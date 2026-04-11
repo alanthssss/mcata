@@ -1,0 +1,13 @@
+stateDiagram-v2
+    [*] --> Start
+    Start --> Playing: startGame()
+    Playing --> Playing: processMoveAction()
+    Playing --> PhaseEnd: output >= target or steps = 0
+    PhaseEnd --> Infusion: phase < last and not forge phase
+    PhaseEnd --> Forge: forge phase
+    PhaseEnd --> GameOver: output < target
+    PhaseEnd --> RunComplete: all phases cleared
+    Infusion --> Playing: selectInfusion()
+    Forge --> Playing: buyFromForge() / skipForge()
+    GameOver --> [*]
+    RunComplete --> [*]

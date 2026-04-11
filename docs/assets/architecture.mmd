@@ -1,0 +1,17 @@
+flowchart TD
+    UI["UI Layer (React)"]
+    Store["Zustand Store"]
+    Engine["Core Engine (pure)"]
+    Board["Board / Move"]
+    Score["Score / Catalysts"]
+    AI["AI Agents"]
+    Bench["Benchmark Runner"]
+    Export["Artifact Exporter"]
+
+    UI --> Store
+    Store --> Engine
+    Engine --> Board
+    Engine --> Score
+    AI --> Engine
+    Bench --> AI
+    Bench --> Export

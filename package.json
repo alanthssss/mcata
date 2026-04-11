@@ -5,7 +5,11 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "benchmark": "tsx src/scripts/runBenchmark.ts --suite baseline",
+    "benchmark:long": "tsx src/scripts/runBenchmark.ts --suite long",
+    "balance": "tsx src/scripts/runBalanceCheck.ts",
+    "docs:assets": "tsx src/scripts/generateDocsAssets.ts"
   },
   "dependencies": {
     "react": "^18.2.0",
@@ -13,9 +17,11 @@
     "zustand": "^4.5.2"
   },
   "devDependencies": {
+    "@types/node": "^25.6.0",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "@vitejs/plugin-react": "^4.2.1",
+    "tsx": "^4.19.2",
     "typescript": "^5.3.3",
     "vite": "^5.1.4"
   }
