@@ -54,13 +54,13 @@ Phase End
 ## Phase Structure
 
 ```
-Phase 1: targetOutput=120,  steps=12
-Phase 2: targetOutput=260,  steps=12
-Phase 3: targetOutput=500,  steps=10
+Phase 1: targetOutput=70,  steps=12
+Phase 2: targetOutput=80,  steps=12
+Phase 3: targetOutput=75,  steps=10
 → Forge Phase (between 3 and 4)
-Phase 4: targetOutput=900,  steps=8   [Anomaly: Entropy Tax]
-Phase 5: targetOutput=1400, steps=10
-Phase 6: targetOutput=2200, steps=8   [Anomaly: Collapse Field]
+Phase 4: targetOutput=40,  steps=8   [Anomaly: Entropy Tax]
+Phase 5: targetOutput=80,  steps=10
+Phase 6: targetOutput=55,  steps=8   [Anomaly: Collapse Field]
 ```
 
 All phase values are centralised in `src/core/config.ts` for easy tuning.
@@ -119,8 +119,40 @@ Starts at 1.0. Increased by +0.1 for each Infusion multiplier choice taken.
 - The blocked cell is highlighted in the UI.
 
 ### Collapse Field (Phase 6)
-- Every 3 valid moves, the highest tile on the grid is reduced by one level (value / 2).
+- Every 4 valid moves, the highest tile on the grid is reduced by one level (value / 2).
 - Counter resets per phase.
+
+---
+
+## Balance v2 Changes
+
+Introduced in Balance v2 (`balanceVersion: "v2"`, see `src/core/config.ts`).
+
+### Phase Target Reductions
+
+All phase `targetOutput` values were significantly reduced to make the game reachable for AI agents and human players. The original targets were unreachable for all tested agents.
+
+| Phase | Target v1 | Target v2 | Steps |
+|-------|-----------|-----------|-------|
+| 1 | 120 | 70 | 12 |
+| 2 | 260 | 80 | 12 |
+| 3 | 500 | 75 | 10 |
+| 4 (Entropy Tax) | 900 | 40 | 8 |
+| 5 | 1400 | 80 | 10 |
+| 6 (Collapse Field) | 2200 | 55 | 8 |
+
+### Collapse Field Period
+
+`COLLAPSE_FIELD_PERIOD` increased from 3 → 4 (every 4 scoring moves instead of 3), reducing the intensity of the Phase 6 anomaly.
+
+### Benchmark Runner Fixes
+
+- `autoInfusion`: now prefers a **catalyst** slot when under the `MAX_CATALYSTS` cap; at cap it prefers **+2 steps** → multiplier → energy (avoids wasting a slot on an unusable catalyst choice).
+- `autoForge`: after buying the cheapest affordable catalyst, now always calls `skipForge()` so the screen advances to `playing` (the previous version left the runner stuck on the forge screen when no purchase was made).
+
+### Architecture: Single Source of Truth
+
+`src/core/phases.ts` no longer duplicates phase data. It now re-exports `PHASES` directly from `PHASE_CONFIG` in `src/core/config.ts`.
 
 ---
 
