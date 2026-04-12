@@ -1,14 +1,19 @@
 // Centralized tuning configuration for Merge Catalyst.
 // All balance-sensitive values live here so tuning changes are one-line edits.
 
-export const PHASE_CONFIG = [
+export const PHASE_CONFIG: Array<{
+  phaseNumber: number;
+  targetOutput: number;
+  steps: number;
+  anomaly?: 'entropy_tax' | 'collapse_field';
+}> = [
   { phaseNumber: 1, targetOutput: 70,  steps: 12 },
   { phaseNumber: 2, targetOutput: 80,  steps: 12 },
   { phaseNumber: 3, targetOutput: 75,  steps: 10 },
-  { phaseNumber: 4, targetOutput: 40,  steps: 8,  anomaly: 'entropy_tax'   as const },
+  { phaseNumber: 4, targetOutput: 40,  steps: 8,  anomaly: 'entropy_tax' },
   { phaseNumber: 5, targetOutput: 80,  steps: 10 },
-  { phaseNumber: 6, targetOutput: 55,  steps: 8,  anomaly: 'collapse_field' as const },
-] as const;
+  { phaseNumber: 6, targetOutput: 55,  steps: 8,  anomaly: 'collapse_field' },
+];
 
 // After which phase index (0-based) the Forge screen is shown.
 export const FORGE_AFTER_PHASE = 2;
