@@ -25,13 +25,13 @@ npm run preview
 
 | Phase | Target Output | Steps | Anomaly |
 |-------|--------------|-------|---------|
-| 1 | 120 | 12 | — |
-| 2 | 260 | 12 | — |
-| 3 | 500 | 10 | — |
+| 1 | 70 | 12 | — |
+| 2 | 80 | 12 | — |
+| 3 | 75 | 10 | — |
 | → Forge | — | — | — |
-| 4 | 900 | 8 | Entropy Tax |
-| 5 | 1400 | 10 | — |
-| 6 | 2200 | 8 | Collapse Field |
+| 4 | 40 | 8 | Entropy Tax |
+| 5 | 80 | 10 | — |
+| 6 | 55 | 8 | Collapse Field |
 
 ## Catalysts
 

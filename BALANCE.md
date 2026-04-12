@@ -18,12 +18,12 @@ All parameters are centralised in **`src/core/config.ts`**.
 
 ```ts
 PHASE_CONFIG = [
-  { phaseNumber: 1, targetOutput: 120,  steps: 12 },
-  { phaseNumber: 2, targetOutput: 260,  steps: 12 },
-  { phaseNumber: 3, targetOutput: 500,  steps: 10 },
-  { phaseNumber: 4, targetOutput: 900,  steps: 8  },  // Entropy Tax
-  { phaseNumber: 5, targetOutput: 1400, steps: 10 },
-  { phaseNumber: 6, targetOutput: 2200, steps: 8  },  // Collapse Field
+  { phaseNumber: 1, targetOutput: 70,  steps: 12 },
+  { phaseNumber: 2, targetOutput: 80,  steps: 12 },
+  { phaseNumber: 3, targetOutput: 75,  steps: 10 },
+  { phaseNumber: 4, targetOutput: 40,  steps: 8  },  // Entropy Tax
+  { phaseNumber: 5, targetOutput: 80,  steps: 10 },
+  { phaseNumber: 6, targetOutput: 55,  steps: 8  },  // Collapse Field
 ]
 ```
 
@@ -46,7 +46,7 @@ CATALYST_MULTIPLIERS = {
 ### Anomaly Intensity
 
 ```ts
-COLLAPSE_FIELD_PERIOD = 3  // every N moves triggers collapse; raise to 4 to weaken
+COLLAPSE_FIELD_PERIOD = 4  // every N moves triggers collapse; raise to 5 to weaken further
 SPAWN_4_PROBABILITY = 0.10 // base spawn-4 chance
 ```
 
@@ -102,6 +102,40 @@ Based on early benchmark runs:
 ### Reserve
 - "+20 per unused step" is strong with a step-conservative strategy
 - Worth monitoring — may drive all winning strategies toward "reserve hoarding"
+
+---
+
+## Balance v2 — Applied Changes
+
+**Version tag**: `balanceVersion: "v2"` in `src/core/config.ts`
+
+### Problem Summary (v1)
+
+All tested agents had near-0% win rates in v1 because phase targets were too high relative to what the tile merging system can produce in the given step budget.
+
+### Phase Target Changes
+
+| Phase | v1 Target | v2 Target | Rationale |
+|-------|-----------|-----------|-----------|
+| 1 | 120 | 70 | Bring Phase 1 within reach of RandomAgent to establish a reachable floor |
+| 2 | 260 | 80 | Reduce to match realistic 12-step output |
+| 3 | 500 | 75 | Make Forge reachable so catalyst economy can be tested |
+| 4 (Entropy Tax) | 900 | 40 | Reduce compound difficulty wall (anomaly + high target) |
+| 5 | 1400 | 80 | Make Phases 5–6 reachable for strong agents |
+| 6 (Collapse Field) | 2200 | 55 | Allow runs to complete and validate full catalyst/anomaly loop |
+
+### Anomaly Intensity Changes
+
+| Parameter | v1 | v2 | Rationale |
+|-----------|----|----|-----------|
+| `COLLAPSE_FIELD_PERIOD` | 3 | 4 | Trigger every 4 scoring moves instead of 3 — slightly less punishing |
+
+### Expected Effects
+
+- Greedy/Heuristic agents should now regularly reach Phase 4+ and the Forge
+- Catalyst pick rates will become observable (previously stuck at 0%)
+- Anomaly survival rates become measurable for adjustment
+- Win rates for best agents should land in the 20%–40% target range
 
 ---
 
