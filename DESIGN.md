@@ -4,22 +4,40 @@
 
 Merge Catalyst is a roguelike puzzle game built on 2048-style grid mechanics. The player progresses through 6 Phases, each with an Output target and step limit. Between Phase 3 and 4, the Forge allows purchasing Catalysts. After each phase, an Infusion reward is offered. Two Anomaly phases add asymmetric challenges.
 
+It also ships a complete **benchmark-aware simulation framework** that allows AI agents to play the game headlessly, batch simulations to run for balance analysis, and results to be exported for review.
+
 ---
 
 ## Terminology
 
 | Term | Meaning |
 |------|---------|
-| Catalyst | Power-up modifier (NOT Joker) |
-| Phase | Game stage/level (NOT Stage) |
-| Anomaly | Special challenge modifier (NOT Boss) |
-| Forge | Shop for buying Catalysts (NOT Shop) |
-| Infusion | Post-phase reward (NOT Reward) |
-| Energy | Currency for the Forge (NOT Coins) |
-| Output | Score (NOT Score) |
-| Steps | Moves remaining (NOT Moves) |
-| Grid | 4×4 play field (NOT Board) |
-| Reaction Log | Move history log (NOT Log) |
+| Catalyst | Power-up modifier |
+| Phase | Game stage/level |
+| Anomaly | Special challenge modifier |
+| Forge | Shop for buying Catalysts |
+| Infusion | Post-phase reward |
+| Energy | Currency for the Forge |
+| Output | Score |
+| Steps | Moves remaining |
+| Grid | 4×4 play field |
+| Reaction Log | Move history log |
+
+---
+
+## Core Loop
+
+```
+Start Run
+  ↓
+Phase N (Playing)
+  ↓ (output ≥ target OR steps = 0)
+Phase End
+  ├── loss → Game Over
+  ├── forge phase → Forge screen → Phase N+1
+  ├── last phase won → Run Complete
+  └── otherwise → Infusion → Phase N+1
+```
 
 ---
 
@@ -45,9 +63,7 @@ Phase 5: targetOutput=1400, steps=10
 Phase 6: targetOutput=2200, steps=8   [Anomaly: Collapse Field]
 ```
 
-Completing Phase 6 = Run Complete (victory).
-
-If Steps reach 0 before Output target is met = game over (defeat).
+All phase values are centralised in `src/core/config.ts` for easy tuning.
 
 ---
 
@@ -147,32 +163,86 @@ The UI displays the last 10 log entries.
 
 ## RNG
 
-Uses a seeded xorshift32 PRNG. Seed is derived from `Date.now()` at game start. The seed advances per move to ensure reproducibility within a run while varying across runs.
+Uses a seeded xorshift32 PRNG. Seed is derived from `Date.now()` at game start. The seed advances per move to ensure reproducibility within a run while varying across runs. Benchmark runs use fixed seeds for deterministic comparisons.
 
 ---
 
-## Architecture
+## Benchmark-Aware Architecture
+
+The core engine (`src/core/`) is **pure** — no React, no browser APIs, no side effects. This allows it to be imported by Node.js benchmark scripts directly.
 
 ```
 src/
-  core/          Pure game logic (no React)
-    types.ts     All TypeScript types and interfaces
-    rng.ts       Seeded PRNG
-    board.ts     Grid utilities
-    move.ts      Move application and merge logic
-    score.ts     Output scoring calculation
-    catalysts.ts Catalyst definitions
-    anomalies.ts Anomaly effects
-    phases.ts    Phase configuration
-    forge.ts     Forge offer generation
-    infusion.ts  Infusion option generation
-    engine.ts    Main game state machine
-  store/
-    gameStore.ts Zustand state store
-  ui/
-    App.tsx      Root component and keyboard handler
-    style.css    Dark theme CSS
-    components/  Individual UI components
+  core/          Pure game logic (no browser dependencies)
+  ai/            Headless AI agents and policy evaluation
+  benchmark/     Simulation runner, metrics, exporters, charts
+  scripts/       CLI entrypoints (tsx / npm scripts)
+  ui/            React UI (browser only)
+  store/         Zustand store (browser only)
+```
+
+### Headless Simulation Design
+
+`runSingle(opts)` in `src/benchmark/runner.ts`:
+1. Creates a game state with a fixed seed
+2. Calls `agent.nextAction(state)` each step
+3. Handles infusion/forge screens automatically
+4. Collects `RunMetrics` at the end
+
+`runBatch(opts)` loops `runSingle` over N seeds.
+
+Agents only depend on `src/core/` and `src/ai/`. They import no browser code.
+
+---
+
+## Balancing Philosophy
+
+- **Centralized config**: all tuning knobs live in `src/core/config.ts`
+- **Benchmark-driven tuning**: run `npm run balance` to check win rates and catalyst stats
+- **Agent distinction**: if HeuristicAgent and RandomAgent score similarly, the game lacks depth
+- **Phase ramp**: each phase should feel meaningfully harder, not just step-limited
+- See [BALANCE.md](BALANCE.md) for the full tuning guide
+
+---
+
+## Architecture Diagram
+
+```mermaid
+flowchart TD
+    UI["UI Layer (React)"]
+    Store["Zustand Store"]
+    Engine["Core Engine (pure)"]
+    Board["Board / Move"]
+    Score["Score / Catalysts"]
+    AI["AI Agents"]
+    Bench["Benchmark Runner"]
+    Export["Artifact Exporter"]
+
+    UI --> Store
+    Store --> Engine
+    Engine --> Board
+    Engine --> Score
+    AI --> Engine
+    Bench --> AI
+    Bench --> Export
+```
+
+## Game Flow Diagram
+
+```mermaid
+stateDiagram-v2
+    [*] --> Start
+    Start --> Playing: startGame()
+    Playing --> Playing: processMoveAction()
+    Playing --> PhaseEnd: output >= target or steps = 0
+    PhaseEnd --> Infusion: phase < last and not forge phase
+    PhaseEnd --> Forge: forge phase
+    PhaseEnd --> GameOver: output < target
+    PhaseEnd --> RunComplete: all phases cleared
+    Infusion --> Playing: selectInfusion()
+    Forge --> Playing: buyFromForge() / skipForge()
+    GameOver --> [*]
+    RunComplete --> [*]
 ```
 
 ---
@@ -183,3 +253,5 @@ src/
 - **Vite 5** — dev server and bundler
 - **TypeScript 5** — type safety
 - **Zustand 4** — minimal global state management
+- **tsx** — TypeScript runner for headless scripts
+

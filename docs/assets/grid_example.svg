@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="220" height="220">
+  <rect width="220" height="220" fill="#bbada0" rx="8"/>
+  <rect x="5" y="5" width="42" height="42" fill="#eee4da" rx="4"/>
+    <text x="26" y="31" text-anchor="middle" font-size="18" font-weight="bold" fill="#776e65">2</text><rect x="55" y="5" width="42" height="42" fill="#eee4da" rx="4"/>
+    <text x="76" y="31" text-anchor="middle" font-size="18" font-weight="bold" fill="#776e65">4</text><rect x="105" y="5" width="42" height="42" fill="#f2b179" rx="4"/>
+    <text x="126" y="31" text-anchor="middle" font-size="18" font-weight="bold" fill="#f9f6f2">8</text><rect x="155" y="5" width="42" height="42" fill="#f2b179" rx="4"/>
+    <text x="176" y="31" text-anchor="middle" font-size="18" font-weight="bold" fill="#f9f6f2">16</text><rect x="5" y="55" width="42" height="42" fill="#f59563" rx="4"/>
+    <text x="26" y="81" text-anchor="middle" font-size="18" font-weight="bold" fill="#f9f6f2">32</text><rect x="55" y="55" width="42" height="42" fill="#f59563" rx="4"/>
+    <text x="76" y="81" text-anchor="middle" font-size="18" font-weight="bold" fill="#f9f6f2">64</text><rect x="105" y="55" width="42" height="42" fill="#f67c5f" rx="4"/>
+    <text x="126" y="81" text-anchor="middle" font-size="18" font-weight="bold" fill="#f9f6f2">128</text><rect x="155" y="55" width="42" height="42" fill="#f67c5f" rx="4"/>
+    <text x="176" y="81" text-anchor="middle" font-size="18" font-weight="bold" fill="#f9f6f2">256</text><rect x="5" y="105" width="42" height="42" fill="#f67c5f" rx="4"/>
+    <text x="26" y="131" text-anchor="middle" font-size="18" font-weight="bold" fill="#f9f6f2">512</text><rect x="55" y="105" width="42" height="42" fill="#f67c5f" rx="4"/>
+    <text x="76" y="131" text-anchor="middle" font-size="14" font-weight="bold" fill="#f9f6f2">1024</text><rect x="105" y="105" width="42" height="42" fill="#f67c5f" rx="4"/>
+    <text x="126" y="131" text-anchor="middle" font-size="14" font-weight="bold" fill="#f9f6f2">2048</text><rect x="155" y="105" width="42" height="42" fill="#cdc1b4" rx="4"/>
+    <rect x="5" y="155" width="42" height="42" fill="#cdc1b4" rx="4"/>
+    <rect x="55" y="155" width="42" height="42" fill="#cdc1b4" rx="4"/>
+    <rect x="105" y="155" width="42" height="42" fill="#cdc1b4" rx="4"/>
+    <rect x="155" y="155" width="42" height="42" fill="#cdc1b4" rx="4"/>
+    
+</svg>

@@ -1,0 +1,10 @@
+flowchart TD
+    PS["Select Suite (presets.ts)"]
+    PS --> RA["Run Agents (runner.ts)"]
+    RA --> CM["Collect RunMetrics"]
+    CM --> AG["Aggregate SuiteMetrics"]
+    AG --> AN["analyseResults (analysis.ts)"]
+    AN --> EX["Export JSON / CSV / MD (exporters.ts)"]
+    AN --> CH["Generate SVG Charts (charts.ts)"]
+    EX --> AR["artifacts/benchmark/latest/"]
+    CH --> AR

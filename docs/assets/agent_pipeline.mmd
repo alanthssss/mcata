@@ -1,0 +1,7 @@
+flowchart LR
+    S["GameState"] --> LA["legalMoves()"]
+    LA --> E["evaluate each move"]
+    E --> D["AgentDecision"]
+    D --> Sim["processMoveAction()"]
+    Sim --> NS["Next GameState"]
+    NS --> S
