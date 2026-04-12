@@ -17,21 +17,31 @@ import { PHASES } from '../core/phases';
 
 // ─── Auto-pilot helpers for non-playing screens ───────────────────────────────
 function autoInfusion(state: GameState): GameState {
-  // Pick first option (energy) or first catalyst
   if (state.infusionOptions.length === 0) return { ...state, screen: 'playing' };
-  const choice = state.infusionOptions.find(o => o.type !== 'energy') ?? state.infusionOptions[0];
+  // When at max catalysts, a catalyst choice does nothing — prefer steps instead.
+  const atMaxCatalysts = state.activeCatalysts.length >= 3;
+  let choice: typeof state.infusionOptions[0];
+  if (!atMaxCatalysts) {
+    // Prefer catalyst; fall back to first option
+    choice = state.infusionOptions.find(o => o.type === 'catalyst') ?? state.infusionOptions[0];
+  } else {
+    // Prefer steps (+2 moves) > multiplier > energy
+    choice =
+      state.infusionOptions.find(o => o.type === 'steps') ??
+      state.infusionOptions.find(o => o.type === 'multiplier') ??
+      state.infusionOptions[0];
+  }
   return selectInfusion(state, choice);
 }
 
 function autoForge(state: GameState): GameState {
-  // Buy cheapest available catalyst if enough energy, else skip
+  // Buy cheapest available catalyst if enough energy, then always skip to 'playing'.
+  // buyFromForge keeps screen='forge', so we must call skipForge to advance the screen.
   const affordable = state.forgeOffers
     .filter(c => state.energy >= c.cost)
     .sort((a, b) => a.cost - b.cost);
-  if (affordable.length > 0) {
-    return buyFromForge(state, affordable[0]);
-  }
-  return skipForge(state);
+  const afterBuy = affordable.length > 0 ? buyFromForge(state, affordable[0]) : state;
+  return skipForge(afterBuy);
 }
 
 // ─── Single run ───────────────────────────────────────────────────────────────
