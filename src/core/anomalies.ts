@@ -1,7 +1,6 @@
 import { AnomalyId, AnomalyDef, Grid, Position } from './types';
 import { getEmptyCells, cloneGrid, findHighestTilePosition } from './board';
 import { Rng } from './rng';
-import { COLLAPSE_FIELD_PERIOD } from './config';
 
 export const ANOMALY_DEFS: Record<AnomalyId, AnomalyDef> = {
   entropy_tax: {
@@ -12,7 +11,7 @@ export const ANOMALY_DEFS: Record<AnomalyId, AnomalyDef> = {
   collapse_field: {
     id: 'collapse_field',
     name: 'Collapse Field',
-    description: 'Every 4 valid moves, the highest tile is reduced by one level',
+    description: 'Every 3 valid moves, the highest tile is reduced by one level',
   },
 };
 
@@ -30,7 +29,7 @@ export function applyCollapseField(
   grid: Grid,
   counter: number
 ): { grid: Grid; triggered: boolean; description: string } {
-  if (counter % COLLAPSE_FIELD_PERIOD !== 0 || counter === 0) {
+  if (counter % 3 !== 0 || counter === 0) {
     return { grid, triggered: false, description: '' };
   }
   const pos = findHighestTilePosition(grid);
