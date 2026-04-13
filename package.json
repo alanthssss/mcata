@@ -6,6 +6,8 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "benchmark": "tsx src/scripts/runBenchmark.ts --suite baseline",
     "benchmark:long": "tsx src/scripts/runBenchmark.ts --suite long",
     "benchmark:meta": "tsx src/scripts/runMetaBenchmark.ts",
@@ -24,6 +26,7 @@
     "@vitejs/plugin-react": "^4.2.1",
     "tsx": "^4.19.2",
     "typescript": "^5.3.3",
-    "vite": "^5.1.4"
+    "vite": "^5.1.4",
+    "vitest": "^4.1.4"
   }
 }
