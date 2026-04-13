@@ -1,6 +1,7 @@
 import React from 'react';
 import { ReactionLogEntry, Direction } from '../../core/types';
 import { useT } from '../../i18n';
+import { formatScore } from '../scoreDisplay';
 
 interface LogPanelProps {
   log: ReactionLogEntry[];
@@ -29,7 +30,7 @@ export const LogPanel: React.FC<LogPanelProps> = ({ log }) => {
                 <span className="log-step">#{entry.step}</span>
                 <span className="log-dir">{DIRECTION_ARROW[entry.action]}</span>
                 <span className="log-merges">{t('ui.merge_count', { n: entry.merges.length })}</span>
-                <span className="log-output">+{entry.finalOutput}</span>
+                <span className="log-output">+{formatScore(entry.finalOutput)}</span>
                 {entry.synergyMultiplier > 1.0 && (
                   <span className="log-synergy" title={t('ui.synergy_bonus')}>
                     ⚡×{entry.synergyMultiplier.toFixed(2)}

@@ -1,6 +1,7 @@
 import React from 'react';
 import { ReactionLogEntry } from '../../core/types';
 import { useT } from '../../i18n';
+import { formatScore } from '../scoreDisplay';
 
 interface OutputPanelProps {
   lastEntry: ReactionLogEntry | null;
@@ -34,7 +35,7 @@ export const OutputPanel: React.FC<OutputPanelProps> = ({ lastEntry }) => {
       <div className="panel-title">{t('ui.output_breakdown')}</div>
       <div className="output-row">
         <span>{t('ui.base')}</span>
-        <span className="output-value">{lastEntry.base}</span>
+        <span className="output-value">{formatScore(lastEntry.base)}</span>
       </div>
       {lastEntry.multipliers.map((m, i) => {
         const labelKey = multLabelKey(m.name);
@@ -61,7 +62,7 @@ export const OutputPanel: React.FC<OutputPanelProps> = ({ lastEntry }) => {
       )}
       <div className="output-row total">
         <span>{t('ui.final_output')}</span>
-        <span className="output-value">{lastEntry.finalOutput}</span>
+        <span className="output-value">{formatScore(lastEntry.finalOutput)}</span>
       </div>
       {lastEntry.triggeredCatalysts.length > 0 && (
         <div className="output-triggered">

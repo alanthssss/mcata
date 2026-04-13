@@ -1,7 +1,12 @@
 # Merge Catalyst
 
-A 2048-style roguelike puzzle game with Catalysts, Anomaly phases, and a full AI benchmark framework.
+A themeable merge roguelike puzzle game with Catalysts, Anomaly phases, and a full AI benchmark framework.
 Built with React, Vite, and TypeScript.
+
+> **Commercial shell note**: The game no longer relies on a 2048-style presentation.
+> Tile visuals are driven by a pluggable **theme system** — the default shell uses a
+> generic progression ladder (Seed → Iron → Bronze → … → Singularity).
+> The underlying numeric merge engine remains unchanged and benchmark-compatible.
 
 ## Quick Start
 
@@ -58,17 +63,65 @@ finalOutput = floor(base × chain × condition × catalyst × global)
 - **catalyst**: from active catalyst bonuses
 - **global**: accumulated from Infusion multiplier choices
 
+**Display score**: All player-facing output values are multiplied by
+`DISPLAY_SCORE_SCALE` (default ×10) for readability.  Internal raw scores
+(used by the engine and benchmarks) are unchanged.
+
+## Theme System
+
+Tile visuals are fully decoupled from game logic.
+
+```
+src/theme/
+  types.ts           — TileThemeEntry + TileTheme interfaces
+  defaultTheme.ts    — Default progression theme (Seed → Singularity)
+  progressionTheme.ts — Re-export of the default theme
+  mathTheme.ts       — Placeholder for math/science theme
+  historyTheme.ts    — Placeholder for history/civilisation theme
+  cultureTheme.ts    — Placeholder for internet culture theme
+  themeRegistry.ts   — Registry + useThemeStore (runtime theme switching)
+```
+
+The active theme is stored in a Zustand slice (`useThemeStore`) and can be
+switched at runtime without restarting the game.  The benchmark and AI agents
+always operate on internal numeric values; the theme layer is UI-only.
+
+### Default Theme — Progression Ladder
+
+| Internal Value | Display Label | Rarity |
+|----------------|--------------|--------|
+| 2 | Seed | Common |
+| 4 | Iron | Common |
+| 8 | Bronze | Common |
+| 16 | Silver | Uncommon |
+| 32 | Gold | Uncommon |
+| 64 | Platinum | Rare |
+| 128 | Emerald | Rare |
+| 256 | Diamond | Epic |
+| 512 | Master | Epic |
+| 1024 | Apex | Legendary |
+| 2048 | Transcendent | Legendary |
+| 4096 | Eternal | Mythic |
+| 8192 | Singularity | Mythic |
+
+Why progression-based (not fruit / raw numbers):
+- Fruit themes carry trademark risk or evoke competing titles.
+- Raw numeric labels ("2 / 4 / 8…") echo classic 2048 visually.
+- A material / rank ladder is instantly understandable, broadly appealing, and easy to localise.
+
 ## Architecture Summary
 
 ```
 src/
   core/         Pure game engine (types, board, move, engine, score, phases, …)
+  theme/        Tile presentation abstraction (theme types, registry, default theme)
   ai/           Agent implementations and policy helpers
     agents/     RandomAgent, GreedyAgent, HeuristicAgent, BeamSearchAgent, MCTSAgent
     policy/     features.ts, evaluation.ts, scoring.ts
   benchmark/    Headless simulation framework
   scripts/      CLI entry points (run via npm scripts)
   ui/           React components (browser only)
+    scoreDisplay.ts  — toDisplayScore / formatScore helpers
   store/        Zustand game store
 ```
 

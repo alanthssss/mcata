@@ -1,6 +1,7 @@
 import React from 'react';
 import { PHASES } from '../../core/phases';
 import { useT } from '../../i18n';
+import { formatScoreCompact } from '../scoreDisplay';
 
 interface PhasePanelProps {
   phaseIndex: number;
@@ -17,7 +18,9 @@ export const PhasePanel: React.FC<PhasePanelProps> = ({ phaseIndex, output }) =>
       <div className="panel-title">{t('ui.phase')} {phase.phaseNumber}</div>
       <div className="progress-bar-container">
         <div className="progress-bar" style={{ width: `${progress}%` }} />
-        <span className="progress-label">{output} / {phase.targetOutput}</span>
+        <span className="progress-label">
+          {formatScoreCompact(output)} / {formatScoreCompact(phase.targetOutput)}
+        </span>
       </div>
       {phase.anomaly && (
         <div className="anomaly-info">
