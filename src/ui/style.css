@@ -1486,6 +1486,9 @@ button:not(:disabled):active {
   font-size: 0.75rem;
 }
 
+.collection-card__flavor::before { content: '\201C'; }
+.collection-card__flavor::after  { content: '\201D'; }
+
 .collection-card__unlock-cond {
   font-size: 0.72rem;
   color: var(--text-muted);

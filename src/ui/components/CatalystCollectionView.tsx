@@ -70,7 +70,7 @@ function CatalystCard({ def, unlocked, t }: {
           <strong>{tName}</strong>
           <p>{tDesc}</p>
           {def.flavorText && (
-            <em className="collection-card__flavor">"{def.flavorText}"</em>
+            <em className="collection-card__flavor">{def.flavorText}</em>
           )}
           <div className="collection-card__unlock-cond">{def.unlockCondition}</div>
         </div>
