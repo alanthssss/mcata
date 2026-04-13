@@ -1,6 +1,7 @@
 import React from 'react';
 import { SignalId } from '../../core/types';
 import { SIGNAL_DEFS } from '../../core/signals';
+import { SIGNAL_CAPACITY } from '../../core/config';
 
 interface SignalPanelProps {
   signals: SignalId[];
@@ -13,7 +14,7 @@ export const SignalPanel: React.FC<SignalPanelProps> = ({ signals, pendingSignal
 
   return (
     <div className="panel signal-panel">
-      <div className="panel-title">Signals ({signals.length}/2)</div>
+      <div className="panel-title">Signals ({signals.length}/{SIGNAL_CAPACITY})</div>
       <div className="signal-list">
         {signals.map(id => {
           const def = SIGNAL_DEFS[id];

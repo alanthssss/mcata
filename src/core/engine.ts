@@ -241,7 +241,7 @@ export function processMoveAction(state: GameState, dir: Direction): GameState {
 
   // Delay Spawn catalyst: skip spawn now, double later
   const delaySpawnActive = state.activeCatalysts.includes('delay_spawn');
-  if (freezeStepActive || (delaySpawnActive && newDelayedSpawnCount === 0 && rng.next() < 0.5)) {
+  if (freezeStepActive || (delaySpawnActive && newDelayedSpawnCount === 0 && rng.next() < CATALYST_MULTIPLIERS.delay_spawn_probability)) {
     // Skip spawn this turn; note the debt
     if (!freezeStepActive) newDelayedSpawnCount = 1;
     if (freezeStepActive) signalEffect = 'Freeze Step: no spawn this turn';
@@ -250,9 +250,9 @@ export function processMoveAction(state: GameState, dir: Direction): GameState {
     const spawnsOwed = newDelayedSpawnCount > 0 ? newDelayedSpawnCount + 1 : 1;
     newDelayedSpawnCount = 0;
 
-    // Double Spawn: 25% chance to spawn 2
-    const baseSpawnCount = (state.activeCatalysts.includes('double_spawn') && rng.next() < CATALYST_MULTIPLIERS.double_spawn_probability) ? 2 : 1;
-    const totalSpawns = Math.max(spawnsOwed, baseSpawnCount);
+    // Double Spawn: 25% chance to add +1 spawn (additive with spawnsOwed)
+    const doubleSpawnBonus = (state.activeCatalysts.includes('double_spawn') && rng.next() < CATALYST_MULTIPLIERS.double_spawn_probability) ? 1 : 0;
+    const totalSpawns = spawnsOwed + doubleSpawnBonus;
 
     let spawnableEmpty = [...emptyAfterMove];
     for (let s = 0; s < totalSpawns; s++) {

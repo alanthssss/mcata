@@ -107,6 +107,9 @@ function computeBuildStats(runs: RunMetrics[]): BuildStat[] {
   return builds.slice(0, 10);
 }
 
+// Minimum run count before catalyst pick rate warnings are meaningful
+const MIN_RUNS_FOR_PICK_RATE_WARNING = 20;
+
 // ─── Analysis ─────────────────────────────────────────────────────────────────
 export function analyseResults(results: SuiteResult[]): BalanceReport {
   const findings:        BalanceFinding[]  = [];
@@ -160,7 +163,7 @@ export function analyseResults(results: SuiteResult[]): BalanceReport {
     : 0;
 
   for (const cs of catalystStats) {
-    if (cs.pickRate < 0.05 && allRuns.length > 20) {
+    if (cs.pickRate < 0.05 && allRuns.length > MIN_RUNS_FOR_PICK_RATE_WARNING) {
       findings.push({ category: 'catalyst', severity: 'warn',
         message: `${cs.id}: rarely picked (${(cs.pickRate * 100).toFixed(1)}%) — may be weak or too expensive.` });
     }

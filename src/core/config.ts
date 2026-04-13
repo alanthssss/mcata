@@ -45,6 +45,7 @@ export const CATALYST_MULTIPLIERS = {
   energy_loop_fraction:        0.1, // fraction of output that becomes energy
   reserve_bank_energy_per_step: 1, // energy per step at phase clear
   double_spawn_probability:    0.25, // chance of double spawn
+  delay_spawn_probability:     0.5,  // chance delay_spawn triggers on a given move
   // New modifiers
   diagonal_merge_mult:        1.2, // bonus multiplier for diagonal merge
   diagonal_merge_period:      4,   // every N moves
@@ -87,9 +88,6 @@ export const MOMENTUM_CONFIG = {
 export const SIGNAL_CAPACITY    = 2;   // max signals a player can hold
 export const PULSE_BOOST_MULT   = 2.0; // pulse_boost output multiplier
 export const GRID_CLEAN_COUNT   = 2;   // number of lowest tiles removed by grid_clean
-
-// ─── Protocol config ──────────────────────────────────────────────────────────
-export const DEFAULT_PROTOCOL_ID = 'corner_protocol' as const;
 
 // ─── Infusion rewards ─────────────────────────────────────────────────────────
 export const INFUSION_ENERGY_BONUS     = 3;

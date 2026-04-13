@@ -124,8 +124,8 @@ export function computeScore(params: {
   }
 
   // Echo Multiplier
-  if (activeCatalysts.includes('echo_multiplier') && echoOutputLast > 0) {
-    const echoBonus = 1.0 + (echoOutputLast * CATALYST_MULTIPLIERS.echo_multiplier_carry) / Math.max(base, 1);
+  if (activeCatalysts.includes('echo_multiplier') && echoOutputLast > 0 && base > 0) {
+    const echoBonus = 1.0 + (echoOutputLast * CATALYST_MULTIPLIERS.echo_multiplier_carry) / base;
     catalystMult *= echoBonus;
     triggered.push('echo_multiplier');
     multipliers.push({ name: 'Echo Multiplier', value: echoBonus });

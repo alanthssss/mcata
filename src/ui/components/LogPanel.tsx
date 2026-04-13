@@ -1,5 +1,6 @@
 import React from 'react';
 import { ReactionLogEntry, Direction } from '../../core/types';
+import { SIGNAL_DEFS } from '../../core/signals';
 
 interface LogPanelProps {
   log: ReactionLogEntry[];
@@ -33,7 +34,7 @@ export const LogPanel: React.FC<LogPanelProps> = ({ log }) => {
                 <span className="log-momentum">🔥×{entry.momentumMultiplier.toFixed(2)}</span>
               )}
               {entry.signalUsed && (
-                <div className="log-signal">🔮 {entry.signalEffect ?? entry.signalUsed}</div>
+                <div className="log-signal">🔮 {entry.signalEffect ?? SIGNAL_DEFS[entry.signalUsed].name}</div>
               )}
               {entry.anomalyEffect && (
                 <div className="log-anomaly">⚠ {entry.anomalyEffect}</div>
