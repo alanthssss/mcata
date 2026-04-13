@@ -1305,3 +1305,217 @@ button:not(:disabled):active {
     height: 70px;
   }
 }
+
+/* ─── Catalyst Collection View ─────────────────────────────────────────────── */
+.collection-modal {
+  max-width: 800px;
+  width: 95vw;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.modal-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--accent);
+  margin: 0;
+  flex: 1;
+}
+
+.collection-progress {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.modal-close-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.modal-close-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.collection-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.filter-btn {
+  background: var(--bg-panel-2);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 4px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.filter-btn:hover,
+.filter-btn--active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(105, 179, 144, 0.08);
+}
+
+.collection-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 10px;
+  padding: 16px 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.collection-card {
+  position: relative;
+  border: 2px solid;
+  border-radius: var(--radius-sm);
+  padding: 10px;
+  background: var(--bg-panel-2);
+  cursor: default;
+  transition: box-shadow 0.15s;
+}
+
+.collection-card--locked {
+  opacity: 0.55;
+}
+
+.collection-card--unlocked:hover {
+  box-shadow: 0 0 8px rgba(105, 179, 144, 0.3);
+}
+
+.collection-card__header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.collection-card__icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.collection-card__name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.collection-card__rarity {
+  font-size: 0.7rem;
+  font-weight: 500;
+  opacity: 0.9;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.collection-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.collection-card__tag {
+  background: rgba(105, 179, 144, 0.12);
+  color: var(--text-muted);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 0.68rem;
+}
+
+.collection-card__tooltip {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: var(--bg-panel);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  padding: 10px;
+  z-index: 200;
+  font-size: 0.8rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+}
+
+.collection-card__tooltip strong {
+  display: block;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+
+.collection-card__tooltip p {
+  margin: 0 0 6px;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+
+.collection-card__flavor {
+  display: block;
+  color: var(--text-muted);
+  font-style: italic;
+  margin-bottom: 6px;
+  font-size: 0.75rem;
+}
+
+.collection-card__flavor::before { content: '\201C'; }
+.collection-card__flavor::after  { content: '\201D'; }
+
+.collection-card__unlock-cond {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  border-top: 1px solid var(--border);
+  padding-top: 4px;
+  margin-top: 4px;
+}
+
+/* ─── Collection button ───────────────────────────────────────────────────── */
+.right-column-top {
+  margin-bottom: 8px;
+}
+
+.collection-btn {
+  width: 100%;
+  background: var(--bg-panel-2);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+}
+
+.collection-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}

@@ -1,17 +1,19 @@
 import React from 'react';
 import { Cell } from '../../core/types';
+import { TILE_DISPLAY_MODE } from '../../core/config';
 import { useThemeStore, getThemeEntry } from '../../theme/themeRegistry';
 
 interface TileProps {
   cell: Cell;
   isFrozen?: boolean;
   isBlocked?: boolean;
-  /** When true, show the internal numeric value as a small debug badge. */
-  showInternalValue?: boolean;
+  /** Override the global display mode for this tile instance. */
+  displayMode?: import('../../core/config').TileDisplayMode;
 }
 
-export const Tile: React.FC<TileProps> = ({ cell, isFrozen, isBlocked, showInternalValue = false }) => {
+export const Tile: React.FC<TileProps> = ({ cell, isFrozen, isBlocked, displayMode }) => {
   const theme = useThemeStore(s => s.getActiveTheme());
+  const mode = displayMode ?? TILE_DISPLAY_MODE;
 
   const className = [
     'tile',
@@ -29,19 +31,34 @@ export const Tile: React.FC<TileProps> = ({ cell, isFrozen, isBlocked, showInter
       backgroundColor: entry.colorToken,
       color: entry.textColorToken,
     };
-    label = (
-      <>
-        {entry.iconToken && (
-          <span className="tile-icon" aria-hidden="true">{entry.iconToken}</span>
-        )}
-        <span className="tile-display-label">{entry.displayLabel}</span>
-        {showInternalValue && (
+
+    if (mode === 'value-only') {
+      label = (
+        <span className="tile-display-label">{cell.value}</span>
+      );
+    } else if (mode === 'label+value') {
+      label = (
+        <>
+          {entry.iconToken && (
+            <span className="tile-icon" aria-hidden="true">{entry.iconToken}</span>
+          )}
+          <span className="tile-display-label">{entry.displayLabel}</span>
           <span className="tile-internal-value" aria-label={`internal value ${cell.value}`}>
             {cell.value}
           </span>
-        )}
-      </>
-    );
+        </>
+      );
+    } else {
+      // mode === 'label'
+      label = (
+        <>
+          {entry.iconToken && (
+            <span className="tile-icon" aria-hidden="true">{entry.iconToken}</span>
+          )}
+          <span className="tile-display-label">{entry.displayLabel}</span>
+        </>
+      );
+    }
   }
 
   return (
