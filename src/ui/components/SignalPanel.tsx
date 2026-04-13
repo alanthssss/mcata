@@ -2,6 +2,7 @@ import React from 'react';
 import { SignalId } from '../../core/types';
 import { SIGNAL_DEFS } from '../../core/signals';
 import { SIGNAL_CAPACITY } from '../../core/config';
+import { useT } from '../../i18n';
 
 interface SignalPanelProps {
   signals: SignalId[];
@@ -10,30 +11,42 @@ interface SignalPanelProps {
 }
 
 export const SignalPanel: React.FC<SignalPanelProps> = ({ signals, pendingSignal, onActivate }) => {
+  const t = useT();
+
   if (signals.length === 0) return null;
 
   return (
     <div className="panel signal-panel">
-      <div className="panel-title">Signals ({signals.length}/{SIGNAL_CAPACITY})</div>
+      <div className="panel-title">{t('ui.signals', { count: signals.length, max: SIGNAL_CAPACITY })}</div>
       <div className="signal-list">
         {signals.map(id => {
           const def = SIGNAL_DEFS[id];
           const isPending = pendingSignal === id;
+          const tName = t(`signal.${id}.name`);
+          const tDesc = t(`signal.${id}.description`);
           return (
-            <button
+            <div
               key={id}
-              className={`signal-btn${isPending ? ' signal-btn--active' : ''}`}
-              onClick={() => onActivate(id)}
-              title={def.description}
+              className={`signal-item${isPending ? ' signal-item--pending' : ''}`}
             >
-              🔮 {def.name}
-            </button>
+              <div className="signal-info">
+                <div className="signal-name">🔮 {tName}</div>
+                <div className="signal-desc">{tDesc}</div>
+              </div>
+              <button
+                className={`signal-use-btn${isPending ? ' signal-use-btn--active' : ''}`}
+                onClick={() => onActivate(id)}
+                title={isPending ? `${tName} queued` : tDesc}
+              >
+                {isPending ? '✓' : t('ui.signal_use')}
+              </button>
+            </div>
           );
         })}
       </div>
       {pendingSignal && (
         <div className="signal-pending">
-          Queued: {SIGNAL_DEFS[pendingSignal].name} — activates on next move
+          🔮 {t('ui.signal_queued', { name: t(`signal.${pendingSignal}.name`) })}
         </div>
       )}
     </div>

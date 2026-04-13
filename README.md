@@ -98,10 +98,56 @@ artifacts/benchmark/latest/
   charts/  (SVG bar charts)
 ```
 
-## Docs
+## Localization (i18n)
 
-- [DESIGN.md](DESIGN.md) — game design and architecture
-- [BENCHMARK.md](BENCHMARK.md) — benchmark goals, suites, metrics
-- [BALANCE.md](BALANCE.md) — balancing philosophy and tuning knobs
-- [AI.md](AI.md) — agent interface and RL roadmap
+Merge Catalyst supports multiple languages via a lightweight built-in i18n layer.
+
+### Supported Languages
+
+| Code | Language |
+|------|----------|
+| `en` | English (default) |
+| `zh-CN` | Simplified Chinese (简体中文) |
+
+### Architecture
+
+```
+src/i18n/
+  types.ts    — Locale type + TranslationMap type
+  en.ts       — English translation map
+  zh-CN.ts    — Simplified Chinese translation map
+  index.ts    — useT() hook, createT() factory, useLocaleStore (Zustand)
+```
+
+### Usage
+
+```typescript
+import { useT } from '../i18n';
+
+const MyComponent = () => {
+  const t = useT();
+  return <div>{t('ui.phase')}</div>;
+};
+```
+
+With interpolation:
+
+```typescript
+t('ui.active_catalysts', { count: 2 })  // "Active Catalysts (2/3)"
+t('ui.signal_queued', { name: 'Pulse Boost' })
+```
+
+### Switching Languages
+
+A `<LocaleSwitcher>` component is embedded in the Header. Clicking it toggles between English and 简体中文. The locale is stored in Zustand state (in-memory, resets on reload).
+
+### Adding a New Language
+
+1. Create `src/i18n/your-locale.ts` exporting a `TranslationMap`
+2. Add the locale to `TRANSLATIONS` in `src/i18n/index.ts`
+3. Add the locale to the `Locale` union type in `src/i18n/types.ts`
+4. Add the locale option to `<LocaleSwitcher>`
+
+---
+
 

@@ -769,6 +769,484 @@ button:not(:disabled):active {
   color: var(--accent);
 }
 
+/* ─── Header (updated for protocol badge + locale) ─────────────────────────── */
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ─── Protocol Badge ────────────────────────────────────────────────────────── */
+.protocol-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(124, 109, 240, 0.12);
+  border: 1px solid rgba(124, 109, 240, 0.35);
+  border-radius: 12px;
+  padding: 3px 10px;
+  font-size: 0.78rem;
+  cursor: default;
+}
+
+.protocol-badge--highlight {
+  border-color: var(--accent);
+  background: rgba(124, 109, 240, 0.25);
+  box-shadow: 0 0 6px rgba(124, 109, 240, 0.3);
+}
+
+.protocol-badge__icon { font-size: 0.9rem; }
+.protocol-badge__name { font-weight: 600; color: var(--accent); }
+
+/* ─── Protocol Panel ────────────────────────────────────────────────────────── */
+.protocol-panel { transition: box-shadow 0.2s; }
+
+.protocol-panel--highlight {
+  box-shadow: 0 0 8px rgba(124, 109, 240, 0.4);
+  border-color: var(--accent);
+}
+
+.protocol-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.protocol-icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 1px; }
+.protocol-info { display: flex; flex-direction: column; gap: 3px; }
+.protocol-name { font-weight: 700; font-size: 0.88rem; color: var(--accent); }
+.protocol-desc { font-size: 0.72rem; color: var(--text-muted); line-height: 1.4; }
+
+/* ─── Momentum Panel ────────────────────────────────────────────────────────── */
+.momentum-panel { transition: box-shadow 0.2s, border-color 0.2s; }
+.momentum-panel--active { border-color: rgba(240, 164, 74, 0.5); }
+
+.momentum-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+
+.momentum-bar-wrap {
+  flex: 1;
+  height: 10px;
+  background: var(--bg-panel-2);
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.momentum-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--warning), #e05a5a);
+  border-radius: 5px;
+  transition: width 0.3s ease;
+}
+
+.momentum-bar--max {
+  background: linear-gradient(90deg, #e05a5a, #ff6b6b);
+  box-shadow: 0 0 6px rgba(224, 90, 90, 0.6);
+}
+
+.momentum-mult {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--warning);
+  min-width: 45px;
+  text-align: right;
+}
+
+.momentum-mult--max { color: #e05a5a; }
+
+.momentum-max-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #e05a5a;
+  margin-left: 3px;
+  letter-spacing: 0.05em;
+}
+
+.momentum-meta {
+  display: flex;
+  gap: 6px;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.momentum-streak-val { font-weight: 600; color: var(--warning); }
+.momentum-value { color: var(--warning) !important; }
+.stat--momentum .stat-value { color: var(--warning); }
+
+/* ─── Synergy Panel ─────────────────────────────────────────────────────────── */
+.synergy-panel .panel-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.build-identity-badge {
+  margin-left: auto;
+  background: rgba(79, 200, 228, 0.15);
+  border: 1px solid rgba(79, 200, 228, 0.35);
+  color: var(--accent-2);
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.synergy-list { display: flex; flex-direction: column; gap: 6px; }
+
+.synergy-item {
+  background: var(--bg-panel-2);
+  border: 1px solid rgba(79, 200, 228, 0.2);
+  border-radius: var(--radius-sm);
+  padding: 6px 8px;
+  transition: border-color 0.2s;
+}
+
+.synergy-item--triggered {
+  border-color: rgba(79, 200, 228, 0.7);
+  box-shadow: 0 0 6px rgba(79, 200, 228, 0.25);
+}
+
+.synergy-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+
+.synergy-name { font-size: 0.82rem; font-weight: 700; color: var(--accent-2); }
+.synergy-mult { font-size: 0.8rem; font-weight: 700; color: var(--accent-2); }
+.synergy-catalysts { font-size: 0.7rem; color: var(--text-muted); }
+.synergy-triggered-badge { font-size: 0.68rem; color: var(--success); font-weight: 700; margin-top: 2px; }
+
+.synergy-last {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+  align-items: center;
+}
+
+.synergy-last-label { font-size: 0.7rem; color: var(--text-muted); }
+
+.synergy-tag {
+  display: inline-block;
+  background: rgba(79, 200, 228, 0.12);
+  border: 1px solid rgba(79, 200, 228, 0.3);
+  color: var(--accent-2);
+  font-size: 0.68rem;
+  padding: 1px 6px;
+  border-radius: 8px;
+}
+
+/* ─── Signal Panel (improved) ───────────────────────────────────────────────── */
+.signal-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-panel-2);
+  border: 1px solid rgba(124, 109, 240, 0.25);
+  border-radius: var(--radius-sm);
+  padding: 6px 8px;
+  margin-bottom: 5px;
+  transition: border-color 0.2s;
+}
+
+.signal-item--pending {
+  border-color: var(--accent);
+  background: rgba(124, 109, 240, 0.12);
+}
+
+.signal-info { flex: 1; min-width: 0; }
+.signal-name { font-size: 0.82rem; font-weight: 600; color: var(--text); }
+.signal-desc { font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; }
+
+.signal-use-btn {
+  background: var(--accent);
+  color: #fff;
+  border-radius: var(--radius-sm);
+  padding: 4px 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.signal-use-btn:hover {
+  background: #9585f5;
+}
+
+.signal-use-btn--active {
+  background: var(--success);
+}
+
+.signal-use-btn--active:hover {
+  background: #5fcf8f;
+}
+
+/* ─── Output Panel (improved) ───────────────────────────────────────────────── */
+.output-triggered {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+  align-items: center;
+}
+
+.output-triggered-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-right: 2px;
+}
+
+.output-signal {
+  margin-top: 5px;
+  font-size: 0.76rem;
+  color: var(--accent);
+  background: rgba(124, 109, 240, 0.1);
+  border-radius: var(--radius-sm);
+  padding: 3px 7px;
+}
+
+.output-signal-effect { color: var(--text-muted); }
+
+.synergy-mult { color: var(--accent-2) !important; }
+.momentum-mult { color: var(--warning) !important; }
+
+/* ─── Log Panel (improved) ──────────────────────────────────────────────────── */
+.log-main {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.log-synergy-detail {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.log-synergy-tag {
+  display: inline-block;
+  background: rgba(79, 200, 228, 0.1);
+  border: 1px solid rgba(79, 200, 228, 0.25);
+  color: var(--accent-2);
+  font-size: 0.68rem;
+  padding: 1px 5px;
+  border-radius: 6px;
+}
+
+.log-signal {
+  width: 100%;
+  font-size: 0.7rem;
+  color: var(--accent);
+  margin-top: 2px;
+}
+
+/* ─── Catalyst Panel (with tags) ────────────────────────────────────────────── */
+.catalyst-rarity {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.catalyst-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-top: 3px;
+}
+
+.catalyst-tag--amplifier { border-color: rgba(124, 109, 240, 0.5); color: var(--accent); }
+.catalyst-tag--stabilizer { border-color: rgba(106, 176, 224, 0.5); color: var(--common); }
+.catalyst-tag--generator { border-color: rgba(240, 164, 74, 0.5); color: var(--warning); }
+.catalyst-tag--modifier { border-color: rgba(199, 126, 240, 0.5); color: var(--rare); }
+.catalyst-tag--legacy { border-color: rgba(160, 160, 180, 0.4); color: var(--text-muted); }
+.catalyst-tag--trigger {
+  background: transparent;
+  border-color: rgba(100, 100, 130, 0.3);
+  color: var(--text-muted);
+  font-size: 0.62rem;
+}
+
+/* ─── Forge Modal (improved) ────────────────────────────────────────────────── */
+.offer-rarity-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 3px;
+}
+
+.offer-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 10px;
+  background: rgba(124, 109, 240, 0.15);
+  border: 1px solid rgba(124, 109, 240, 0.3);
+  color: var(--accent);
+}
+
+.offer-tag--amplifier { background: rgba(124, 109, 240, 0.15); border-color: rgba(124, 109, 240, 0.3); color: var(--accent); }
+.offer-tag--stabilizer { background: rgba(106, 176, 224, 0.12); border-color: rgba(106, 176, 224, 0.3); color: var(--common); }
+.offer-tag--generator { background: rgba(240, 164, 74, 0.12); border-color: rgba(240, 164, 74, 0.3); color: var(--warning); }
+.offer-tag--modifier { background: rgba(199, 126, 240, 0.12); border-color: rgba(199, 126, 240, 0.3); color: var(--rare); }
+.offer-tag--legacy { background: rgba(120, 120, 140, 0.1); border-color: rgba(120, 120, 140, 0.25); color: var(--text-muted); }
+
+.offer-synergy-hint {
+  font-size: 0.72rem;
+  color: var(--accent-2);
+  background: rgba(79, 200, 228, 0.08);
+  border: 1px solid rgba(79, 200, 228, 0.25);
+  border-radius: var(--radius-sm);
+  padding: 3px 7px;
+  margin: 4px 0;
+}
+
+/* ─── Infusion Modal (improved) ─────────────────────────────────────────────── */
+.infusion-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 3px;
+}
+
+.infusion-icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.infusion-tag {
+  margin-left: auto;
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 10px;
+}
+
+.infusion-tag--catalyst { background: rgba(124, 109, 240, 0.15); border: 1px solid rgba(124, 109, 240, 0.3); color: var(--accent); }
+.infusion-tag--energy   { background: rgba(240, 164, 74, 0.12);  border: 1px solid rgba(240, 164, 74, 0.3);  color: var(--warning); }
+.infusion-tag--steps    { background: rgba(106, 176, 224, 0.12); border: 1px solid rgba(106, 176, 224, 0.3); color: var(--common); }
+.infusion-tag--multiplier { background: rgba(76, 175, 125, 0.12); border: 1px solid rgba(76, 175, 125, 0.3); color: var(--success); }
+
+/* ─── Start Screen (improved) ───────────────────────────────────────────────── */
+.start-protocol-info {
+  background: var(--bg-panel);
+  border: 1px solid rgba(124, 109, 240, 0.3);
+  border-radius: var(--radius);
+  padding: 12px 18px;
+  max-width: 360px;
+  width: 100%;
+  text-align: left;
+}
+
+.start-protocol-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.start-protocol-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.start-protocol-key { font-size: 0.82rem; color: var(--text-muted); }
+.start-protocol-val { font-size: 0.88rem; font-weight: 700; color: var(--accent); }
+.start-protocol-desc { font-size: 0.76rem; color: var(--text-muted); line-height: 1.4; }
+
+.start-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.help-btn {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 10px 18px;
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.help-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ─── Help Overlay ──────────────────────────────────────────────────────────── */
+.help-modal {
+  max-width: 480px;
+}
+
+.help-entries {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.help-entry {
+  background: var(--bg-panel-2);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+}
+
+.help-entry-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 3px;
+}
+
+.help-entry-desc {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.help-close-btn {
+  width: 100%;
+}
+
+/* ─── Locale Switcher ───────────────────────────────────────────────────────── */
+.locale-switcher {
+  background: var(--bg-panel-2);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.locale-switcher:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 /* ─── Responsive ────────────────────────────────────────────────────────────── */
 @media (max-width: 760px) {
   .game-layout {

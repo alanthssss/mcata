@@ -1,41 +1,72 @@
 import React from 'react';
 import { InfusionChoice } from '../../core/types';
 import { Modal } from './Modal';
+import { useT } from '../../i18n';
 
 interface InfusionModalProps {
   options: InfusionChoice[];
   onChoose: (choice: InfusionChoice) => void;
 }
 
-function choiceLabel(choice: InfusionChoice): string {
+const INFUSION_ICONS: Record<string, string> = {
+  catalyst:   '⚗',
+  energy:     '⚡',
+  steps:      '👣',
+  multiplier: '×',
+};
+
+const INFUSION_TAG_KEY: Record<string, string> = {
+  catalyst:   'tag.scoring',
+  energy:     'tag.energy',
+  steps:      'tag.control',
+  multiplier: 'tag.amplification',
+};
+
+function getChoiceLabelKey(choice: InfusionChoice): string {
   switch (choice.type) {
-    case 'catalyst': return `Gain Catalyst: ${choice.catalyst.name}`;
-    case 'energy': return 'Gain ⚡3 Energy';
-    case 'steps': return 'Gain +2 Steps (next phase)';
-    case 'multiplier': return '+10% Global Output Multiplier';
+    case 'catalyst': return 'ui.infusion_gain_catalyst';
+    case 'energy':   return 'ui.infusion_gain_energy';
+    case 'steps':    return 'ui.infusion_gain_steps';
+    case 'multiplier': return 'ui.infusion_gain_multiplier';
   }
 }
 
-function choiceDesc(choice: InfusionChoice): string {
+function getChoiceDescKey(choice: InfusionChoice): string {
   switch (choice.type) {
-    case 'catalyst': return choice.catalyst.description;
-    case 'energy': return 'Increase your Energy reserve by 3.';
-    case 'steps': return 'Get 2 extra steps in the next phase.';
-    case 'multiplier': return 'All future output is multiplied by an additional 10%.';
+    case 'catalyst': return `catalyst.${choice.catalyst.id}.description`;
+    case 'energy':   return 'ui.infusion_desc_energy';
+    case 'steps':    return 'ui.infusion_desc_steps';
+    case 'multiplier': return 'ui.infusion_desc_multiplier';
   }
 }
 
 export const InfusionModal: React.FC<InfusionModalProps> = ({ options, onChoose }) => {
+  const t = useT();
+
   return (
-    <Modal title="⚡ Infusion">
-      <p className="modal-subtitle">Phase cleared! Choose your reward.</p>
+    <Modal title={t('ui.infusion_title')}>
+      <p className="modal-subtitle">{t('ui.infusion_subtitle')}</p>
       <div className="infusion-options">
-        {options.map((choice, i) => (
-          <button key={i} className="infusion-option" onClick={() => onChoose(choice)}>
-            <div className="infusion-label">{choiceLabel(choice)}</div>
-            <div className="infusion-desc">{choiceDesc(choice)}</div>
-          </button>
-        ))}
+        {options.map((choice, i) => {
+          const icon = INFUSION_ICONS[choice.type] ?? '';
+          const tagKey = INFUSION_TAG_KEY[choice.type] ?? '';
+          const labelKey = getChoiceLabelKey(choice);
+          const label = choice.type === 'catalyst'
+            ? t(labelKey, { name: t(`catalyst.${choice.catalyst.id}.name`) })
+            : t(labelKey);
+          return (
+            <button key={i} className="infusion-option" onClick={() => onChoose(choice)}>
+              <div className="infusion-header">
+                <span className="infusion-icon">{icon}</span>
+                <span className="infusion-label">{label}</span>
+                {tagKey && (
+                  <span className={`infusion-tag infusion-tag--${choice.type}`}>{t(tagKey)}</span>
+                )}
+              </div>
+              <div className="infusion-desc">{t(getChoiceDescKey(choice))}</div>
+            </button>
+          );
+        })}
       </div>
     </Modal>
   );
