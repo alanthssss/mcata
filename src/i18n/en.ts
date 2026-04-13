@@ -49,7 +49,7 @@ const en: TranslationMap = {
   'ui.log_anomaly': '⚠ {effect}',
 
   // ─── UI: Start Screen ──────────────────────────────────────────────────────
-  'ui.game_subtitle': 'A 2048-based Roguelike Puzzle Game',
+  'ui.game_subtitle': 'A Themeable Merge Roguelike — Powered by Catalyst Reactions',
   'ui.start_hint_output': '🎯 Reach target Output before Steps run out',
   'ui.start_hint_catalyst': '⚗ Equip Catalysts to amplify your reactions',
   'ui.start_hint_energy': '⚡ Spend Energy at the Forge',

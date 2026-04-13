@@ -1,5 +1,6 @@
 import React from 'react';
 import { useT } from '../../i18n';
+import { formatScore } from '../scoreDisplay';
 
 interface EndScreenProps {
   isVictory: boolean;
@@ -21,7 +22,7 @@ export const EndScreen: React.FC<EndScreenProps> = ({ isVictory, totalOutput, on
       <div className="end-stats">
         <div className="stat-block">
           <div className="stat-label">{t('ui.total_output')}</div>
-          <div className="stat-big">{totalOutput}</div>
+          <div className="stat-big">{formatScore(totalOutput)}</div>
         </div>
       </div>
       <button className="start-btn" onClick={onRestart}>{t('ui.new_run')}</button>

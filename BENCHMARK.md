@@ -11,6 +11,13 @@ The benchmark framework lets you:
 - Measure Momentum average and max per run
 - Produce reproducible, comparable numbers across code changes
 
+> **Theme note**: The UI presentation layer (tile labels, colours, display score
+> scaling) has **no effect on benchmark results**.  All benchmark metrics —
+> `finalOutput`, `meanOutput`, `winRate`, etc. — are raw internal numeric values.
+> `DISPLAY_SCORE_SCALE` is a UI-only multiplier; it is never applied to benchmark
+> output.  This means benchmark results remain directly comparable across all
+> theme changes.
+
 ---
 
 ## Agent Overview

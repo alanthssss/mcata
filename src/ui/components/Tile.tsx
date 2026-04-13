@@ -1,43 +1,18 @@
 import React from 'react';
 import { Cell } from '../../core/types';
+import { useThemeStore, getThemeEntry } from '../../theme/themeRegistry';
 
 interface TileProps {
   cell: Cell;
   isFrozen?: boolean;
   isBlocked?: boolean;
+  /** When true, show the internal numeric value as a small debug badge. */
+  showInternalValue?: boolean;
 }
 
-const TILE_COLORS: Record<number, string> = {
-  2: '#eee4da',
-  4: '#ede0c8',
-  8: '#f2b179',
-  16: '#f59563',
-  32: '#f67c5f',
-  64: '#f65e3b',
-  128: '#edcf72',
-  256: '#edcc61',
-  512: '#edc850',
-  1024: '#edc53f',
-  2048: '#edc22e',
-  4096: '#3c3a32',
-  8192: '#1a1a2e',
-};
+export const Tile: React.FC<TileProps> = ({ cell, isFrozen, isBlocked, showInternalValue = false }) => {
+  const theme = useThemeStore(s => s.getActiveTheme());
 
-function getTileColor(value: number): string {
-  return TILE_COLORS[value] || '#cdc1b4';
-}
-
-function getTextColor(value: number): string {
-  return value <= 4 ? '#776e65' : '#f9f6f2';
-}
-
-function getFontSize(value: number): string {
-  if (value >= 1000) return '1.1rem';
-  if (value >= 100) return '1.4rem';
-  return '1.8rem';
-}
-
-export const Tile: React.FC<TileProps> = ({ cell, isFrozen, isBlocked }) => {
   const className = [
     'tile',
     cell ? 'tile-filled' : '',
@@ -45,17 +20,33 @@ export const Tile: React.FC<TileProps> = ({ cell, isFrozen, isBlocked }) => {
     isBlocked ? 'tile-blocked' : '',
   ].filter(Boolean).join(' ');
 
-  const style: React.CSSProperties = cell
-    ? {
-        backgroundColor: getTileColor(cell.value),
-        color: getTextColor(cell.value),
-        fontSize: getFontSize(cell.value),
-      }
-    : {};
+  let style: React.CSSProperties = {};
+  let label: React.ReactNode = null;
+
+  if (cell) {
+    const entry = getThemeEntry(theme, cell.value);
+    style = {
+      backgroundColor: entry.colorToken,
+      color: entry.textColorToken,
+    };
+    label = (
+      <>
+        {entry.iconToken && (
+          <span className="tile-icon" aria-hidden="true">{entry.iconToken}</span>
+        )}
+        <span className="tile-display-label">{entry.displayLabel}</span>
+        {showInternalValue && (
+          <span className="tile-internal-value" aria-label={`internal value ${cell.value}`}>
+            {cell.value}
+          </span>
+        )}
+      </>
+    );
+  }
 
   return (
     <div className={className} style={style}>
-      {cell ? cell.value : ''}
+      {label}
       {isFrozen && <span className="tile-label">❄</span>}
       {isBlocked && <span className="tile-label">✕</span>}
     </div>

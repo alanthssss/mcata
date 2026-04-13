@@ -10,7 +10,47 @@
 
 ---
 
-## Key Tuning Knobs
+## Display Score Scaling
+
+### Motivation
+
+Internal score values from tile merges are relatively small integers (e.g. a strong
+move produces a raw `finalOutput` of 80–200).  To make numbers feel more rewarding to
+players without changing game mechanics, a display scale factor is applied.
+
+### Implementation
+
+```ts
+// src/core/config.ts
+export const DISPLAY_SCORE_SCALE = 10;
+```
+
+All player-facing score displays (`Header`, `PhasePanel`, `OutputPanel`, `LogPanel`,
+`EndScreen`) call `formatScore(rawValue)` or `formatScoreCompact(rawValue)` from
+`src/ui/scoreDisplay.ts`, which applies `× DISPLAY_SCORE_SCALE` and adds comma formatting.
+
+### Internal vs Display
+
+| Context | Value used |
+|---------|-----------|
+| Engine merge/score logic | Raw internal value |
+| Benchmark / AI agents | Raw internal value |
+| Phase target comparison (`output >= target`) | Raw internal value |
+| All player-facing UI labels | `rawValue × DISPLAY_SCORE_SCALE` |
+
+### Balance Impact
+
+**No mechanical change.**  Phase targets, catalyst multipliers, and all engine logic
+remain on raw values.  Only the display layer changes.  Benchmark reports show raw output
+for direct comparability across versions.
+
+To adjust the display feel: change `DISPLAY_SCORE_SCALE` in `src/core/config.ts`.
+A value of 1 restores raw-number display.  Values of 10–100 are recommended for
+mainstream appeal.
+
+---
+
+## Key Tuning Knobs (first block)
 
 All parameters are centralised in **`src/core/config.ts`**.
 

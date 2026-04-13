@@ -4,6 +4,7 @@ import { PHASES } from '../../core/phases';
 import { useT } from '../../i18n';
 import { ProtocolBadge } from './ProtocolBadge';
 import { LocaleSwitcher } from './LocaleSwitcher';
+import { formatScore, formatScoreCompact } from '../scoreDisplay';
 
 interface HeaderProps {
   phaseIndex: number;
@@ -42,7 +43,7 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
         <div className="stat">
           <span className="stat-label">{t('ui.output')}</span>
-          <span className="stat-value">{output} / {phase.targetOutput}</span>
+          <span className="stat-value">{formatScoreCompact(output)} / {formatScoreCompact(phase.targetOutput)}</span>
         </div>
         <div className="stat">
           <span className="stat-label">{t('ui.steps')}</span>
@@ -54,7 +55,7 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
         <div className="stat">
           <span className="stat-label">{t('ui.total')}</span>
-          <span className="stat-value">{totalOutput}</span>
+          <span className="stat-value">{formatScore(totalOutput)}</span>
         </div>
         {momentumMultiplier > 1.0 && (
           <div className="stat stat--momentum">

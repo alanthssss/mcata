@@ -107,3 +107,9 @@ export const LUCKY_SEED_SPAWN_4_PROBABILITY = 0.25; // with Lucky Seed
 
 // ─── Starting energy ─────────────────────────────────────────────────────────
 export const STARTING_ENERGY = 10;
+
+// ─── Display score scaling ────────────────────────────────────────────────────
+// Internal score values are unchanged.  All player-facing score displays
+// multiply by this factor to make numbers feel more rewarding.
+// Set to 1 to disable scaling (internal = display).
+export const DISPLAY_SCORE_SCALE = 10;

@@ -49,7 +49,7 @@ const zhCN: TranslationMap = {
   'ui.log_anomaly': '⚠ {effect}',
 
   // ─── UI: Start Screen ──────────────────────────────────────────────────────
-  'ui.game_subtitle': '2048风格 Roguelike 解谜游戏',
+  'ui.game_subtitle': '主题化融合 Roguelike — 由催化反应驱动',
   'ui.start_hint_output': '🎯 在步数耗尽前达成目标产出',
   'ui.start_hint_catalyst': '⚗ 装备催化器强化你的反应',
   'ui.start_hint_energy': '⚡ 在熔炉花费能量购买催化器',

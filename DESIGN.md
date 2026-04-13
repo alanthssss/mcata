@@ -2,7 +2,9 @@
 
 ## Overview
 
-Merge Catalyst is a roguelike puzzle game built on 2048-style grid mechanics. The player progresses through 6 Phases, each with an Output target and step limit. Between Phase 3 and 4, the Forge allows purchasing Catalysts. After each phase, an Infusion reward is offered. Two Anomaly phases add asymmetric challenges.
+Merge Catalyst is a roguelike puzzle game built on a discrete tile-merge grid.  The player progresses through 6 Phases, each with an Output target and step limit.  Between Phase 3 and 4, the Forge allows purchasing Catalysts.  After each phase, an Infusion reward is offered.  Two Anomaly phases add asymmetric challenges.
+
+The player-facing tile visuals are driven by a **pluggable theme layer** — the default shell uses a generic progression ladder (Seed → Singularity) rather than raw numeric labels.  Core game logic always operates on internal power-of-two values; the theme layer is purely presentational.
 
 It also ships a complete **benchmark-aware simulation framework** that allows AI agents to play the game headlessly, batch simulations to run for balance analysis, and results to be exported for review.
 
@@ -72,6 +74,68 @@ Phase 6: targetOutput=55,  steps=8   [Anomaly: Collapse Field]
 
 All phase values are centralised in `src/core/config.ts` for easy tuning.
 Protocol modifiers are applied to step counts per phase.
+
+---
+
+## Presentation Layer Abstraction
+
+### Core Engine vs Player-Facing Shell
+
+```
+┌─────────────────────────────────┐
+│   Core Engine (src/core/)       │
+│   Internal numeric values only  │
+│   2 / 4 / 8 / 16 / …           │
+│   Score = raw integers          │
+└────────────┬────────────────────┘
+             │ internalValue
+             ▼
+┌─────────────────────────────────┐
+│   Theme Layer (src/theme/)      │
+│   TileTheme → TileThemeEntry    │
+│   displayLabel / colorToken /   │
+│   iconToken / rarityTag         │
+└────────────┬────────────────────┘
+             │ display label + colour
+             ▼
+┌─────────────────────────────────┐
+│   UI (src/ui/)                  │
+│   Tile.tsx renders theme entry  │
+│   scoreDisplay.ts scales output │
+└─────────────────────────────────┘
+```
+
+- **Core engine** operates exclusively on internal numeric values.  No theme imports appear in `src/core/`.
+- **Theme layer** maps each `internalValue` to `displayLabel`, `colorToken`, `iconToken`, and `rarityTag`.
+- **UI layer** reads the active theme from `useThemeStore` and renders the themed presentation.  An optional `showInternalValue` prop on `<Tile>` shows the raw numeric value as a small debug badge.
+- **Benchmark and AI agents** are unaffected by themes — they only see raw numeric game state.
+
+### rawOutput vs displayOutput
+
+| Field | Meaning | Where used |
+|-------|---------|-----------|
+| `finalOutput` / `rawOutput` | Internal score value (unchanged) | Engine, benchmark, AI agents |
+| `displayOutput` | `rawOutput × DISPLAY_SCORE_SCALE` | UI panels, end screen |
+
+`DISPLAY_SCORE_SCALE` (default 10, defined in `src/core/config.ts`) makes numbers feel more rewarding without touching game mechanics.  Benchmark reports always reference raw output.
+
+### Theme Registry
+
+```
+src/theme/
+  types.ts           — TileThemeEntry + TileTheme interfaces
+  defaultTheme.ts    — Default progression theme
+  progressionTheme.ts — Re-export alias
+  mathTheme.ts       — Placeholder (math/science)
+  historyTheme.ts    — Placeholder (history/civilisation)
+  cultureTheme.ts    — Placeholder (internet culture)
+  themeRegistry.ts   — THEME_REGISTRY map + useThemeStore
+```
+
+New themes can be added by:
+1. Creating a new `src/theme/myTheme.ts` exporting a `TileTheme`.
+2. Adding it to `THEME_REGISTRY` in `themeRegistry.ts`.
+3. Calling `useThemeStore.getState().setTheme('myThemeId')` to activate it.
 
 ---
 
