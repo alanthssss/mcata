@@ -3,17 +3,34 @@
  */
 import { SuiteResult } from './suites';
 import { RunMetrics, SuiteMetrics } from './metrics';
-import { CatalystId } from '../core/types';
+import { CatalystId, SynergyId } from '../core/types';
+import { ALL_CATALYSTS } from '../core/catalysts';
+import { ALL_SYNERGIES, getActiveSynergies } from '../core/synergies';
 
 export interface CatalystStat {
   id:       CatalystId;
   pickRate: number;
   winRate:  number;
   meanOutput: number;
+  avgOutputContribution: number;
+}
+
+export interface SynergyStat {
+  id:           SynergyId;
+  triggerRate:  number;
+  winRate:      number;
+  meanOutput:   number;
+}
+
+export interface BuildStat {
+  catalysts:    CatalystId[];
+  frequency:    number;
+  winRate:      number;
+  meanOutput:   number;
 }
 
 export interface BalanceFinding {
-  category: 'catalyst' | 'anomaly' | 'agent' | 'economy' | 'scoring';
+  category: 'catalyst' | 'anomaly' | 'agent' | 'economy' | 'scoring' | 'synergy' | 'momentum';
   severity: 'info' | 'warn' | 'critical';
   message:  string;
 }
@@ -23,17 +40,16 @@ export interface BalanceReport {
   suiteNames:     string[];
   findings:       BalanceFinding[];
   catalystStats:  CatalystStat[];
+  synergyStats:   SynergyStat[];
+  buildStats:     BuildStat[];
   agentSummary:   Record<string, SuiteMetrics>;
   recommendations: string[];
 }
 
 // ─── Catalyst statistics ──────────────────────────────────────────────────────
 function computeCatalystStats(runs: RunMetrics[]): CatalystStat[] {
-  const ids: CatalystId[] = [
-    'corner_crown', 'twin_burst', 'lucky_seed', 'bankers_edge',
-    'reserve', 'frozen_cell', 'combo_wire', 'high_tribute',
-  ];
-  return ids.map(id => {
+  return ALL_CATALYSTS.map(def => {
+    const id = def.id;
     const withCat  = runs.filter(r => r.activeCatalysts.includes(id));
     const pickRate = withCat.length / Math.max(runs.length, 1);
     const winRate  = withCat.length > 0
@@ -42,9 +58,57 @@ function computeCatalystStats(runs: RunMetrics[]): CatalystStat[] {
     const meanOutput = withCat.length > 0
       ? withCat.reduce((s, r) => s + r.finalOutput, 0) / withCat.length
       : 0;
-    return { id, pickRate, winRate, meanOutput };
+    const avgOutputContribution = withCat.length > 0
+      ? withCat.reduce((s, r) => s + r.avgOutputPerMove, 0) / withCat.length
+      : 0;
+    return { id, pickRate, winRate, meanOutput, avgOutputContribution };
   });
 }
+
+// ─── Synergy statistics ───────────────────────────────────────────────────────
+function computeSynergyStats(runs: RunMetrics[]): SynergyStat[] {
+  return ALL_SYNERGIES.map(synDef => {
+    const withSyn = runs.filter(r =>
+      getActiveSynergies(r.activeCatalysts).includes(synDef.id)
+    );
+    const triggerRate = withSyn.length / Math.max(runs.length, 1);
+    const winRate = withSyn.length > 0
+      ? withSyn.filter(r => r.won).length / withSyn.length
+      : 0;
+    const meanOutput = withSyn.length > 0
+      ? withSyn.reduce((s, r) => s + r.finalOutput, 0) / withSyn.length
+      : 0;
+    return { id: synDef.id, triggerRate, winRate, meanOutput };
+  });
+}
+
+// ─── Build statistics ─────────────────────────────────────────────────────────
+function computeBuildStats(runs: RunMetrics[]): BuildStat[] {
+  const buildMap = new Map<string, RunMetrics[]>();
+  for (const run of runs) {
+    if (run.activeCatalysts.length === 0) continue;
+    const key = [...run.activeCatalysts].sort().join('+');
+    const arr = buildMap.get(key) ?? [];
+    arr.push(run);
+    buildMap.set(key, arr);
+  }
+
+  const builds: BuildStat[] = [];
+  for (const [key, arr] of buildMap.entries()) {
+    builds.push({
+      catalysts: key.split('+') as CatalystId[],
+      frequency: arr.length / Math.max(runs.length, 1),
+      winRate: arr.filter(r => r.won).length / arr.length,
+      meanOutput: arr.reduce((s, r) => s + r.finalOutput, 0) / arr.length,
+    });
+  }
+
+  builds.sort((a, b) => b.frequency - a.frequency);
+  return builds.slice(0, 10);
+}
+
+// Minimum run count before catalyst pick rate warnings are meaningful
+const MIN_RUNS_FOR_PICK_RATE_WARNING = 20;
 
 // ─── Analysis ─────────────────────────────────────────────────────────────────
 export function analyseResults(results: SuiteResult[]): BalanceReport {
@@ -66,6 +130,8 @@ export function analyseResults(results: SuiteResult[]): BalanceReport {
   }
 
   const catalystStats = computeCatalystStats(allRuns);
+  const synergyStats  = computeSynergyStats(allRuns);
+  const buildStats    = computeBuildStats(allRuns);
 
   // ─── Win rate check ──────────────────────────────────────────────────────
   const allMetrics = Object.values(agentSummary);
@@ -97,13 +163,21 @@ export function analyseResults(results: SuiteResult[]): BalanceReport {
     : 0;
 
   for (const cs of catalystStats) {
-    if (cs.pickRate < 0.05) {
+    if (cs.pickRate < 0.05 && allRuns.length > MIN_RUNS_FOR_PICK_RATE_WARNING) {
       findings.push({ category: 'catalyst', severity: 'warn',
         message: `${cs.id}: rarely picked (${(cs.pickRate * 100).toFixed(1)}%) — may be weak or too expensive.` });
     }
     if (cs.winRate > globalWinRate * 1.5 && cs.pickRate > 0.1) {
       findings.push({ category: 'catalyst', severity: 'warn',
         message: `${cs.id}: unusually high win rate when held (${(cs.winRate * 100).toFixed(1)}% vs ${(globalWinRate * 100).toFixed(1)}% global). Potentially overpowered.` });
+    }
+  }
+
+  // ─── Synergy analysis ─────────────────────────────────────────────────────
+  for (const ss of synergyStats) {
+    if (ss.winRate > globalWinRate * 2.0 && ss.triggerRate > 0.05) {
+      findings.push({ category: 'synergy', severity: 'warn',
+        message: `${ss.id}: synergy win rate ${(ss.winRate * 100).toFixed(1)}% vs ${(globalWinRate * 100).toFixed(1)}% global — may be overpowered.` });
     }
   }
 
@@ -134,6 +208,8 @@ export function analyseResults(results: SuiteResult[]): BalanceReport {
     suiteNames,
     findings,
     catalystStats,
+    synergyStats,
+    buildStats,
     agentSummary,
     recommendations,
   };

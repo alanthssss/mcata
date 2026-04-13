@@ -18,6 +18,7 @@ export type Direction = 'up' | 'down' | 'left' | 'right';
 
 // ─── Catalyst ────────────────────────────────────────────────────────────────
 export type CatalystId =
+  // Legacy (original 8)
   | 'corner_crown'
   | 'twin_burst'
   | 'lucky_seed'
@@ -25,9 +26,55 @@ export type CatalystId =
   | 'reserve'
   | 'frozen_cell'
   | 'combo_wire'
-  | 'high_tribute';
+  | 'high_tribute'
+  // Amplifier (score multipliers)
+  | 'empty_amplifier'
+  | 'chain_reactor'
+  | 'echo_multiplier'
+  | 'threshold_surge'
+  | 'phase_resonance'
+  // Stabilizer (board control)
+  | 'gravity_well'
+  | 'soft_reset'
+  | 'buffer_zone'
+  | 'merge_shield'
+  | 'stability_field'
+  // Generator (resource / spawn)
+  | 'double_spawn'
+  | 'rich_merge'
+  | 'catalyst_echo'
+  | 'energy_loop'
+  | 'reserve_bank'
+  // Modifier (rule changes)
+  | 'diagonal_merge'
+  | 'split_protocol'
+  | 'inversion_field'
+  | 'overflow_grid'
+  | 'delay_spawn'
+  | 'anomaly_sync';
 
-export type CatalystRarity = 'common' | 'rare';
+export type CatalystRarity = 'common' | 'rare' | 'epic';
+
+export type CatalystCategory = 'amplifier' | 'stabilizer' | 'generator' | 'modifier' | 'legacy';
+
+export type CatalystTrigger =
+  | 'on_merge'
+  | 'on_phase_clear'
+  | 'on_spawn'
+  | 'on_move'
+  | 'passive'
+  | 'on_anomaly';
+
+export interface CatalystEffectParams {
+  multiplier?: number;
+  flatBonus?: number;
+  energyBonus?: number;
+  stepsBonus?: number;
+  probability?: number;
+  threshold?: number;
+  period?: number;
+  maxStack?: number;
+}
 
 export interface CatalystDef {
   id: CatalystId;
@@ -35,6 +82,53 @@ export interface CatalystDef {
   description: string;
   rarity: CatalystRarity;
   cost: number;
+  category: CatalystCategory;
+  trigger: CatalystTrigger;
+  effectParams: CatalystEffectParams;
+}
+
+// ─── Signal ───────────────────────────────────────────────────────────────────
+export type SignalId = 'pulse_boost' | 'grid_clean' | 'chain_trigger' | 'freeze_step';
+
+export interface SignalDef {
+  id: SignalId;
+  name: string;
+  description: string;
+}
+
+// ─── Protocol ────────────────────────────────────────────────────────────────
+export type ProtocolId = 'corner_protocol' | 'sparse_protocol' | 'overload_protocol';
+
+export interface ProtocolDef {
+  id: ProtocolId;
+  name: string;
+  description: string;
+  /** Extra corner multiplier applied on top of base corner bonuses */
+  cornerMultiplier: number;
+  /** Number of starting tiles (default 2) */
+  startTiles: number;
+  /** Spawn frequency reduction factor (1.0 = normal, >1 = less frequent) */
+  spawnFrequencyFactor: number;
+  /** Output scaling multiplier */
+  outputScale: number;
+  /** Steps reduction per phase (0 = no reduction) */
+  stepsReduction: number;
+}
+
+// ─── Synergy ─────────────────────────────────────────────────────────────────
+export type SynergyId =
+  | 'corner_empire'
+  | 'chain_echo'
+  | 'generator_surplus'
+  | 'amplified_stability'
+  | 'phase_reactor';
+
+export interface SynergyDef {
+  id: SynergyId;
+  name: string;
+  catalysts: [CatalystId, CatalystId];
+  multiplier: number;
+  description: string;
 }
 
 // ─── Anomaly ─────────────────────────────────────────────────────────────────
@@ -95,6 +189,11 @@ export interface ReactionLogEntry {
   multipliers: MultiplierRecord[];
   finalOutput: number;
   triggeredCatalysts: CatalystId[];
+  synergyMultiplier: number;
+  triggeredSynergies: SynergyId[];
+  momentumMultiplier: number;
+  signalUsed: SignalId | null;
+  signalEffect: string | null;
 }
 
 // ─── Game State ──────────────────────────────────────────────────────────────
@@ -125,4 +224,17 @@ export interface GameState {
   infusionOptions: InfusionChoice[];
   tileIdCounter: number;
   rngSeed: number;
+  // Signal system
+  signals: SignalId[];          // active signals (max SIGNAL_CAPACITY)
+  pendingSignal: SignalId | null; // signal queued for this move
+  // Protocol system
+  protocol: ProtocolId;
+  // Momentum system
+  consecutiveValidMoves: number; // for momentum calculation
+  momentumMultiplier: number;    // current momentum multiplier
+  // Extended catalyst state
+  delayedSpawnCount: number;     // tiles owed from Delay Spawn
+  stabilityCount: number;        // consecutive non-bad moves for Stability Field
+  shieldCharge: number;          // remaining Merge Shield charges
+  echoOutputLast: number;        // last move output for Echo Multiplier
 }

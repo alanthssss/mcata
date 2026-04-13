@@ -12,6 +12,7 @@ import { ForgeModal } from './components/ForgeModal';
 import { InfusionModal } from './components/InfusionModal';
 import { StartScreen } from './components/StartScreen';
 import { EndScreen } from './components/EndScreen';
+import { SignalPanel } from './components/SignalPanel';
 import './style.css';
 
 const KEY_MAP: Record<string, Direction> = {
@@ -80,6 +81,11 @@ export const App: React.FC = () => {
         <div className="left-column">
           <PhasePanel phaseIndex={state.phaseIndex} output={state.output} />
           <CatalystPanel activeCatalysts={state.activeCatalysts} frozenCell={state.frozenCell} />
+          <SignalPanel
+            signals={state.signals}
+            pendingSignal={state.pendingSignal}
+            onActivate={state.activateSignal}
+          />
           <OutputPanel lastEntry={lastEntry} />
         </div>
 
@@ -117,3 +123,4 @@ export const App: React.FC = () => {
     </div>
   );
 };
+
