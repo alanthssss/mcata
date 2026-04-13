@@ -113,3 +113,12 @@ export const STARTING_ENERGY = 10;
 // multiply by this factor to make numbers feel more rewarding.
 // Set to 1 to disable scaling (internal = display).
 export const DISPLAY_SCORE_SCALE = 10;
+
+// ─── Tile display mode ────────────────────────────────────────────────────────
+// Controls how individual tiles render their value on the grid.
+//   "label"       — show only the theme display label (e.g. "Gold")
+//   "label+value" — show the theme label AND the internal numeric value as a
+//                   small secondary badge
+//   "value-only"  — show only the raw internal value (debug / accessibility)
+export type TileDisplayMode = 'label' | 'label+value' | 'value-only';
+export const TILE_DISPLAY_MODE: TileDisplayMode = 'label+value';

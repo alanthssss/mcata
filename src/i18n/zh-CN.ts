@@ -132,6 +132,15 @@ const zhCN: TranslationMap = {
   'ui.build_hybrid': '混合流',
   'ui.frozen_cell_info': '冻结格：({row},{col})',
 
+  // ─── UI: Catalyst Collection ──────────────────────────────────────────────
+  'ui.collection_title': '📦 催化器图鉴',
+  'ui.collection_unlocked': '已解锁',
+  'ui.collection_locked': '未解锁',
+  'ui.collection_unlocked_count': '已解锁',
+  'ui.collection_filter_all': '全部',
+  'ui.collection_close': '关闭',
+  'ui.open_collection': '📦 图鉴',
+
   // ─── Locale ────────────────────────────────────────────────────────────────
   'locale.en': 'EN',
   'locale.zh': '中文',

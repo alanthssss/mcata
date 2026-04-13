@@ -11,6 +11,9 @@ export const CATALYST_DEFS: Record<CatalystId, CatalystDef> = {
     category: 'legacy',
     trigger: 'on_merge',
     effectParams: { multiplier: 2.0 },
+    tags: ['corner', 'surge'],
+    flavorText: 'Rule from the edges.',
+    unlockCondition: 'Available from the start',
   },
   twin_burst: {
     id: 'twin_burst',
@@ -21,6 +24,9 @@ export const CATALYST_DEFS: Record<CatalystId, CatalystDef> = {
     category: 'legacy',
     trigger: 'on_merge',
     effectParams: { multiplier: 1.5, threshold: 2 },
+    tags: ['combo', 'chain'],
+    flavorText: 'Two at once — twice the reward.',
+    unlockCondition: 'Available from the start',
   },
   lucky_seed: {
     id: 'lucky_seed',
@@ -31,6 +37,9 @@ export const CATALYST_DEFS: Record<CatalystId, CatalystDef> = {
     category: 'legacy',
     trigger: 'on_spawn',
     effectParams: { probability: 0.75 },
+    tags: ['spawn', 'economy'],
+    flavorText: 'Plant low, harvest high.',
+    unlockCondition: 'Available from the start',
   },
   bankers_edge: {
     id: 'bankers_edge',
@@ -41,6 +50,9 @@ export const CATALYST_DEFS: Record<CatalystId, CatalystDef> = {
     category: 'legacy',
     trigger: 'on_phase_clear',
     effectParams: { energyBonus: 2 },
+    tags: ['energy', 'economy'],
+    flavorText: 'Every cleared phase is a deposit.',
+    unlockCondition: 'Available from the start',
   },
   reserve: {
     id: 'reserve',
@@ -51,6 +63,9 @@ export const CATALYST_DEFS: Record<CatalystId, CatalystDef> = {
     category: 'legacy',
     trigger: 'on_phase_clear',
     effectParams: { flatBonus: 20 },
+    tags: ['economy', 'control'],
+    flavorText: 'Patience is its own multiplier.',
+    unlockCondition: 'Available from the start',
   },
   frozen_cell: {
     id: 'frozen_cell',
@@ -61,6 +76,9 @@ export const CATALYST_DEFS: Record<CatalystId, CatalystDef> = {
     category: 'legacy',
     trigger: 'passive',
     effectParams: {},
+    tags: ['board', 'control'],
+    flavorText: 'Hold one corner sacred.',
+    unlockCondition: 'Available from the start',
   },
   combo_wire: {
     id: 'combo_wire',
@@ -71,6 +89,9 @@ export const CATALYST_DEFS: Record<CatalystId, CatalystDef> = {
     category: 'legacy',
     trigger: 'on_move',
     effectParams: { multiplier: 1.3, period: 3 },
+    tags: ['combo', 'chain'],
+    flavorText: 'Keep the current flowing.',
+    unlockCondition: 'Available from the start',
   },
   high_tribute: {
     id: 'high_tribute',
@@ -81,6 +102,9 @@ export const CATALYST_DEFS: Record<CatalystId, CatalystDef> = {
     category: 'legacy',
     trigger: 'on_merge',
     effectParams: { multiplier: 1.4 },
+    tags: ['surge', 'combo'],
+    flavorText: 'The pinnacle pays its own tribute.',
+    unlockCondition: 'Available from the start',
   },
 
   // ── Amplifier ────────────────────────────────────────────────────────────────
@@ -93,6 +117,9 @@ export const CATALYST_DEFS: Record<CatalystId, CatalystDef> = {
     category: 'amplifier',
     trigger: 'on_merge',
     effectParams: { multiplier: 0.05 },
+    tags: ['board', 'surge'],
+    flavorText: 'Silence amplifies signal.',
+    unlockCondition: 'Unlock with 15 Core Shards',
   },
   chain_reactor: {
     id: 'chain_reactor',
@@ -103,6 +130,9 @@ export const CATALYST_DEFS: Record<CatalystId, CatalystDef> = {
     category: 'amplifier',
     trigger: 'on_merge',
     effectParams: { multiplier: 0.2 },
+    tags: ['chain', 'surge'],
+    flavorText: 'One reaction feeds the next.',
+    unlockCondition: 'Unlock with 25 Core Shards',
   },
   echo_multiplier: {
     id: 'echo_multiplier',
@@ -113,6 +143,9 @@ export const CATALYST_DEFS: Record<CatalystId, CatalystDef> = {
     category: 'amplifier',
     trigger: 'on_merge',
     effectParams: { multiplier: 0.2 },
+    tags: ['echo', 'chain'],
+    flavorText: 'Your last move still resonates.',
+    unlockCondition: 'Unlock with 25 Core Shards',
   },
   threshold_surge: {
     id: 'threshold_surge',
@@ -123,6 +156,9 @@ export const CATALYST_DEFS: Record<CatalystId, CatalystDef> = {
     category: 'amplifier',
     trigger: 'on_merge',
     effectParams: { multiplier: 1.5, threshold: 30 },
+    tags: ['surge', 'risk'],
+    flavorText: 'Break the ceiling, claim the bonus.',
+    unlockCondition: 'Unlock with 25 Core Shards',
   },
   phase_resonance: {
     id: 'phase_resonance',
@@ -133,6 +169,9 @@ export const CATALYST_DEFS: Record<CatalystId, CatalystDef> = {
     category: 'amplifier',
     trigger: 'on_merge',
     effectParams: { multiplier: 0.1 },
+    tags: ['phase', 'surge'],
+    flavorText: 'The deeper in, the louder the signal.',
+    unlockCondition: 'Unlock with 40 Core Shards',
   },
 
   // ── Stabilizer ───────────────────────────────────────────────────────────────
@@ -145,6 +184,9 @@ export const CATALYST_DEFS: Record<CatalystId, CatalystDef> = {
     category: 'stabilizer',
     trigger: 'on_merge',
     effectParams: { multiplier: 1.1 },
+    tags: ['corner', 'board'],
+    flavorText: 'High-value tiles seek the edges.',
+    unlockCondition: 'Unlock with 15 Core Shards',
   },
   soft_reset: {
     id: 'soft_reset',
@@ -155,6 +197,9 @@ export const CATALYST_DEFS: Record<CatalystId, CatalystDef> = {
     category: 'stabilizer',
     trigger: 'passive',
     effectParams: {},
+    tags: ['board', 'control'],
+    flavorText: 'Sometimes less is more space.',
+    unlockCondition: 'Unlock with 25 Core Shards',
   },
   buffer_zone: {
     id: 'buffer_zone',
@@ -165,6 +210,9 @@ export const CATALYST_DEFS: Record<CatalystId, CatalystDef> = {
     category: 'stabilizer',
     trigger: 'on_spawn',
     effectParams: {},
+    tags: ['board', 'spawn', 'control'],
+    flavorText: 'Keep one row free to breathe.',
+    unlockCondition: 'Unlock with 15 Core Shards',
   },
   merge_shield: {
     id: 'merge_shield',
@@ -175,6 +223,9 @@ export const CATALYST_DEFS: Record<CatalystId, CatalystDef> = {
     category: 'stabilizer',
     trigger: 'passive',
     effectParams: { period: 5 },
+    tags: ['shield', 'risk'],
+    flavorText: 'The run continues — for now.',
+    unlockCondition: 'Unlock with 40 Core Shards',
   },
   stability_field: {
     id: 'stability_field',
@@ -185,6 +236,9 @@ export const CATALYST_DEFS: Record<CatalystId, CatalystDef> = {
     category: 'stabilizer',
     trigger: 'on_move',
     effectParams: { multiplier: 1.2, period: 3 },
+    tags: ['combo', 'shield'],
+    flavorText: 'Steady hands, steady gains.',
+    unlockCondition: 'Unlock with 25 Core Shards',
   },
 
   // ── Generator ────────────────────────────────────────────────────────────────
@@ -197,6 +251,9 @@ export const CATALYST_DEFS: Record<CatalystId, CatalystDef> = {
     category: 'generator',
     trigger: 'on_spawn',
     effectParams: { probability: 0.25 },
+    tags: ['spawn', 'risk'],
+    flavorText: 'More tiles, more chances.',
+    unlockCondition: 'Unlock with 15 Core Shards',
   },
   rich_merge: {
     id: 'rich_merge',
@@ -207,6 +264,9 @@ export const CATALYST_DEFS: Record<CatalystId, CatalystDef> = {
     category: 'generator',
     trigger: 'on_merge',
     effectParams: { energyBonus: 1 },
+    tags: ['energy', 'economy', 'chain'],
+    flavorText: 'Every merge is a payday.',
+    unlockCondition: 'Unlock with 25 Core Shards',
   },
   catalyst_echo: {
     id: 'catalyst_echo',
@@ -217,6 +277,9 @@ export const CATALYST_DEFS: Record<CatalystId, CatalystDef> = {
     category: 'generator',
     trigger: 'on_phase_clear',
     effectParams: {},
+    tags: ['echo', 'phase'],
+    flavorText: 'Even weak signals can resonate.',
+    unlockCondition: 'Unlock with 40 Core Shards',
   },
   energy_loop: {
     id: 'energy_loop',
@@ -227,6 +290,9 @@ export const CATALYST_DEFS: Record<CatalystId, CatalystDef> = {
     category: 'generator',
     trigger: 'on_merge',
     effectParams: { multiplier: 0.1 },
+    tags: ['energy', 'economy'],
+    flavorText: 'Output fuels the forge.',
+    unlockCondition: 'Unlock with 25 Core Shards',
   },
   reserve_bank: {
     id: 'reserve_bank',
@@ -237,6 +303,9 @@ export const CATALYST_DEFS: Record<CatalystId, CatalystDef> = {
     category: 'generator',
     trigger: 'on_phase_clear',
     effectParams: { energyBonus: 1 },
+    tags: ['energy', 'economy'],
+    flavorText: 'Every step earns its keep.',
+    unlockCondition: 'Unlock with 15 Core Shards',
   },
 
   // ── Modifier ─────────────────────────────────────────────────────────────────
@@ -249,6 +318,9 @@ export const CATALYST_DEFS: Record<CatalystId, CatalystDef> = {
     category: 'modifier',
     trigger: 'on_move',
     effectParams: { multiplier: 1.2, period: 4 },
+    tags: ['board', 'combo'],
+    flavorText: 'Think sideways.',
+    unlockCondition: 'Unlock with 40 Core Shards',
   },
   split_protocol: {
     id: 'split_protocol',
@@ -259,6 +331,9 @@ export const CATALYST_DEFS: Record<CatalystId, CatalystDef> = {
     category: 'modifier',
     trigger: 'on_phase_clear',
     effectParams: {},
+    tags: ['board', 'risk', 'phase'],
+    flavorText: 'Division creates opportunity.',
+    unlockCondition: 'Unlock with 40 Core Shards',
   },
   inversion_field: {
     id: 'inversion_field',
@@ -269,6 +344,9 @@ export const CATALYST_DEFS: Record<CatalystId, CatalystDef> = {
     category: 'modifier',
     trigger: 'on_merge',
     effectParams: { multiplier: 1.15 },
+    tags: ['board', 'surge'],
+    flavorText: 'Small tiles, big potential.',
+    unlockCondition: 'Unlock with 25 Core Shards',
   },
   overflow_grid: {
     id: 'overflow_grid',
@@ -279,6 +357,9 @@ export const CATALYST_DEFS: Record<CatalystId, CatalystDef> = {
     category: 'modifier',
     trigger: 'on_move',
     effectParams: { flatBonus: 2 },
+    tags: ['board', 'risk'],
+    flavorText: 'Bend the grid when space runs out.',
+    unlockCondition: 'Unlock with 40 Core Shards',
   },
   delay_spawn: {
     id: 'delay_spawn',
@@ -289,6 +370,9 @@ export const CATALYST_DEFS: Record<CatalystId, CatalystDef> = {
     category: 'modifier',
     trigger: 'on_spawn',
     effectParams: {},
+    tags: ['spawn', 'control', 'risk'],
+    flavorText: 'Pause before the flood.',
+    unlockCondition: 'Unlock with 25 Core Shards',
   },
   anomaly_sync: {
     id: 'anomaly_sync',
@@ -299,6 +383,9 @@ export const CATALYST_DEFS: Record<CatalystId, CatalystDef> = {
     category: 'modifier',
     trigger: 'on_anomaly',
     effectParams: { multiplier: 1.3 },
+    tags: ['anomaly', 'risk', 'surge'],
+    flavorText: 'Chaos is just free multiplier.',
+    unlockCondition: 'Unlock with 40 Core Shards',
   },
 };
 

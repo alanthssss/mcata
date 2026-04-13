@@ -65,6 +65,23 @@ export type CatalystTrigger =
   | 'passive'
   | 'on_anomaly';
 
+/** Semantic tags used for collection filtering (e.g. "chain", "corner", "energy"). */
+export type CatalystTag =
+  | 'chain'
+  | 'corner'
+  | 'energy'
+  | 'risk'
+  | 'combo'
+  | 'control'
+  | 'spawn'
+  | 'echo'
+  | 'surge'
+  | 'phase'
+  | 'board'
+  | 'economy'
+  | 'shield'
+  | 'anomaly';
+
 export interface CatalystEffectParams {
   multiplier?: number;
   flatBonus?: number;
@@ -85,6 +102,12 @@ export interface CatalystDef {
   category: CatalystCategory;
   trigger: CatalystTrigger;
   effectParams: CatalystEffectParams;
+  /** Semantic tags for collection filtering. */
+  tags: CatalystTag[];
+  /** Short flavour text shown in the collection view. */
+  flavorText?: string;
+  /** Human-readable unlock condition description. */
+  unlockCondition: string;
 }
 
 // ─── Signal ───────────────────────────────────────────────────────────────────

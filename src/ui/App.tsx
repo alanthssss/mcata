@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useState } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { Direction } from '../core/types';
 import { GridView } from './components/GridView';
@@ -16,6 +16,8 @@ import { SignalPanel } from './components/SignalPanel';
 import { ProtocolPanel } from './components/ProtocolBadge';
 import { MomentumBar } from './components/MomentumBar';
 import { SynergyPanel } from './components/SynergyPanel';
+import { CatalystCollectionView } from './components/CatalystCollectionView';
+import { useT } from '../i18n';
 import './style.css';
 
 const KEY_MAP: Record<string, Direction> = {
@@ -26,6 +28,8 @@ const KEY_MAP: Record<string, Direction> = {
 
 export const App: React.FC = () => {
   const state = useGameStore();
+  const t = useT();
+  const [showCollection, setShowCollection] = useState(false);
 
   const handleMove = useCallback((dir: Direction) => {
     state.move(dir);
@@ -114,6 +118,15 @@ export const App: React.FC = () => {
         </div>
 
         <div className="right-column">
+          <div className="right-column-top">
+            <button
+              className="collection-btn"
+              onClick={() => setShowCollection(true)}
+              aria-label={t('ui.open_collection')}
+            >
+              {t('ui.open_collection')}
+            </button>
+          </div>
           <LogPanel log={state.reactionLog} />
         </div>
       </div>
@@ -133,6 +146,13 @@ export const App: React.FC = () => {
         <InfusionModal
           options={state.infusionOptions}
           onChoose={state.chooseInfusion}
+        />
+      )}
+
+      {showCollection && (
+        <CatalystCollectionView
+          unlockedIds={state.unlockedCatalysts ?? undefined}
+          onClose={() => setShowCollection(false)}
         />
       )}
     </div>

@@ -132,6 +132,15 @@ const en: TranslationMap = {
   'ui.build_hybrid': 'Hybrid Build',
   'ui.frozen_cell_info': 'Frozen: ({row},{col})',
 
+  // ─── UI: Catalyst Collection ──────────────────────────────────────────────
+  'ui.collection_title': '📦 Catalyst Collection',
+  'ui.collection_unlocked': 'Unlocked',
+  'ui.collection_locked': 'Locked',
+  'ui.collection_unlocked_count': 'unlocked',
+  'ui.collection_filter_all': 'All',
+  'ui.collection_close': 'Close',
+  'ui.open_collection': '📦 Collection',
+
   // ─── Locale ────────────────────────────────────────────────────────────────
   'locale.en': 'EN',
   'locale.zh': '中文',

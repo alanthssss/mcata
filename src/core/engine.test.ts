@@ -11,7 +11,7 @@ import {
   grantSignal,
 } from './engine';
 import { createEmptyGrid, spawnTile } from './board';
-import type { GameState, Grid } from './types';
+import type { GameState, Grid, CatalystTag } from './types';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -302,7 +302,7 @@ describe('selectInfusion', () => {
     const state = infusionState();
     const result = selectInfusion(state, {
       type: 'catalyst',
-      catalyst: { id: 'twin_burst', name: 'Twin Burst', description: '', rarity: 'common', cost: 3, category: 'legacy', trigger: 'on_merge', effectParams: {} },
+      catalyst: { id: 'twin_burst', name: 'Twin Burst', description: '', rarity: 'common', cost: 3, category: 'legacy', trigger: 'on_merge', effectParams: {}, tags: ['combo' as CatalystTag], unlockCondition: '' },
     });
     expect(result.activeCatalysts).toContain('twin_burst');
     expect(result.screen).toBe('playing');
@@ -355,6 +355,8 @@ describe('buyFromForge', () => {
     category: 'legacy' as const,
     trigger: 'on_spawn' as const,
     effectParams: {},
+    tags: ['spawn' as CatalystTag],
+    unlockCondition: '',
   };
 
   it('adds a catalyst and deducts energy', () => {
@@ -385,6 +387,8 @@ describe('buyFromForge', () => {
       category: 'legacy' as const,
       trigger: 'on_merge' as const,
       effectParams: {},
+      tags: ['combo' as CatalystTag],
+      unlockCondition: '',
     };
     const result = buyFromForge(state as unknown as GameState, newCatalyst, 1);
     expect(result.activeCatalysts[1]).toBe('combo_wire');
@@ -410,6 +414,8 @@ describe('buyFromForge', () => {
       category: 'legacy' as const,
       trigger: 'on_move' as const,
       effectParams: {},
+      tags: ['board' as CatalystTag],
+      unlockCondition: '',
     };
     const state = { ...playingState(), energy: 10, activeCatalysts: [], frozenCell: null };
     const result = buyFromForge(state, frozenDef);
