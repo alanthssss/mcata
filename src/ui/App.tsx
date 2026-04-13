@@ -13,6 +13,9 @@ import { InfusionModal } from './components/InfusionModal';
 import { StartScreen } from './components/StartScreen';
 import { EndScreen } from './components/EndScreen';
 import { SignalPanel } from './components/SignalPanel';
+import { ProtocolPanel } from './components/ProtocolBadge';
+import { MomentumBar } from './components/MomentumBar';
+import { SynergyPanel } from './components/SynergyPanel';
 import './style.css';
 
 const KEY_MAP: Record<string, Direction> = {
@@ -65,6 +68,7 @@ export const App: React.FC = () => {
   }
 
   const lastEntry = state.reactionLog[0] ?? null;
+  const lastTriggeredSynergies = lastEntry?.triggeredSynergies ?? [];
 
   return (
     <div className="app">
@@ -75,12 +79,23 @@ export const App: React.FC = () => {
         stepsRemaining={state.stepsRemaining}
         energy={state.energy}
         globalMultiplier={state.globalMultiplier}
+        protocol={state.protocol}
+        momentumMultiplier={state.momentumMultiplier}
       />
 
       <div className="game-layout">
         <div className="left-column">
           <PhasePanel phaseIndex={state.phaseIndex} output={state.output} />
+          <ProtocolPanel protocol={state.protocol} />
+          <MomentumBar
+            momentumMultiplier={state.momentumMultiplier}
+            consecutiveValidMoves={state.consecutiveValidMoves}
+          />
           <CatalystPanel activeCatalysts={state.activeCatalysts} frozenCell={state.frozenCell} />
+          <SynergyPanel
+            activeCatalysts={state.activeCatalysts}
+            lastTriggeredSynergies={lastTriggeredSynergies}
+          />
           <SignalPanel
             signals={state.signals}
             pendingSignal={state.pendingSignal}

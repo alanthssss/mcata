@@ -440,12 +440,62 @@ stateDiagram-v2
 
 ---
 
+## UI Components
+
+The React UI renders the game state from the Zustand store. Key panels:
+
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| `Header` | Top bar | Phase, Output, Steps, Energy, Protocol badge, Momentum, Locale switcher |
+| `PhasePanel` | Left column | Phase progress bar + Anomaly info |
+| `ProtocolPanel` | Left column | Active Protocol name and description |
+| `MomentumBar` | Left column | Visual momentum multiplier meter |
+| `CatalystPanel` | Left column | Active Catalysts with category tags |
+| `SynergyPanel` | Left column | Active Synergies + Build identity label |
+| `SignalPanel` | Left column | Available Signals with Use buttons |
+| `OutputPanel` | Left column | Last move score breakdown |
+| `GridView` | Center | 4×4 game board |
+| `ControlPad` | Center | On-screen arrow controls |
+| `LogPanel` | Right column | Reaction log (last 10 moves) |
+| `ForgeModal` | Overlay | Catalyst shop with category tags and synergy hints |
+| `InfusionModal` | Overlay | Post-phase reward choice with playstyle tags |
+| `HelpOverlay` | Overlay | In-game help (systems explanation) |
+| `LocaleSwitcher` | Header | Toggle EN / 中文 |
+
+---
+
+## Localization (i18n)
+
+All player-facing strings are extracted to `src/i18n/`.
+
+```
+src/i18n/
+  types.ts      — Locale + TranslationMap types
+  en.ts         — English translations (default)
+  zh-CN.ts      — Simplified Chinese translations
+  index.ts      — useT() hook, createT() factory, Zustand locale store
+```
+
+Translation keys are grouped by domain:
+- `ui.*` — UI labels, buttons, panel titles, screen text
+- `catalyst.*` — Catalyst names and descriptions
+- `signal.*` — Signal names and descriptions
+- `protocol.*` — Protocol names and descriptions
+- `anomaly.*` — Anomaly names and descriptions
+- `synergy.*` — Synergy names and descriptions
+- `tag.*` — Category/playstyle tag labels
+- `locale.*` — Locale switcher labels
+
+Adding a new language: create `src/i18n/<locale>.ts`, add it to `TRANSLATIONS` in `index.ts`, extend the `Locale` union in `types.ts`.
+
+---
+
 ## Tech Stack
 
 - **React 18** — UI rendering
 - **Vite 5** — dev server and bundler
 - **TypeScript 5** — type safety
-- **Zustand 4** — minimal global state management
+- **Zustand 4** — minimal global state management (game + locale)
 - **tsx** — TypeScript runner for headless scripts
 
 
