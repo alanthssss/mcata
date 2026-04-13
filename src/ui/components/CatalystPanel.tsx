@@ -44,7 +44,7 @@ export const CatalystPanel: React.FC<CatalystPanelProps> = ({ activeCatalysts, f
                 </div>
                 {id === 'frozen_cell' && frozenCell && (
                   <div className="catalyst-extra">
-                    Frozen: ({frozenCell.row},{frozenCell.col})
+                    {t('ui.frozen_cell_info', { row: frozenCell.row, col: frozenCell.col })}
                   </div>
                 )}
               </div>

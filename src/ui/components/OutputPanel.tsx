@@ -36,12 +36,16 @@ export const OutputPanel: React.FC<OutputPanelProps> = ({ lastEntry }) => {
         <span>{t('ui.base')}</span>
         <span className="output-value">{lastEntry.base}</span>
       </div>
-      {lastEntry.multipliers.map((m, i) => (
-        <div key={i} className="output-row">
-          <span>{t(multLabelKey(m.name)) !== multLabelKey(m.name) ? t(multLabelKey(m.name)) : m.name}</span>
-          <span className="output-value multiplier">×{m.value.toFixed(2)}</span>
-        </div>
-      ))}
+      {lastEntry.multipliers.map((m, i) => {
+        const labelKey = multLabelKey(m.name);
+        const label = t(labelKey) !== labelKey ? t(labelKey) : m.name;
+        return (
+          <div key={i} className="output-row">
+            <span>{label}</span>
+            <span className="output-value multiplier">×{m.value.toFixed(2)}</span>
+          </div>
+        );
+      })}
       {/* Show synergy / momentum inline if not already in multipliers */}
       {lastEntry.synergyMultiplier > 1.0 && !lastEntry.multipliers.find(m => m.name.toLowerCase().includes('synergy')) && (
         <div className="output-row">

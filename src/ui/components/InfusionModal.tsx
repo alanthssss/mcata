@@ -22,26 +22,26 @@ const INFUSION_TAG_KEY: Record<string, string> = {
   multiplier: 'tag.amplification',
 };
 
+function getChoiceLabelKey(choice: InfusionChoice): string {
+  switch (choice.type) {
+    case 'catalyst': return 'ui.infusion_gain_catalyst';
+    case 'energy':   return 'ui.infusion_gain_energy';
+    case 'steps':    return 'ui.infusion_gain_steps';
+    case 'multiplier': return 'ui.infusion_gain_multiplier';
+  }
+}
+
+function getChoiceDescKey(choice: InfusionChoice): string {
+  switch (choice.type) {
+    case 'catalyst': return `catalyst.${choice.catalyst.id}.description`;
+    case 'energy':   return 'ui.infusion_desc_energy';
+    case 'steps':    return 'ui.infusion_desc_steps';
+    case 'multiplier': return 'ui.infusion_desc_multiplier';
+  }
+}
+
 export const InfusionModal: React.FC<InfusionModalProps> = ({ options, onChoose }) => {
   const t = useT();
-
-  function choiceLabel(choice: InfusionChoice): string {
-    switch (choice.type) {
-      case 'catalyst': return t('ui.infusion_gain_catalyst', { name: t(`catalyst.${choice.catalyst.id}.name`) });
-      case 'energy':   return t('ui.infusion_gain_energy');
-      case 'steps':    return t('ui.infusion_gain_steps');
-      case 'multiplier': return t('ui.infusion_gain_multiplier');
-    }
-  }
-
-  function choiceDesc(choice: InfusionChoice): string {
-    switch (choice.type) {
-      case 'catalyst': return t(`catalyst.${choice.catalyst.id}.description`);
-      case 'energy':   return t('ui.infusion_desc_energy');
-      case 'steps':    return t('ui.infusion_desc_steps');
-      case 'multiplier': return t('ui.infusion_desc_multiplier');
-    }
-  }
 
   return (
     <Modal title={t('ui.infusion_title')}>
@@ -50,16 +50,20 @@ export const InfusionModal: React.FC<InfusionModalProps> = ({ options, onChoose 
         {options.map((choice, i) => {
           const icon = INFUSION_ICONS[choice.type] ?? '';
           const tagKey = INFUSION_TAG_KEY[choice.type] ?? '';
+          const labelKey = getChoiceLabelKey(choice);
+          const label = choice.type === 'catalyst'
+            ? t(labelKey, { name: t(`catalyst.${choice.catalyst.id}.name`) })
+            : t(labelKey);
           return (
             <button key={i} className="infusion-option" onClick={() => onChoose(choice)}>
               <div className="infusion-header">
                 <span className="infusion-icon">{icon}</span>
-                <span className="infusion-label">{choiceLabel(choice)}</span>
+                <span className="infusion-label">{label}</span>
                 {tagKey && (
                   <span className={`infusion-tag infusion-tag--${choice.type}`}>{t(tagKey)}</span>
                 )}
               </div>
-              <div className="infusion-desc">{choiceDesc(choice)}</div>
+              <div className="infusion-desc">{t(getChoiceDescKey(choice))}</div>
             </button>
           );
         })}

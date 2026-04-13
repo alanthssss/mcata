@@ -124,6 +124,14 @@ const en: TranslationMap = {
   'ui.help_synergy_desc': 'Certain Catalyst pairs unlock powerful synergy bonuses when both are equipped.',
   'ui.help_show_again': 'Show help',
 
+  // ─── UI: Synergy ────────────────────────────────────────────────────────────
+  'ui.synergy_triggered': '✓ Triggered',
+  'ui.build_corner': 'Corner Build',
+  'ui.build_chain': 'Chain Build',
+  'ui.build_economy': 'Economy Build',
+  'ui.build_hybrid': 'Hybrid Build',
+  'ui.frozen_cell_info': 'Frozen: ({row},{col})',
+
   // ─── Locale ────────────────────────────────────────────────────────────────
   'locale.en': 'EN',
   'locale.zh': '中文',

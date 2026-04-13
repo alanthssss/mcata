@@ -9,7 +9,7 @@ interface SynergyPanelProps {
 }
 
 /** Derive a lightweight build-identity label from active catalysts */
-function getBuildIdentity(activeCatalysts: CatalystId[]): string | null {
+function getBuildIdentityKey(activeCatalysts: CatalystId[]): string | null {
   const cats = new Set(activeCatalysts);
   const cornerCats = ['corner_crown', 'gravity_well', 'empty_amplifier'] as const;
   const chainCats  = ['chain_reactor', 'combo_wire', 'echo_multiplier'] as const;
@@ -19,10 +19,10 @@ function getBuildIdentity(activeCatalysts: CatalystId[]): string | null {
   const chainCount  = chainCats.filter(c => cats.has(c)).length;
   const genCount    = genCats.filter(c => cats.has(c)).length;
 
-  if (cornerCount >= 2) return 'Corner Build';
-  if (chainCount >= 2)  return 'Chain Build';
-  if (genCount >= 2)    return 'Economy Build';
-  if (cornerCount >= 1 && chainCount >= 1) return 'Hybrid Build';
+  if (cornerCount >= 2) return 'ui.build_corner';
+  if (chainCount >= 2)  return 'ui.build_chain';
+  if (genCount >= 2)    return 'ui.build_economy';
+  if (cornerCount >= 1 && chainCount >= 1) return 'ui.build_hybrid';
   return null;
 }
 
@@ -32,14 +32,14 @@ export const SynergyPanel: React.FC<SynergyPanelProps> = ({
 }) => {
   const t = useT();
   const activeSynergies = getActiveSynergies(activeCatalysts);
-  const buildIdentity = getBuildIdentity(activeCatalysts);
+  const buildIdentityKey = getBuildIdentityKey(activeCatalysts);
 
   return (
     <div className="panel synergy-panel">
       <div className="panel-title">
         {t('ui.synergies')}
-        {buildIdentity && (
-          <span className="build-identity-badge">{buildIdentity}</span>
+        {buildIdentityKey && (
+          <span className="build-identity-badge">{t(buildIdentityKey)}</span>
         )}
       </div>
 
@@ -69,7 +69,7 @@ export const SynergyPanel: React.FC<SynergyPanelProps> = ({
                   {c1Name} + {c2Name}
                 </div>
                 {wasTriggered && (
-                  <div className="synergy-triggered-badge">✓ Triggered</div>
+                  <div className="synergy-triggered-badge">{t('ui.synergy_triggered')}</div>
                 )}
               </div>
             );

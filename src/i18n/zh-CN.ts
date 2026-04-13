@@ -124,6 +124,14 @@ const zhCN: TranslationMap = {
   'ui.help_synergy_desc': '特定催化器组合，同时装备可触发强大的协同加成。',
   'ui.help_show_again': '显示帮助',
 
+  // ─── UI: Synergy ────────────────────────────────────────────────────────────
+  'ui.synergy_triggered': '✓ 已触发',
+  'ui.build_corner': '角落流',
+  'ui.build_chain': '连锁流',
+  'ui.build_economy': '经济流',
+  'ui.build_hybrid': '混合流',
+  'ui.frozen_cell_info': '冻结格：({row},{col})',
+
   // ─── Locale ────────────────────────────────────────────────────────────────
   'locale.en': 'EN',
   'locale.zh': '中文',
