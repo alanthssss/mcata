@@ -130,6 +130,14 @@ export function exportComparisonMd(results: SuiteResult[], report: BalanceReport
 
 // ─── Balance report Markdown ──────────────────────────────────────────────────
 
+export function exportSynergyStats(report: BalanceReport): void {
+  write(path.join(ARTIFACTS_DIR, 'synergy_stats.json'), JSON.stringify(report.synergyStats, null, 2));
+}
+
+export function exportBuildStats(report: BalanceReport): void {
+  write(path.join(ARTIFACTS_DIR, 'build_stats.json'), JSON.stringify(report.buildStats, null, 2));
+}
+
 export function exportBalanceReport(report: BalanceReport): void {
   const lines: string[] = [
     '# Merge Catalyst — Balance Report',
@@ -177,12 +185,13 @@ export function exportBalanceReport(report: BalanceReport): void {
   write(path.join(ARTIFACTS_DIR, 'balance_report.md'), lines.join('\n'));
 }
 
-// ─── Export all ───────────────────────────────────────────────────────────────
 export function exportAll(results: SuiteResult[], report: BalanceReport): void {
   ensureDir(ARTIFACTS_DIR);
   exportSummary(results);
   exportPerAgent(results);
   exportCatalystStats(report);
+  exportSynergyStats(report);
+  exportBuildStats(report);
   exportAnomalyStats(results);
   exportRunsCSV(results);
   exportComparisonMd(results, report);

@@ -1,4 +1,4 @@
-import { GameState, Direction, CatalystDef, InfusionChoice, CatalystId, Grid, Position } from './types';
+import { GameState, Direction, CatalystDef, InfusionChoice, CatalystId, Grid, Position, SignalId, ProtocolId } from './types';
 import { applyMove } from './move';
 import { computeScore } from './score';
 import { createRng } from './rng';
@@ -11,16 +11,24 @@ import { PHASES, FORGE_AFTER_PHASE_INDEX } from './phases';
 import { generateForgeOffers } from './forge';
 import { generateInfusionOptions } from './infusion';
 import { ReactionLogEntry } from './types';
+import { PROTOCOL_DEFS, DEFAULT_PROTOCOL } from './protocols';
+import {
+  MAX_CATALYSTS,
+  MOMENTUM_CONFIG,
+  SIGNAL_CAPACITY,
+  GRID_CLEAN_COUNT,
+  CATALYST_MULTIPLIERS,
+  STARTING_ENERGY,
+} from './config';
 
 const MAX_LOG = 10;
-const MAX_CATALYSTS = 3;
 
-function makeInitialGrid(rngSeed: number): { grid: Grid; idCounter: number } {
+function makeInitialGrid(rngSeed: number, startTiles: number): { grid: Grid; idCounter: number } {
   const rng = createRng(rngSeed);
   let grid = createEmptyGrid();
   let idCounter = 0;
 
-  for (let i = 0; i < 2; i++) {
+  for (let i = 0; i < startTiles; i++) {
     const empty = getEmptyCells(grid);
     if (empty.length === 0) break;
     const pos = rng.pick(empty);
@@ -33,17 +41,20 @@ function makeInitialGrid(rngSeed: number): { grid: Grid; idCounter: number } {
   return { grid, idCounter };
 }
 
-export function createInitialState(seed: number): GameState {
+export function createInitialState(seed: number, protocol: ProtocolId = DEFAULT_PROTOCOL): GameState {
   const rngSeed = seed;
-  const { grid, idCounter } = makeInitialGrid(rngSeed);
+  const protocolDef = PROTOCOL_DEFS[protocol];
+  const { grid, idCounter } = makeInitialGrid(rngSeed, protocolDef.startTiles);
   const phase = PHASES[0];
+
+  const stepsForPhase = Math.max(1, phase.steps - protocolDef.stepsReduction);
 
   return {
     screen: 'start',
     grid,
     phaseIndex: 0,
-    stepsRemaining: phase.steps,
-    energy: 10,
+    stepsRemaining: stepsForPhase,
+    energy: STARTING_ENERGY,
     output: 0,
     totalOutput: 0,
     activeCatalysts: [],
@@ -57,11 +68,44 @@ export function createInitialState(seed: number): GameState {
     infusionOptions: [],
     tileIdCounter: idCounter,
     rngSeed,
+    signals: [],
+    pendingSignal: null,
+    protocol,
+    consecutiveValidMoves: 0,
+    momentumMultiplier: 1.0,
+    delayedSpawnCount: 0,
+    stabilityCount: 0,
+    shieldCharge: 0,
+    echoOutputLast: 0,
   };
 }
 
 export function startGame(state: GameState): GameState {
   return { ...state, screen: 'playing' };
+}
+
+/** Queue a signal to be consumed on the next move */
+export function queueSignal(state: GameState, signalId: SignalId): GameState {
+  if (!state.signals.includes(signalId)) return state;
+  return { ...state, pendingSignal: signalId };
+}
+
+/** Remove a signal from the player's inventory (called after use) */
+function consumeSignal(state: GameState): GameState {
+  const { pendingSignal } = state;
+  if (!pendingSignal) return state;
+  return {
+    ...state,
+    signals: state.signals.filter(s => s !== pendingSignal),
+    pendingSignal: null,
+  };
+}
+
+/** Grant a signal to the player (via Infusion or other reward) */
+export function grantSignal(state: GameState, signalId: SignalId): GameState {
+  if (state.signals.length >= SIGNAL_CAPACITY) return state;
+  if (state.signals.includes(signalId)) return state;
+  return { ...state, signals: [...state.signals, signalId] };
 }
 
 export function processMoveAction(state: GameState, dir: Direction): GameState {
@@ -70,14 +114,20 @@ export function processMoveAction(state: GameState, dir: Direction): GameState {
 
   const rng = createRng(state.rngSeed + state.reactionLog.length + 1);
   const gridBefore = cloneGrid(state.grid);
+  const protocolDef = PROTOCOL_DEFS[state.protocol];
+
+  // ── Pending signal: Freeze Step ───────────────────────────────────────────
+  const freezeStepActive = state.pendingSignal === 'freeze_step';
 
   let entropyBlockedCell: Position | null = null;
   let anomalyEffectPre = '';
+  let anomalyTriggered = false;
   const currentPhase = PHASES[state.phaseIndex];
   if (currentPhase.anomaly === 'entropy_tax') {
     const { blockedCell, description } = applyEntropyTax(state.grid, rng);
     entropyBlockedCell = blockedCell;
     anomalyEffectPre = description;
+    anomalyTriggered = true;
   }
 
   const moveResult = applyMove(state.grid, dir, state.tileIdCounter);
@@ -96,16 +146,66 @@ export function processMoveAction(state: GameState, dir: Direction): GameState {
     if (collapseResult.triggered) {
       newGrid = collapseResult.grid;
       anomalyEffectPost = collapseResult.description;
+      anomalyTriggered = true;
     }
   }
 
+  // ── Grid Clean signal ─────────────────────────────────────────────────────
+  let signalEffect: string | null = null;
+  const usedSignal: SignalId | null = state.pendingSignal;
+
+  if (state.pendingSignal === 'grid_clean') {
+    // Remove the GRID_CLEAN_COUNT lowest-value tiles
+    const allTiles: Array<{ value: number; row: number; col: number }> = [];
+    for (let r = 0; r < 4; r++) {
+      for (let c = 0; c < 4; c++) {
+        const cell = newGrid[r][c];
+        if (cell) allTiles.push({ value: cell.value, row: r, col: c });
+      }
+    }
+    allTiles.sort((a, b) => a.value - b.value);
+    const toRemove = allTiles.slice(0, GRID_CLEAN_COUNT);
+    newGrid = cloneGrid(newGrid);
+    for (const t of toRemove) newGrid[t.row][t.col] = null;
+    signalEffect = `Grid Clean removed ${toRemove.length} tile(s)`;
+  }
+
+  // ── Momentum update ───────────────────────────────────────────────────────
+  const newConsecutiveValidMoves = state.consecutiveValidMoves + 1;
+  const newMomentumMultiplier = Math.min(
+    1.0 + newConsecutiveValidMoves * MOMENTUM_CONFIG.growthRate,
+    MOMENTUM_CONFIG.maxMultiplier
+  );
+
+  // ── Stability counter ─────────────────────────────────────────────────────
+  const newStabilityCount = state.stabilityCount + 1;
+
+  // ── Diagonal move counter ─────────────────────────────────────────────────
+  const diagonalMoveCount = (state.reactionLog.length + 1);
+
   const comboWireActive = state.activeCatalysts.includes('combo_wire') && state.comboWireCount >= 2;
+  const emptyCells = getEmptyCells(newGrid).length;
+
   const scoreResult = computeScore({
     merges: moveResult.merges,
     activeCatalysts: state.activeCatalysts,
-    globalMultiplier: state.globalMultiplier,
+    globalMultiplier: state.globalMultiplier * protocolDef.outputScale,
     comboWireActive,
+    emptyCells,
+    phaseIndex: state.phaseIndex,
+    echoOutputLast: state.echoOutputLast,
+    consecutiveValidMoves: newConsecutiveValidMoves,
+    anomalyTriggered,
+    stabilityCount: newStabilityCount,
+    diagonalMoveCount,
   });
+
+  // ── Pulse Boost signal ────────────────────────────────────────────────────
+  let finalOutputAdjusted = scoreResult.finalOutput;
+  if (state.pendingSignal === 'pulse_boost') {
+    finalOutputAdjusted = Math.floor(scoreResult.finalOutput * 2.0);
+    signalEffect = `Pulse Boost ×2 → ${finalOutputAdjusted}`;
+  }
 
   let newComboCount = state.comboWireCount;
   if (state.activeCatalysts.includes('combo_wire')) {
@@ -116,28 +216,65 @@ export function processMoveAction(state: GameState, dir: Direction): GameState {
     }
   }
 
+  // ── Energy from Rich Merge / Energy Loop ──────────────────────────────────
+  let energyGain = 0;
+  if (state.activeCatalysts.includes('rich_merge') && moveResult.merges.length > 0) {
+    energyGain += moveResult.merges.length * CATALYST_MULTIPLIERS.rich_merge_energy_per_merge;
+  }
+  if (state.activeCatalysts.includes('energy_loop') && finalOutputAdjusted > 0) {
+    energyGain += Math.floor(finalOutputAdjusted * CATALYST_MULTIPLIERS.energy_loop_fraction);
+  }
+
+  // ── Spawn logic ───────────────────────────────────────────────────────────
   let spawnPos: Position | null = null;
+  let newDelayedSpawnCount = state.delayedSpawnCount;
+
+  // Buffer Zone: block row 0 from spawning
+  const bufferZoneActive = state.activeCatalysts.includes('buffer_zone');
+
   const emptyAfterMove = getEmptyCells(newGrid).filter(p => {
     if (entropyBlockedCell && p.row === entropyBlockedCell.row && p.col === entropyBlockedCell.col) return false;
     if (state.frozenCell && p.row === state.frozenCell.row && p.col === state.frozenCell.col) return false;
+    if (bufferZoneActive && p.row === 0) return false;
     return true;
   });
 
-  if (emptyAfterMove.length > 0) {
-    spawnPos = rng.pick(emptyAfterMove);
-    const spawnValue = state.activeCatalysts.includes('lucky_seed')
-      ? (rng.next() < 0.75 ? 2 : 4)
-      : (rng.next() < 0.9 ? 2 : 4);
-    const spawnResult = spawnTile(newGrid, spawnValue, spawnPos, newIdCounter);
-    newGrid = spawnResult.grid;
-    newIdCounter = spawnResult.id;
+  // Delay Spawn catalyst: skip spawn now, double later
+  const delaySpawnActive = state.activeCatalysts.includes('delay_spawn');
+  if (freezeStepActive || (delaySpawnActive && newDelayedSpawnCount === 0 && rng.next() < 0.5)) {
+    // Skip spawn this turn; note the debt
+    if (!freezeStepActive) newDelayedSpawnCount = 1;
+    if (freezeStepActive) signalEffect = 'Freeze Step: no spawn this turn';
+  } else {
+    // Number of tiles to spawn
+    const spawnsOwed = newDelayedSpawnCount > 0 ? newDelayedSpawnCount + 1 : 1;
+    newDelayedSpawnCount = 0;
+
+    // Double Spawn: 25% chance to spawn 2
+    const baseSpawnCount = (state.activeCatalysts.includes('double_spawn') && rng.next() < CATALYST_MULTIPLIERS.double_spawn_probability) ? 2 : 1;
+    const totalSpawns = Math.max(spawnsOwed, baseSpawnCount);
+
+    let spawnableEmpty = [...emptyAfterMove];
+    for (let s = 0; s < totalSpawns; s++) {
+      if (spawnableEmpty.length === 0) break;
+      const spawnIdx = Math.floor(rng.next() * spawnableEmpty.length);
+      const sp = spawnableEmpty[spawnIdx];
+      if (s === 0) spawnPos = sp;
+      const spawnValue = state.activeCatalysts.includes('lucky_seed')
+        ? (rng.next() < 0.75 ? 2 : 4)
+        : (rng.next() < 0.9 ? 2 : 4);
+      const spawnResult = spawnTile(newGrid, spawnValue, sp, newIdCounter);
+      newGrid = spawnResult.grid;
+      newIdCounter = spawnResult.id;
+      spawnableEmpty = spawnableEmpty.filter((_, i) => i !== spawnIdx);
+    }
   }
 
   newGrid = resetMergedFlags(newGrid);
 
   const newSteps = state.stepsRemaining - 1;
-  const newOutput = state.output + scoreResult.finalOutput;
-  const newTotalOutput = state.totalOutput + scoreResult.finalOutput;
+  const newOutput = state.output + finalOutputAdjusted;
+  const newTotalOutput = state.totalOutput + finalOutputAdjusted;
 
   const logEntry: ReactionLogEntry = {
     step: PHASES[state.phaseIndex].steps - newSteps,
@@ -149,8 +286,13 @@ export function processMoveAction(state: GameState, dir: Direction): GameState {
     anomalyEffect: anomalyEffectPost || null,
     base: scoreResult.base,
     multipliers: scoreResult.multipliers,
-    finalOutput: scoreResult.finalOutput,
+    finalOutput: finalOutputAdjusted,
     triggeredCatalysts: scoreResult.triggeredCatalysts,
+    synergyMultiplier: scoreResult.synergyMultiplier,
+    triggeredSynergies: scoreResult.triggeredSynergies,
+    momentumMultiplier: scoreResult.momentumMultiplier,
+    signalUsed: usedSignal,
+    signalEffect,
   };
 
   const newLog = [logEntry, ...state.reactionLog].slice(0, MAX_LOG);
@@ -167,10 +309,32 @@ export function processMoveAction(state: GameState, dir: Direction): GameState {
     reactionLog: newLog,
     tileIdCounter: newIdCounter,
     rngSeed: state.rngSeed + 1,
+    consecutiveValidMoves: newConsecutiveValidMoves,
+    momentumMultiplier: newMomentumMultiplier,
+    stabilityCount: newStabilityCount,
+    delayedSpawnCount: newDelayedSpawnCount,
+    echoOutputLast: finalOutputAdjusted,
+    energy: state.energy + energyGain,
+    pendingSignal: null,
+    signals: usedSignal
+      ? state.signals.filter(s => s !== usedSignal)
+      : state.signals,
   };
 
   if (newOutput >= currentPhase.targetOutput || newSteps <= 0) {
     newState = handlePhaseEnd(newState);
+  }
+
+  // Chain Trigger signal: force re-processing after a move
+  if (usedSignal === 'chain_trigger' && newState.screen === 'playing') {
+    const chainResult = applyMove(newState.grid, dir, newState.tileIdCounter);
+    if (chainResult.changed) {
+      newState = {
+        ...newState,
+        grid: resetMergedFlags(chainResult.grid),
+        tileIdCounter: chainResult.newTileIdCounter,
+      };
+    }
   }
 
   return newState;
@@ -178,15 +342,20 @@ export function processMoveAction(state: GameState, dir: Direction): GameState {
 
 function handlePhaseEnd(state: GameState): GameState {
   const currentPhase = PHASES[state.phaseIndex];
+  const protocolDef = PROTOCOL_DEFS[state.protocol];
   let energy = state.energy;
   let output = state.output;
 
   if (state.activeCatalysts.includes('bankers_edge')) {
-    energy += 2;
+    energy += CATALYST_MULTIPLIERS.bankers_edge_energy;
   }
 
   if (state.activeCatalysts.includes('reserve')) {
-    output += state.stepsRemaining * 20;
+    output += state.stepsRemaining * CATALYST_MULTIPLIERS.reserve_bonus;
+  }
+
+  if (state.activeCatalysts.includes('reserve_bank')) {
+    energy += (PHASES[state.phaseIndex].steps - state.stepsRemaining) * CATALYST_MULTIPLIERS.reserve_bank_energy_per_step;
   }
 
   const succeeded = output >= currentPhase.targetOutput;
@@ -200,6 +369,9 @@ function handlePhaseEnd(state: GameState): GameState {
   }
 
   const nextPhaseIndex = state.phaseIndex + 1;
+  const nextPhase = PHASES[nextPhaseIndex];
+  const nextSteps = Math.max(1, nextPhase.steps - protocolDef.stepsReduction);
+
   if (state.phaseIndex === FORGE_AFTER_PHASE_INDEX) {
     const rng = createRng(state.rngSeed + 100);
     const forgeOffers = generateForgeOffers(state.activeCatalysts, 3, rng.next.bind(rng));
@@ -211,7 +383,7 @@ function handlePhaseEnd(state: GameState): GameState {
       energy,
       forgeOffers,
       phaseIndex: nextPhaseIndex,
-      stepsRemaining: PHASES[nextPhaseIndex].steps,
+      stepsRemaining: nextSteps,
     };
   }
 
@@ -225,7 +397,7 @@ function handlePhaseEnd(state: GameState): GameState {
     energy,
     infusionOptions,
     phaseIndex: nextPhaseIndex,
-    stepsRemaining: PHASES[nextPhaseIndex].steps,
+    stepsRemaining: nextSteps,
   };
 }
 
@@ -254,11 +426,17 @@ export function selectInfusion(state: GameState, choice: InfusionChoice): GameSt
 
   newState.output = 0;
   newState.screen = 'playing';
+  // Reset momentum on new phase
+  newState.consecutiveValidMoves = 0;
+  newState.momentumMultiplier = 1.0;
+  newState.stabilityCount = 0;
 
   const rng = createRng(newState.rngSeed + 300);
   let grid = createEmptyGrid();
   let idCounter = newState.tileIdCounter;
-  for (let i = 0; i < 2; i++) {
+  const protocolDef = PROTOCOL_DEFS[newState.protocol];
+  const startTiles = protocolDef.startTiles;
+  for (let i = 0; i < startTiles; i++) {
     const empty = getEmptyCells(grid);
     if (empty.length > 0) {
       const pos = rng.pick(empty);
@@ -306,9 +484,10 @@ export function rerollForge(state: GameState): GameState {
 
 export function skipForge(state: GameState): GameState {
   const rng = createRng(state.rngSeed + 600);
+  const protocolDef = PROTOCOL_DEFS[state.protocol];
   let grid = createEmptyGrid();
   let idCounter = state.tileIdCounter;
-  for (let i = 0; i < 2; i++) {
+  for (let i = 0; i < protocolDef.startTiles; i++) {
     const empty = getEmptyCells(grid);
     if (empty.length > 0) {
       const pos = rng.pick(empty);
@@ -326,5 +505,10 @@ export function skipForge(state: GameState): GameState {
     grid,
     tileIdCounter: idCounter,
     reactionLog: [],
+    consecutiveValidMoves: 0,
+    momentumMultiplier: 1.0,
+    stabilityCount: 0,
   };
 }
+
+export { consumeSignal };

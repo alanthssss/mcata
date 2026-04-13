@@ -7,6 +7,14 @@ interface CatalystPanelProps {
   frozenCell: Position | null;
 }
 
+const CATEGORY_ICON: Record<string, string> = {
+  amplifier: '🔺',
+  stabilizer: '🛡',
+  generator: '⚡',
+  modifier: '🔀',
+  legacy: '⚙',
+};
+
 export const CatalystPanel: React.FC<CatalystPanelProps> = ({ activeCatalysts, frozenCell }) => {
   return (
     <div className="panel catalyst-panel">
@@ -19,7 +27,10 @@ export const CatalystPanel: React.FC<CatalystPanelProps> = ({ activeCatalysts, f
             const def = CATALYST_DEFS[id];
             return (
               <div key={id} className="catalyst-item">
-                <div className="catalyst-name">{def.name}</div>
+                <div className="catalyst-name">
+                  {CATEGORY_ICON[def.category] ?? '⚙'} {def.name}
+                  <span className="catalyst-rarity"> [{def.rarity}]</span>
+                </div>
                 <div className="catalyst-desc">{def.description}</div>
                 {id === 'frozen_cell' && frozenCell && (
                   <div className="catalyst-extra">
