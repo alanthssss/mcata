@@ -4,10 +4,8 @@
  * The engine (createInitialState et al.) is kept pure.
  * This adapter translates profile constraints into engine parameters.
  */
-import { ProfileState, RunReward, AscensionLevel, CatalystId } from './types';
-import { ProtocolId } from './types';
+import { ProfileState, RunReward, AscensionLevel, CatalystId, ProtocolId, GameState } from './types';
 import { createInitialState, startGame } from './engine';
-import { GameState } from './types';
 import { DEFAULT_PROTOCOL } from './protocols';
 import { calculateRunReward, applyRunReward } from './profile';
 

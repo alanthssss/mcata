@@ -16,8 +16,10 @@ import { AscensionLevel } from '../core/types';
 import { ALL_ASCENSION_LEVELS, ASCENSION_MODIFIER_DEFS } from '../core/ascensionModifiers';
 import { DEFAULT_PROFILE } from '../core/profile';
 import { applyRunReward, calculateRunReward } from '../core/profile';
-import { createInitialState, startGame, processMoveAction, selectInfusion, buyFromForge, skipForge } from '../core/engine';
+import { createRunState, finalizeRun } from '../core/runAdapter';
+import { processMoveAction, selectInfusion, buyFromForge, skipForge } from '../core/engine';
 import { ProfileState } from '../core/types';
+import { PHASES } from '../core/phases';
 
 const args    = process.argv.slice(2);
 const modeArg = args.indexOf('--mode');
@@ -83,7 +85,8 @@ function simulateProgression() {
   console.log('  ----|--------|-------|--------|----');
 
   for (let i = 0; i < 20; i++) {
-    let state = startGame(createInitialState(7000 + i));
+    // Use the adapter so the run respects profile unlock restrictions
+    let state = createRunState(profile, { seed: 7000 + i });
     let steps = 0;
     let anomalyPhaseCount = 0;
     let anomalyPhasesSurvived = 0;
@@ -111,15 +114,26 @@ function simulateProgression() {
       } else break;
     }
 
+    // Compute anomaly survival correctly: check each anomaly phase
+    for (const ph of PHASES) {
+      if (ph.anomaly) {
+        anomalyPhaseCount++;
+        const phIdx = PHASES.indexOf(ph);
+        // Survived if we cleared past this phase index or won the entire run
+        if (state.phaseIndex > phIdx || state.screen === 'run_complete') {
+          anomalyPhasesSurvived++;
+        }
+      }
+    }
+    const anomalySurvivalRate = anomalyPhaseCount > 0
+      ? anomalyPhasesSurvived / anomalyPhaseCount
+      : 0;
+
     const won = state.screen === 'run_complete';
     const phasesCleared = state.phaseIndex + (won ? 1 : 0);
-    // rough anomaly survival
-    if (state.phaseIndex >= 3) { anomalyPhaseCount = 1; anomalyPhasesSurvived = 1; }
-    if (state.phaseIndex >= 5) { anomalyPhaseCount = 2; anomalyPhasesSurvived = 2; }
-    const anomalySurvivalRate = anomalyPhaseCount > 0 ? anomalyPhasesSurvived / anomalyPhaseCount : 0;
 
-    const reward = calculateRunReward(state, anomalySurvivalRate);
-    profile = applyRunReward(profile, reward);
+    const { reward, updatedProfile } = finalizeRun(profile, state, anomalySurvivalRate);
+    profile = updatedProfile;
 
     console.log(
       `  ${String(i + 1).padStart(3)} | ${String(reward.metaCurrencyEarned).padStart(6)} | ${String(profile.metaCurrency).padStart(5)} | ${String(phasesCleared).padStart(6)} | ${won ? 'Y' : 'N'}`

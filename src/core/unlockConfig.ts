@@ -39,6 +39,11 @@ export const UNLOCK_COSTS = {
   },
   signal:        20,
   protocol:      30,
+  /**
+   * Anomaly unlocks reuse the common-catalyst cost tier.
+   * (Anomalies are always active in runs so this cost is for future use.)
+   */
+  anomaly:       15,
   /** Cost to unlock Ascension level N = ASCENSION_UNLOCK_COST_PER_LEVEL × N */
   ascensionLevelPerLevel: 20,
 } as const;

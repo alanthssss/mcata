@@ -21,6 +21,7 @@ import {
   CATALYST_MULTIPLIERS,
   STARTING_ENERGY,
   COLLAPSE_FIELD_PERIOD,
+  SPAWN_4_PROBABILITY,
 } from './config';
 
 const MAX_LOG = 10;
@@ -277,7 +278,7 @@ export function processMoveAction(state: GameState, dir: Direction): GameState {
       const spawnIdx = Math.floor(rng.next() * spawnableEmpty.length);
       const sp = spawnableEmpty[spawnIdx];
       if (s === 0) spawnPos = sp;
-      const base4Prob = 0.10 + ascMod.spawnFourBonus;
+      const base4Prob = SPAWN_4_PROBABILITY + ascMod.spawnFourBonus;
       const spawnValue = state.activeCatalysts.includes('lucky_seed')
         ? (rng.next() < 0.75 ? 2 : 4)
         : (rng.next() < (1 - base4Prob) ? 2 : 4);

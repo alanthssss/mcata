@@ -99,8 +99,7 @@ export function unlockProtocol(profile: ProfileState, id: ProtocolId): ProfileSt
 
 export function unlockAnomaly(profile: ProfileState, id: AnomalyId): ProfileState | null {
   if (profile.unlockedAnomalies.includes(id)) return profile;
-  // Anomalies cost like a common catalyst
-  const updated = withCurrency(profile, UNLOCK_COSTS.catalyst.common);
+  const updated = withCurrency(profile, UNLOCK_COSTS.anomaly);
   if (!updated) return null;
   return { ...updated, unlockedAnomalies: [...updated.unlockedAnomalies, id] };
 }
