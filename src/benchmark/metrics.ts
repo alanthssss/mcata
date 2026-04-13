@@ -20,6 +20,9 @@ export interface RunMetrics {
   // Advanced / optional
   moveDiversity?:       number;  // 0–1 entropy of action distribution
   invalidMoveRate?:     number;  // should be near 0 for agents
+  // Meta progression
+  ascensionLevel?:      number;  // 0–8 difficulty level used for this run
+  coreShards?:          number;  // meta currency earned this run
 }
 
 // ─── Aggregate suite metrics ──────────────────────────────────────────────────

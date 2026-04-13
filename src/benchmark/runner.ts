@@ -11,10 +11,13 @@ import {
   buyFromForge,
   skipForge,
 } from '../core/engine';
-import { GameState, Direction, CatalystId } from '../core/types';
+import { GameState, Direction, CatalystId, AscensionLevel } from '../core/types';
 import { getEmptyCells, getHighestTileValue } from '../core/board';
 import { PHASES } from '../core/phases';
 import { MAX_CATALYSTS } from '../core/config';
+import { ProtocolId } from '../core/types';
+import { DEFAULT_PROTOCOL } from '../core/protocols';
+import { calculateRunReward } from '../core/profile';
 
 // ─── Auto-pilot helpers for non-playing screens ───────────────────────────────
 function autoInfusion(state: GameState): GameState {
@@ -50,13 +53,28 @@ export interface RunOptions {
   seed:  number;
   agent: Agent;
   maxSteps?: number; // safety guard (default 2000)
+  /** Protocol to use (default: corner_protocol) */
+  protocol?: ProtocolId;
+  /** Ascension difficulty level 0–8 (default: 0) */
+  ascensionLevel?: AscensionLevel;
+  /**
+   * When provided, only catalysts in this list appear in Forge / Infusion.
+   * Leave undefined for full pool (benchmark default).
+   */
+  unlockedCatalysts?: CatalystId[];
 }
 
 export function runSingle(opts: RunOptions): RunMetrics {
   const { seed, agent } = opts;
   const maxSteps = opts.maxSteps ?? 2000;
+  const protocol       = opts.protocol ?? DEFAULT_PROTOCOL;
+  const ascensionLevel = opts.ascensionLevel ?? 0;
+  const unlockedCatalysts = opts.unlockedCatalysts;
 
-  let state = startGame(createInitialState(seed));
+  let state = startGame(createInitialState(seed, protocol, {
+    ascensionLevel,
+    unlockedCatalysts,
+  }));
 
   let totalSteps           = 0;
   let totalCatalysts       = 0;
@@ -148,6 +166,8 @@ export function runSingle(opts: RunOptions): RunMetrics {
   const moveDiversity    = actionEntropy(actionCounts) / Math.log2(4); // normalised 0–1
   const anomalySurvivalRate = anomalyPhaseCount > 0 ? anomalyPhasesSurvived / anomalyPhaseCount : 1;
 
+  const reward = calculateRunReward(state, anomalySurvivalRate);
+
   return {
     seed,
     agentName:            agent.name,
@@ -166,6 +186,8 @@ export function runSingle(opts: RunOptions): RunMetrics {
     activeCatalysts:      state.activeCatalysts,
     moveDiversity,
     invalidMoveRate:      0, // agents should never hit invalid moves
+    ascensionLevel:       ascensionLevel,
+    coreShards:           reward.metaCurrencyEarned,
   };
 }
 
@@ -174,13 +196,22 @@ export interface BatchOptions {
   agent:     Agent;
   runCount:  number;
   seedStart: number;
+  protocol?:          ProtocolId;
+  ascensionLevel?:    AscensionLevel;
+  unlockedCatalysts?: CatalystId[];
   onProgress?: (done: number, total: number) => void;
 }
 
 export function runBatch(opts: BatchOptions): RunMetrics[] {
   const results: RunMetrics[] = [];
   for (let i = 0; i < opts.runCount; i++) {
-    results.push(runSingle({ seed: opts.seedStart + i, agent: opts.agent }));
+    results.push(runSingle({
+      seed: opts.seedStart + i,
+      agent: opts.agent,
+      protocol:          opts.protocol,
+      ascensionLevel:    opts.ascensionLevel,
+      unlockedCatalysts: opts.unlockedCatalysts,
+    }));
     opts.onProgress?.(i + 1, opts.runCount);
   }
   return results;

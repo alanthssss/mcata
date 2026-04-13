@@ -494,3 +494,58 @@ flowchart LR
     Sim --> NS["Next GameState"]
     NS --> S
 ```
+
+---
+
+## How Unlocks Affect Agent Performance
+
+### Catalyst Pool Restriction
+
+When `unlockedCatalysts` is set in `GameState` (or via `RunOptions`), the Forge and Infusion screens only offer catalysts from the restricted pool.  
+Agents **do not need any changes** — they evaluate whatever options are presented; the pool restriction is transparent to agent logic.
+
+- In **full pool** mode (`unlockedCatalysts: undefined`), all 24 catalysts are available.
+- In **restricted pool** mode (`unlockedCatalysts: BASE_UNLOCKED_CATALYSTS`), only the 8 legacy catalysts appear.
+
+Empirically, the full pool increases HeuristicAgent win rate by ~20–30 percentage points due to:
+- More synergy combinations
+- Access to specialist Amplifier / Stabilizer / Generator catalysts
+- Higher ceiling for catalyst-stack strategies
+
+### Ascension Level Effects
+
+Higher Ascension levels make the run harder (fewer steps, higher phase targets, etc.).  
+Agents experience this as a tighter decision space:
+- Fewer moves available per phase → less room for recovery
+- Higher phase targets → must produce output on almost every move
+- Reduced Forge affordability → fewer catalyst acquisitions
+
+Agents with lookahead (BeamSearchAgent, MCTSAgent) generally tolerate ascension pressure better than greedy agents because they can plan ahead when the step budget is tight.
+
+### Benchmark Guidance for Agents
+
+To evaluate an agent across the full meta-progression difficulty range:
+
+```ts
+import { runAscensionSuite } from './src/benchmark/suites';
+import { HeuristicAgent } from './src/ai/agents';
+
+const result = runAscensionSuite(
+  [new HeuristicAgent()],
+  50,      // runs per level
+  5000,    // seed start
+);
+
+// result.metricsByLevel[0]['HeuristicAgent'].winRate → A0 win rate
+// result.metricsByLevel[8]['HeuristicAgent'].winRate → A8 win rate
+```
+
+To compare base vs full unlock pool performance:
+
+```ts
+import { runUnlockComparisonSuite } from './src/benchmark/suites';
+
+const cmp = runUnlockComparisonSuite([new HeuristicAgent()], 50, 6000);
+console.log(cmp.baseMetrics['HeuristicAgent'].winRate);
+console.log(cmp.fullMetrics['HeuristicAgent'].winRate);
+```

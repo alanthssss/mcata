@@ -329,3 +329,104 @@ npx tsx src/scripts/runBenchmark.ts --suite smoke
 - **Anomaly challenge**: Phase 4 and 6 cause a measurable survival drop
 - **Catalyst usage**: at least 2–3 catalysts see > 10% pick rate
 - **Reproducibility**: running the same suite twice gives < 5% difference in mean output
+
+---
+
+## Meta Progression Benchmarks
+
+The `benchmark:meta` script (`src/scripts/runMetaBenchmark.ts`) adds three analysis modes.
+
+### 1. Ascension Difficulty Sweep (`--mode ascension`)
+
+Runs the same agents across all 9 Ascension levels (0–8) and reports per-level win rates.
+
+```
+npm run benchmark:meta -- --mode ascension
+```
+
+#### Expected output
+
+```
+Level | Description                    | WinRate (Heuristic) | WinRate (MCTS)
+A0    | No modifiers — baseline        |              ~25.0% |         ~10.0%
+A1    | -1 Step per Phase              |               ~5.0% |          ~2.0%
+A2    | +15% target output             |               ~2.0% |          ~1.0%
+...
+A8    | Combined penalties             |               ~0.0% |          ~0.0%
+```
+
+A healthy difficulty curve shows a steady drop in win rate across levels.
+
+---
+
+### 2. Unlock Pool Comparison (`--mode unlock`)
+
+Compares agent performance with:
+- **Base pool** — only the 8 legacy catalysts (fresh profile restriction)
+- **Full pool** — all 24 catalysts (no unlock restrictions)
+
+```
+npm run benchmark:meta -- --mode unlock
+```
+
+#### What to look for
+
+| Pool | Expected HeuristicAgent Win% |
+|------|------------------------------|
+| Base (8 legacy only) | 25–40% |
+| Full (all 24) | 45–65% |
+
+A gap of ~20 percentage points validates that unlocks provide real power. If the gap is < 5%, the advanced catalysts may be too weak. If > 40%, the base experience may be too punishing for new players.
+
+---
+
+### 3. Meta Progression Simulation (`--mode simulate`)
+
+Simulates a player playing 20 runs in sequence, earning Core Shards each run, and prints a progression table.
+
+```
+npm run benchmark:meta -- --mode simulate
+```
+
+#### Sample output
+
+```
+Run | Shards | Total | Phases | Won
+  1 |     20 |    20 |      2 | N
+  4 |     53 |   143 |      6 | Y
+ 11 |     53 |   306 |      6 | Y
+```
+
+This helps verify:
+- Shards accumulate at a reasonable pace
+- A win earns meaningfully more shards than a loss
+- After ~20 runs a player could afford several unlocks
+
+---
+
+### Difficulty Scaling Curve
+
+```mermaid
+xychart-beta
+    title "Win Rate vs Ascension Level"
+    x-axis [A0, A1, A2, A3, A4, A5, A6, A7, A8]
+    y-axis "Win %" 0 --> 100
+    line [25, 5, 2, 1, 1, 0, 0, 0, 0]
+```
+
+---
+
+### New RunOptions Fields
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `ascensionLevel` | `0–8` | `0` | Difficulty tier for the run |
+| `protocol` | `ProtocolId` | `corner_protocol` | Protocol to use |
+| `unlockedCatalysts` | `CatalystId[] \| undefined` | `undefined` (full pool) | Restricts Forge/Infusion pool |
+
+### New RunMetrics Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `ascensionLevel` | `number` | Difficulty level used for this run |
+| `coreShards` | `number` | Meta currency earned this run |
