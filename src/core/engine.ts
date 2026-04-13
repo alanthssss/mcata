@@ -1,4 +1,4 @@
-import { GameState, Direction, CatalystDef, InfusionChoice, CatalystId, Grid, Position, SignalId, ProtocolId } from './types';
+import { GameState, Direction, CatalystDef, InfusionChoice, CatalystId, Grid, Position, SignalId, ProtocolId, AscensionLevel } from './types';
 import { applyMove } from './move';
 import { computeScore } from './score';
 import { createRng } from './rng';
@@ -12,6 +12,7 @@ import { generateForgeOffers } from './forge';
 import { generateInfusionOptions } from './infusion';
 import { ReactionLogEntry } from './types';
 import { PROTOCOL_DEFS, DEFAULT_PROTOCOL } from './protocols';
+import { ASCENSION_MODIFIER_DEFS } from './ascensionModifiers';
 import {
   MAX_CATALYSTS,
   MOMENTUM_CONFIG,
@@ -19,6 +20,7 @@ import {
   GRID_CLEAN_COUNT,
   CATALYST_MULTIPLIERS,
   STARTING_ENERGY,
+  COLLAPSE_FIELD_PERIOD,
 } from './config';
 
 const MAX_LOG = 10;
@@ -41,20 +43,28 @@ function makeInitialGrid(rngSeed: number, startTiles: number): { grid: Grid; idC
   return { grid, idCounter };
 }
 
-export function createInitialState(seed: number, protocol: ProtocolId = DEFAULT_PROTOCOL): GameState {
+export function createInitialState(
+  seed: number,
+  protocol: ProtocolId = DEFAULT_PROTOCOL,
+  runConfig?: { ascensionLevel?: AscensionLevel; unlockedCatalysts?: CatalystId[] }
+): GameState {
   const rngSeed = seed;
+  const ascensionLevel: AscensionLevel = runConfig?.ascensionLevel ?? 0;
+  const unlockedCatalysts = runConfig?.unlockedCatalysts;
+  const ascMod = ASCENSION_MODIFIER_DEFS[ascensionLevel];
   const protocolDef = PROTOCOL_DEFS[protocol];
   const { grid, idCounter } = makeInitialGrid(rngSeed, protocolDef.startTiles);
   const phase = PHASES[0];
 
-  const stepsForPhase = Math.max(1, phase.steps - protocolDef.stepsReduction);
+  const stepsForPhase = Math.max(1, phase.steps - protocolDef.stepsReduction - ascMod.stepsReduction);
+  const startingEnergy = Math.floor(STARTING_ENERGY * ascMod.startingEnergyFactor);
 
   return {
     screen: 'start',
     grid,
     phaseIndex: 0,
     stepsRemaining: stepsForPhase,
-    energy: STARTING_ENERGY,
+    energy: startingEnergy,
     output: 0,
     totalOutput: 0,
     activeCatalysts: [],
@@ -77,6 +87,8 @@ export function createInitialState(seed: number, protocol: ProtocolId = DEFAULT_
     stabilityCount: 0,
     shieldCharge: 0,
     echoOutputLast: 0,
+    ascensionLevel,
+    unlockedCatalysts,
   };
 }
 
@@ -115,6 +127,7 @@ export function processMoveAction(state: GameState, dir: Direction): GameState {
   const rng = createRng(state.rngSeed + state.reactionLog.length + 1);
   const gridBefore = cloneGrid(state.grid);
   const protocolDef = PROTOCOL_DEFS[state.protocol];
+  const ascMod = ASCENSION_MODIFIER_DEFS[state.ascensionLevel];
 
   // ── Pending signal: Freeze Step ───────────────────────────────────────────
   const freezeStepActive = state.pendingSignal === 'freeze_step';
@@ -142,7 +155,11 @@ export function processMoveAction(state: GameState, dir: Direction): GameState {
   let anomalyEffectPost = anomalyEffectPre;
   if (currentPhase.anomaly === 'collapse_field') {
     newCollapseCounter++;
-    const collapseResult = applyCollapseField(newGrid, newCollapseCounter);
+    const effectivePeriod = Math.max(
+      1,
+      COLLAPSE_FIELD_PERIOD - ascMod.collapseFieldPeriodReduction
+    );
+    const collapseResult = applyCollapseField(newGrid, newCollapseCounter, effectivePeriod);
     if (collapseResult.triggered) {
       newGrid = collapseResult.grid;
       anomalyEffectPost = collapseResult.description;
@@ -260,9 +277,10 @@ export function processMoveAction(state: GameState, dir: Direction): GameState {
       const spawnIdx = Math.floor(rng.next() * spawnableEmpty.length);
       const sp = spawnableEmpty[spawnIdx];
       if (s === 0) spawnPos = sp;
+      const base4Prob = 0.10 + ascMod.spawnFourBonus;
       const spawnValue = state.activeCatalysts.includes('lucky_seed')
         ? (rng.next() < 0.75 ? 2 : 4)
-        : (rng.next() < 0.9 ? 2 : 4);
+        : (rng.next() < (1 - base4Prob) ? 2 : 4);
       const spawnResult = spawnTile(newGrid, spawnValue, sp, newIdCounter);
       newGrid = spawnResult.grid;
       newIdCounter = spawnResult.id;
@@ -343,6 +361,7 @@ export function processMoveAction(state: GameState, dir: Direction): GameState {
 function handlePhaseEnd(state: GameState): GameState {
   const currentPhase = PHASES[state.phaseIndex];
   const protocolDef = PROTOCOL_DEFS[state.protocol];
+  const ascMod = ASCENSION_MODIFIER_DEFS[state.ascensionLevel];
   let energy = state.energy;
   let output = state.output;
 
@@ -358,7 +377,8 @@ function handlePhaseEnd(state: GameState): GameState {
     energy += (PHASES[state.phaseIndex].steps - state.stepsRemaining) * CATALYST_MULTIPLIERS.reserve_bank_energy_per_step;
   }
 
-  const succeeded = output >= currentPhase.targetOutput;
+  const effectiveTarget = Math.ceil(currentPhase.targetOutput * ascMod.targetOutputScale);
+  const succeeded = output >= effectiveTarget;
 
   if (!succeeded) {
     return { ...state, screen: 'game_over', output, energy };
@@ -370,11 +390,13 @@ function handlePhaseEnd(state: GameState): GameState {
 
   const nextPhaseIndex = state.phaseIndex + 1;
   const nextPhase = PHASES[nextPhaseIndex];
-  const nextSteps = Math.max(1, nextPhase.steps - protocolDef.stepsReduction);
+  const nextSteps = Math.max(1, nextPhase.steps - protocolDef.stepsReduction - ascMod.stepsReduction);
 
   if (state.phaseIndex === FORGE_AFTER_PHASE_INDEX) {
     const rng = createRng(state.rngSeed + 100);
-    const forgeOffers = generateForgeOffers(state.activeCatalysts, 3, rng.next.bind(rng));
+    const forgeOffers = generateForgeOffers(
+      state.activeCatalysts, 3, rng.next.bind(rng), state.unlockedCatalysts
+    );
 
     return {
       ...state,
@@ -388,7 +410,10 @@ function handlePhaseEnd(state: GameState): GameState {
   }
 
   const rng = createRng(state.rngSeed + 200);
-  const infusionOptions = generateInfusionOptions(state.activeCatalysts, rng.next.bind(rng));
+  const infusionOptions = generateInfusionOptions(
+    state.activeCatalysts, rng.next.bind(rng),
+    state.unlockedCatalysts, ascMod.infusionChoiceCount
+  );
 
   return {
     ...state,
@@ -454,10 +479,12 @@ export function selectInfusion(state: GameState, choice: InfusionChoice): GameSt
 }
 
 export function buyFromForge(state: GameState, catalyst: CatalystDef, replaceIndex?: number): GameState {
-  if (state.energy < catalyst.cost) return state;
+  const ascMod = ASCENSION_MODIFIER_DEFS[state.ascensionLevel];
+  const effectiveCost = catalyst.cost + ascMod.forgeCostBonus;
+  if (state.energy < effectiveCost) return state;
 
   const newCatalysts: CatalystId[] = [...state.activeCatalysts];
-  const energy = state.energy - catalyst.cost;
+  const energy = state.energy - effectiveCost;
 
   if (newCatalysts.length < MAX_CATALYSTS) {
     newCatalysts.push(catalyst.id);
@@ -478,7 +505,9 @@ export function buyFromForge(state: GameState, catalyst: CatalystDef, replaceInd
 export function rerollForge(state: GameState): GameState {
   if (state.energy < 1) return state;
   const rng = createRng(state.rngSeed + state.forgeOffers.length + 500);
-  const forgeOffers = generateForgeOffers(state.activeCatalysts, 3, rng.next.bind(rng));
+  const forgeOffers = generateForgeOffers(
+    state.activeCatalysts, 3, rng.next.bind(rng), state.unlockedCatalysts
+  );
   return { ...state, energy: state.energy - 1, forgeOffers };
 }
 

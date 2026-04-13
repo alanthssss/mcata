@@ -28,9 +28,11 @@ export function applyEntropyTax(
 
 export function applyCollapseField(
   grid: Grid,
-  counter: number
+  counter: number,
+  period?: number
 ): { grid: Grid; triggered: boolean; description: string } {
-  if (counter % COLLAPSE_FIELD_PERIOD !== 0 || counter === 0) {
+  const effectivePeriod = period ?? COLLAPSE_FIELD_PERIOD;
+  if (counter % effectivePeriod !== 0 || counter === 0) {
     return { grid, triggered: false, description: '' };
   }
   const pos = findHighestTilePosition(grid);

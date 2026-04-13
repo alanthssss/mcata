@@ -416,3 +416,50 @@ All tested agents had near-0% win rates in v1 because phase targets were too hig
 3. **Catalyst costs/multipliers** (fine-tune after economy is visible)
 4. **Step counts** (secondary lever after targets)
 5. **Spawn probabilities** (minor effect; adjust last)
+
+---
+
+## Meta Progression Balance
+
+### Design Goals
+
+- **Early game easier**: A fresh profile (Ascension 0, only legacy catalysts) should feel achievable — giving players a foothold and motivation to keep playing.
+- **Late game harder**: Ascension 8 should be a genuine challenge even for skilled players with a full unlock pool.
+- **Smooth scaling**: Each ascension level should feel meaningfully harder than the previous, but not a sudden cliff.
+
+### Difficulty Curve Expectations
+
+| Ascension | Expected Best-Agent Win Rate |
+|-----------|------------------------------|
+| 0 | 10–40% |
+| 1 | 5–20% |
+| 2 | 2–10% |
+| 3–5 | 1–5% |
+| 6–7 | <2% |
+| 8 | <1% |
+
+These are guidelines, not hard targets. If Ascension 1 win rate collapses to 0% in benchmarks, consider:
+- Increasing starting energy at A0 (buffer before A1 penalty kicks in)
+- Reducing the step penalty from -1 to -0.5 (averaged across phases)
+
+### Unlock Pacing
+
+A typical player session earns 15–50 Core Shards per run (depending on how many phases they clear).
+
+Expected unlock pacing:
+- **Run 5–10**: First common catalyst (15 shards) becomes affordable.
+- **Run 10–20**: First protocol or rare catalyst unlock.
+- **Run 20–30**: First signal or epic catalyst.
+- **Run 30+**: Ascension level 1 (20 shards) feels earned, not gated.
+
+If players feel progression is too slow, increase `META_CURRENCY_CONFIG.baseReward` in `src/core/unlockConfig.ts`.
+If unlocks feel too cheap (trivial to obtain), increase `UNLOCK_COSTS` in the same file.
+
+### Meta Progression Impact on Balance
+
+- **Base pool (only legacy catalysts)**: ~30–40% win rate for HeuristicAgent (restricted diversity).
+- **Full pool (all catalysts)**: ~50–60% win rate for HeuristicAgent (more synergy options).
+
+This ~20 percentage point gap is intentional and meaningful — it validates that unlocking content provides real power while the game remains playable from the start.
+
+All values remain centralised in `src/core/unlockConfig.ts` and `src/core/ascensionModifiers.ts`.

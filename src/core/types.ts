@@ -196,6 +196,28 @@ export interface ReactionLogEntry {
   signalEffect: string | null;
 }
 
+// ─── Meta Progression ────────────────────────────────────────────────────────
+export type AscensionLevel = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+
+export interface ProfileState {
+  unlockedCatalysts: CatalystId[];
+  unlockedSignals: SignalId[];
+  unlockedProtocols: ProtocolId[];
+  unlockedAnomalies: AnomalyId[];
+  unlockedAscensionLevel: AscensionLevel;
+  metaCurrency: number;
+}
+
+export interface RunReward {
+  metaCurrencyEarned: number;
+  breakdown: {
+    base: number;
+    phasesBonus: number;
+    anomalyBonus: number;
+    outputBonus: number;
+  };
+}
+
 // ─── Game State ──────────────────────────────────────────────────────────────
 export type GameScreen =
   | 'start'
@@ -237,4 +259,7 @@ export interface GameState {
   stabilityCount: number;        // consecutive non-bad moves for Stability Field
   shieldCharge: number;          // remaining Merge Shield charges
   echoOutputLast: number;        // last move output for Echo Multiplier
+  // Meta progression
+  ascensionLevel: AscensionLevel;
+  unlockedCatalysts: CatalystId[] | undefined; // undefined = full pool
 }

@@ -19,7 +19,6 @@ function defaultAgents() {
     new MCTSAgent({ rollouts: 15, rolloutDepth: 8 }),
   ];
 }
-
 /** Suite A — Baseline (100 runs each) */
 export const SUITE_BASELINE: SuiteDefinition = {
   name:        'Baseline',

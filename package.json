@@ -8,6 +8,7 @@
     "preview": "vite preview",
     "benchmark": "tsx src/scripts/runBenchmark.ts --suite baseline",
     "benchmark:long": "tsx src/scripts/runBenchmark.ts --suite long",
+    "benchmark:meta": "tsx src/scripts/runMetaBenchmark.ts",
     "balance": "tsx src/scripts/runBalanceCheck.ts",
     "docs:assets": "tsx src/scripts/generateDocsAssets.ts"
   },

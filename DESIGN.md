@@ -736,3 +736,143 @@ stateDiagram-v2
 - **Zustand 4** — minimal global state management
 - **tsx** — TypeScript runner for headless scripts
 
+
+---
+
+## Meta Progression System
+
+### Overview
+
+The meta progression layer transforms Merge Catalyst from a single-run prototype into a replayable, progression-based roguelike with three interlocking systems:
+
+1. **Unlock System** — content unlocked over multiple runs
+2. **Difficulty System (Ascension)** — 9 scaling difficulty tiers (0–8)
+3. **Meta Currency (Core Shards)** — long-term resource used for unlocks
+
+These systems are implemented as an **adapter layer** (`src/core/runAdapter.ts`) that wraps the pure engine. The engine itself remains stateless and pure.
+
+---
+
+### ProfileState
+
+`ProfileState` is the persistent player record, kept separate from `GameState`:
+
+```ts
+interface ProfileState {
+  unlockedCatalysts:     CatalystId[];
+  unlockedSignals:       SignalId[];
+  unlockedProtocols:     ProtocolId[];
+  unlockedAnomalies:     AnomalyId[];
+  unlockedAscensionLevel: AscensionLevel;
+  metaCurrency:          number;          // Core Shards
+}
+```
+
+The default profile (`DEFAULT_PROFILE` in `src/core/profile.ts`) unlocks only:
+- The 8 legacy catalysts
+- `corner_protocol`
+- Both anomalies (always in play)
+
+---
+
+### Unlock Philosophy
+
+Unlocks are **intentional long-term gates**, not time gates.
+
+- **Why unlock?** To give experienced players access to more powerful and varied builds.
+- **What is locked by default?** All 16 advanced catalysts, 2 alternative protocols, all 4 signals.
+- **How to unlock?** Spend Core Shards (`src/core/unlockConfig.ts`).
+
+| Content | Cost |
+|---------|------|
+| Common catalyst | 15 Core Shards |
+| Rare catalyst | 25 Core Shards |
+| Epic catalyst | 40 Core Shards |
+| Protocol | 30 Core Shards |
+| Signal | 20 Core Shards |
+| Ascension level N | N × 20 Core Shards |
+
+The Forge and Infusion rewards only show catalysts the player has unlocked.
+Benchmark mode can bypass this restriction (`ignoreUnlocks: true`) for full-pool runs.
+
+---
+
+### Ascension Philosophy
+
+Ascension (0–8) is Merge Catalyst's difficulty scaling, inspired by Slay the Spire / Balatro stakes.
+
+- **Level 0** = baseline (identical to pre-meta-progression behaviour).
+- **Levels 1–7** = each level adds one new penalty, stacking cumulatively.
+- **Level 8** = combined maximum penalties.
+
+Players unlock ascension levels with Core Shards. A fresh profile can only play Ascension 0.
+
+| Level | Cumulative Penalty |
+|-------|--------------------|
+| 0 | None (baseline) |
+| 1 | −1 Step per Phase |
+| 2 | +1 + Phase target output ×1.15 |
+| 3 | +2 + Anomalies trigger more frequently |
+| 4 | +3 + Forge catalyst cost +1 |
+| 5 | +4 + Higher "4" spawn probability |
+| 6 | +5 + Starting Energy ×0.8 |
+| 7 | +6 + Fewer Infusion reward choices |
+| 8 | All penalties at maximum intensity |
+
+All values are centralised in `src/core/ascensionModifiers.ts`.
+
+---
+
+### Meta Currency (Core Shards)
+
+Core Shards are earned at the end of every run:
+
+```
+reward = base(10) + phases_cleared × 5 + anomaly_cleared × 10 + floor((output − 200) / 100)
+```
+
+Config lives in `META_CURRENCY_CONFIG` inside `src/core/unlockConfig.ts`.
+
+---
+
+### Run Loop Integration
+
+```mermaid
+flowchart TD
+    Start["Start Run\n(choose Protocol + Ascension)"]
+    Engine["Engine\n(createInitialState with\nascensionLevel + unlockedCatalysts)"]
+    End["Run End\n(game_over or run_complete)"]
+    Reward["Calculate Core Shards\n(calculateRunReward)"]
+    Profile["Update ProfileState\n(applyRunReward)"]
+    Unlock["Optional: Unlock Content\n(unlockCatalyst, unlockProtocol, …)"]
+
+    Start --> Engine --> End --> Reward --> Profile --> Unlock --> Start
+```
+
+---
+
+### Progression Loop Diagram
+
+```mermaid
+flowchart LR
+    P["ProfileState\n(persistent)"] -->|"unlockedCatalysts\nascensionLevel"| A["Adapter\nrunAdapter.ts"]
+    A -->|"createInitialState\n+ ascension mods"| E["Engine\n(pure)"]
+    E -->|"GameState"| G["Run"]
+    G -->|"finalState"| R["calculateRunReward"]
+    R -->|"CoreShards"| P
+```
+
+---
+
+### Unlock Flow Diagram
+
+```mermaid
+flowchart TD
+    CP["Complete Run"] --> CS["Earn Core Shards"]
+    CS --> U{"Spend Shards?"}
+    U -->|"Catalyst"| UC["unlockCatalyst()"]
+    U -->|"Protocol"| UP["unlockProtocol()"]
+    U -->|"Signal"| US["unlockSignal()"]
+    U -->|"Ascension"| UA["unlockAscensionLevel()"]
+    UC & UP & US & UA --> NP["Updated ProfileState"]
+```
