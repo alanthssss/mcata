@@ -123,10 +123,10 @@ export interface SignalDef {
 export type ProtocolId = 'corner_protocol' | 'sparse_protocol' | 'overload_protocol';
 
 /**
- * Difficulty tier for a protocol.  Each value carries an in-game label that
- * lives with the protocol rather than being hardcoded in UI components.
+ * Stakes tier for a protocol.  Describes how demanding the protocol's ruleset
+ * is, displayed as a badge on the protocol selection card.
  */
-export type ProtocolDifficulty = 'standard' | 'tactical' | 'overclocked';
+export type RunStakes = 'standard' | 'tactical' | 'overclocked';
 
 export interface ProtocolDef {
   id: ProtocolId;
@@ -134,8 +134,8 @@ export interface ProtocolDef {
   description: string;
   /** Emoji icon displayed on the protocol selection card */
   icon: string;
-  /** Difficulty tier — expresses how demanding this protocol is to clear */
-  difficulty: ProtocolDifficulty;
+  /** Stakes tier — expresses how demanding this protocol's ruleset is */
+  stakes: RunStakes;
   /** Extra corner multiplier applied on top of base corner bonuses */
   cornerMultiplier: number;
   /** Number of starting tiles (default 2) */
@@ -192,6 +192,19 @@ export interface PhaseDef {
   challengeTier?: ChallengeTier;
   /** Human-readable description of the active rule modifier (boss phases). */
   modifier?: string;
+}
+
+// ─── Round Template ───────────────────────────────────────────────────────────
+
+/**
+ * A round template defines the 6-phase structure for one round.
+ * Templates rotate across rounds to keep runs feeling varied.
+ */
+export interface RoundTemplate {
+  id: string;
+  name: string;
+  description: string;
+  phases: PhaseDef[];
 }
 
 // ─── Forge ───────────────────────────────────────────────────────────────────
@@ -270,7 +283,8 @@ export type GameScreen =
   | 'forge'
   | 'infusion'
   | 'game_over'
-  | 'run_complete';
+  | 'round_complete'
+  | 'run_complete';   // kept for potential "end run early" UI flow
 
 export interface GameState {
   screen: GameScreen;
@@ -307,4 +321,6 @@ export interface GameState {
   // Meta progression
   ascensionLevel: AscensionLevel;
   unlockedCatalysts: CatalystId[] | undefined; // undefined = full pool
+  // Round progression
+  roundNumber: number;                         // current round (starts at 1)
 }

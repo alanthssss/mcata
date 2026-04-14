@@ -21,8 +21,11 @@ export interface RunMetrics {
   moveDiversity?:       number;  // 0–1 entropy of action distribution
   invalidMoveRate?:     number;  // should be near 0 for agents
   // Meta progression
-  ascensionLevel?:      number;  // 0–8 difficulty level used for this run
+  ascensionLevel?:      number;  // 0–8 ascension level used for this run
   coreShards?:          number;  // meta currency earned this run
+  // Endless round tracking
+  roundsCleared?:       number;  // total complete rounds finished
+  highestRound?:        number;  // highest round number reached
 }
 
 // ─── Aggregate suite metrics ──────────────────────────────────────────────────
@@ -41,6 +44,10 @@ export interface SuiteMetrics {
   anomalySuccessRate:  number;
   scoreVariance:       number;
   scoreStdDev:         number;
+  /** Average complete rounds cleared per run */
+  avgRoundsCleared:    number;
+  /** Highest round number reached across all runs */
+  maxRoundReached:     number;
 }
 
 // ─── Aggregate helpers ────────────────────────────────────────────────────────
@@ -88,6 +95,8 @@ export function buildSuiteMetrics(runs: RunMetrics[]): SuiteMetrics {
       anomalySuccessRate: 0,
       scoreVariance: 0,
       scoreStdDev: 0,
+      avgRoundsCleared: 0,
+      maxRoundReached: 0,
     };
   }
 
@@ -116,6 +125,8 @@ export function buildSuiteMetrics(runs: RunMetrics[]): SuiteMetrics {
     anomalySuccessRate:  mean(runs.map(r => r.anomalySurvivalRate)),
     scoreVariance:       v,
     scoreStdDev:         Math.sqrt(v),
+    avgRoundsCleared:    mean(runs.map(r => r.roundsCleared ?? 0)),
+    maxRoundReached:     Math.max(...runs.map(r => r.highestRound ?? 1)),
   };
 }
 

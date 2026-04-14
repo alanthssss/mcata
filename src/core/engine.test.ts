@@ -9,6 +9,7 @@ import {
   skipForge,
   queueSignal,
   grantSignal,
+  advanceRound,
 } from './engine';
 import { createEmptyGrid, spawnTile } from './board';
 import type { GameState, Grid, CatalystTag } from './types';
@@ -305,7 +306,8 @@ describe('selectInfusion', () => {
       catalyst: { id: 'twin_burst', name: 'Twin Burst', description: '', rarity: 'common', cost: 3, category: 'legacy', trigger: 'on_merge', effectParams: {}, tags: ['combo' as CatalystTag], unlockCondition: '' },
     });
     expect(result.activeCatalysts).toContain('twin_burst');
-    expect(result.screen).toBe('playing');
+    // selectInfusion now opens the intermission forge before playing
+    expect(result.screen).toBe('forge');
   });
 
   it('energy reward adds 3 energy', () => {
@@ -376,7 +378,8 @@ describe('buyFromForge', () => {
     const state = {
       ...playingState(),
       energy: 20,
-      activeCatalysts: ['corner_crown', 'twin_burst', 'high_tribute'] as const,
+      // Fill all 6 slots
+      activeCatalysts: ['corner_crown', 'twin_burst', 'high_tribute', 'lucky_seed', 'bankers_edge', 'reserve'] as const,
     };
     const newCatalyst = {
       id: 'combo_wire' as const,
@@ -398,7 +401,8 @@ describe('buyFromForge', () => {
     const state = {
       ...playingState(),
       energy: 20,
-      activeCatalysts: ['corner_crown', 'twin_burst', 'high_tribute'] as const,
+      // Fill all 6 slots
+      activeCatalysts: ['corner_crown', 'twin_burst', 'high_tribute', 'lucky_seed', 'bankers_edge', 'reserve'] as const,
     };
     const result = buyFromForge(state as unknown as GameState, catalystDef);
     expect(result).toBe(state);
@@ -475,5 +479,122 @@ describe('skipForge', () => {
     const result = skipForge(state);
     expect(result.consecutiveValidMoves).toBe(0);
     expect(result.momentumMultiplier).toBe(1.0);
+  });
+});
+
+// ─── Round-based progression ──────────────────────────────────────────────────
+
+describe('round progression', () => {
+  it('initial state starts at roundNumber 1', () => {
+    const state = createInitialState(42);
+    expect(state.roundNumber).toBe(1);
+  });
+
+  it('advanceRound increments roundNumber', () => {
+    const state = { ...playingState(), screen: 'round_complete' as const, roundNumber: 1 };
+    const next = advanceRound(state);
+    expect(next.roundNumber).toBe(2);
+  });
+
+  it('advanceRound resets phaseIndex to 0', () => {
+    const state = { ...playingState(), screen: 'round_complete' as const, roundNumber: 1, phaseIndex: 5 };
+    const next = advanceRound(state);
+    expect(next.phaseIndex).toBe(0);
+  });
+
+  it('advanceRound transitions to playing screen', () => {
+    const state = { ...playingState(), screen: 'round_complete' as const, roundNumber: 1 };
+    const next = advanceRound(state);
+    expect(next.screen).toBe('playing');
+  });
+
+  it('advanceRound resets per-round state (momentum, output, log)', () => {
+    const state = {
+      ...playingState(),
+      screen: 'round_complete' as const,
+      roundNumber: 1,
+      output: 500,
+      consecutiveValidMoves: 8,
+      momentumMultiplier: 1.8,
+    };
+    const next = advanceRound(state);
+    expect(next.output).toBe(0);
+    expect(next.consecutiveValidMoves).toBe(0);
+    expect(next.momentumMultiplier).toBe(1.0);
+    expect(next.reactionLog).toHaveLength(0);
+  });
+});
+
+// ─── Catalyst 6-slot system ───────────────────────────────────────────────────
+
+describe('6-slot catalyst system', () => {
+  it('can acquire up to 6 catalysts via infusion', () => {
+    let state = playingState();
+    const catalysts = [
+      'corner_crown', 'twin_burst', 'high_tribute', 'lucky_seed', 'bankers_edge', 'reserve'
+    ] as const;
+    for (const id of catalysts) {
+      state = selectInfusion({ ...state, screen: 'infusion', infusionOptions: [] }, {
+        type: 'catalyst',
+        catalyst: { id, name: id, description: '', rarity: 'common', cost: 3, category: 'legacy', trigger: 'on_merge', effectParams: {}, tags: ['combo' as CatalystTag], unlockCondition: '' },
+      });
+      // After infusion, state is on 'forge' — skip to playing
+      state = skipForge(state);
+    }
+    expect(state.activeCatalysts).toHaveLength(6);
+  });
+
+  it('does not add 7th catalyst via infusion when 6 are active', () => {
+    let state = playingState();
+    const catalysts = [
+      'corner_crown', 'twin_burst', 'high_tribute', 'lucky_seed', 'bankers_edge', 'reserve'
+    ] as const;
+    state = { ...state, activeCatalysts: [...catalysts] };
+    const result = selectInfusion({ ...state, screen: 'infusion', infusionOptions: [] }, {
+      type: 'catalyst',
+      catalyst: { id: 'combo_wire', name: 'Combo Wire', description: '', rarity: 'common', cost: 3, category: 'legacy', trigger: 'on_merge', effectParams: {}, tags: ['combo' as CatalystTag], unlockCondition: '' },
+    });
+    expect(result.activeCatalysts).toHaveLength(6);
+    expect(result.activeCatalysts).not.toContain('combo_wire');
+  });
+
+  it('replaces catalyst at replaceIndex when 6 slots are full via forge', () => {
+    const state = {
+      ...playingState(),
+      energy: 20,
+      activeCatalysts: ['corner_crown', 'twin_burst', 'high_tribute', 'lucky_seed', 'bankers_edge', 'reserve'] as const,
+    };
+    const newCatalyst = {
+      id: 'combo_wire' as const,
+      name: 'Combo Wire', description: '', rarity: 'common' as const, cost: 3,
+      category: 'legacy' as const, trigger: 'on_merge' as const,
+      effectParams: {}, tags: ['combo' as CatalystTag], unlockCondition: '',
+    };
+    const result = buyFromForge(state as unknown as GameState, newCatalyst, 2);
+    expect(result.activeCatalysts[2]).toBe('combo_wire');
+    expect(result.activeCatalysts).toHaveLength(6);
+  });
+});
+
+// ─── Intermission flow (infusion → forge) ────────────────────────────────────
+
+describe('intermission flow', () => {
+  it('selectInfusion transitions to forge screen (not playing)', () => {
+    const state = { ...playingState(), screen: 'infusion' as const, infusionOptions: [] };
+    const result = selectInfusion(state, { type: 'energy' });
+    expect(result.screen).toBe('forge');
+  });
+
+  it('selectInfusion generates forge offers', () => {
+    const state = { ...playingState(), screen: 'infusion' as const, infusionOptions: [] };
+    const result = selectInfusion(state, { type: 'energy' });
+    expect(result.forgeOffers.length).toBeGreaterThan(0);
+  });
+
+  it('skipForge after infusion transitions to playing', () => {
+    const state = { ...playingState(), screen: 'infusion' as const, infusionOptions: [] };
+    const afterInfusion = selectInfusion(state, { type: 'energy' });
+    const afterForge = skipForge(afterInfusion);
+    expect(afterForge.screen).toBe('playing');
   });
 });

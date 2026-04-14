@@ -3,7 +3,7 @@ import { GameState, Direction, InfusionChoice, CatalystDef, SignalId, ProtocolId
 import {
   createInitialState, startGame, processMoveAction,
   selectInfusion, buyFromForge, rerollForge, skipForge,
-  queueSignal, grantSignal,
+  queueSignal, grantSignal, advanceRound,
 } from '../core/engine';
 
 interface GameStore extends GameState {
@@ -18,6 +18,8 @@ interface GameStore extends GameState {
   skipForgePhase: () => void;
   activateSignal: (signalId: SignalId) => void;
   addSignal: (signalId: SignalId) => void;
+  /** Advance the run into the next round after seeing the round_complete screen. */
+  nextRound: () => void;
 }
 
 export const useGameStore = create<GameStore>((set) => ({
@@ -61,5 +63,9 @@ export const useGameStore = create<GameStore>((set) => ({
 
   addSignal: (signalId: SignalId) => {
     set(state => grantSignal(state, signalId));
+  },
+
+  nextRound: () => {
+    set(state => advanceRound(state));
   },
 }));

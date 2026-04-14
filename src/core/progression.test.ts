@@ -9,7 +9,7 @@
 import { describe, it, expect } from 'vitest';
 import { DEFAULT_PROFILE } from './profile';
 import { BASE_UNLOCKED_CATALYSTS, BASE_UNLOCKED_PROTOCOLS } from './unlockConfig';
-import { PHASE_CONFIG } from './config';
+import { PHASE_CONFIG, ROUND_TEMPLATES, ROUND_TARGET_SCALE } from './config';
 import type { PhaseDef, ChallengeTier } from './types';
 
 // ─── Profile defaults ──────────────────────────────────────────────────────────
@@ -92,6 +92,58 @@ describe('PHASE_CONFIG benchmark fields', () => {
   });
 });
 
+// ─── Round template system ───────────────────────────────────────────────────
+
+import { getPhasesForRound, PHASES_PER_ROUND } from './phases';
+
+describe('Round template system', () => {
+  it('has 3 round templates', () => {
+    expect(ROUND_TEMPLATES).toHaveLength(3);
+  });
+
+  it('each template has exactly 6 phases', () => {
+    for (const template of ROUND_TEMPLATES) {
+      expect(template.phases).toHaveLength(PHASES_PER_ROUND);
+    }
+  });
+
+  it('each template has a unique id', () => {
+    const ids = ROUND_TEMPLATES.map(t => t.id);
+    const unique = new Set(ids);
+    expect(unique.size).toBe(ROUND_TEMPLATES.length);
+  });
+
+  it('round 1 uses unscaled targets', () => {
+    const phases = getPhasesForRound(1);
+    const template = ROUND_TEMPLATES[0];
+    expect(phases[0].targetOutput).toBe(template.phases[0].targetOutput);
+  });
+
+  it('round 2 uses second template with scaled targets', () => {
+    const phases = getPhasesForRound(2);
+    const template = ROUND_TEMPLATES[1]; // beta
+    const expectedTarget = Math.ceil(template.phases[0].targetOutput * (1 + ROUND_TARGET_SCALE));
+    expect(phases[0].targetOutput).toBe(expectedTarget);
+  });
+
+  it('templates rotate every 3 rounds', () => {
+    const r1 = getPhasesForRound(1);
+    const r4 = getPhasesForRound(4);
+    // Round 4 uses template index (4-1)%3 = 0 (same as round 1) but scaled
+    expect(r1[0].phaseNumber).toBe(r4[0].phaseNumber);
+    expect(r4[0].targetOutput).toBeGreaterThan(r1[0].targetOutput);
+  });
+
+  it('targets increase with each round', () => {
+    const r1 = getPhasesForRound(1);
+    const r2 = getPhasesForRound(2);
+    const r3 = getPhasesForRound(3);
+    // Targets should be higher in later rounds (accounting for template differences)
+    expect(r2[0].targetOutput).toBeGreaterThan(r1[0].targetOutput * 0.9);
+    expect(r3[0].targetOutput).toBeGreaterThan(r1[0].targetOutput * 0.9);
+  });
+});
+
 // ─── Protocol availability ────────────────────────────────────────────────────
 
 import { ALL_PROTOCOLS, DEFAULT_PROTOCOL, PROTOCOL_DEFS } from './protocols';
@@ -106,14 +158,14 @@ describe('Protocol system', () => {
   });
 
   it('all protocols have required fields', () => {
-    const validDifficulties = new Set(['standard', 'tactical', 'overclocked']);
+    const validStakes = new Set(['standard', 'tactical', 'overclocked']);
     for (const protocol of ALL_PROTOCOLS) {
       expect(typeof protocol.id).toBe('string');
       expect(typeof protocol.name).toBe('string');
       expect(typeof protocol.description).toBe('string');
       expect(typeof protocol.icon).toBe('string');
       expect(protocol.icon.length).toBeGreaterThan(0);
-      expect(validDifficulties).toContain(protocol.difficulty);
+      expect(validStakes).toContain(protocol.stakes);
       expect(typeof protocol.cornerMultiplier).toBe('number');
       expect(typeof protocol.startTiles).toBe('number');
       expect(typeof protocol.spawnFrequencyFactor).toBe('number');
@@ -122,9 +174,9 @@ describe('Protocol system', () => {
     }
   });
 
-  it('all protocols have unique difficulty tiers', () => {
-    const difficulties = ALL_PROTOCOLS.map(p => p.difficulty);
-    const unique = new Set(difficulties);
+  it('all protocols have unique stakes tiers', () => {
+    const stakes = ALL_PROTOCOLS.map(p => p.stakes);
+    const unique = new Set(stakes);
     expect(unique.size).toBe(ALL_PROTOCOLS.length);
   });
 
@@ -178,5 +230,10 @@ describe('createInitialState with protocol', () => {
     const sparseTiles = sparse.grid.flat().filter(Boolean).length;
     const cornerTiles = corner.grid.flat().filter(Boolean).length;
     expect(sparseTiles).toBeLessThanOrEqual(cornerTiles);
+  });
+
+  it('starts at roundNumber 1', () => {
+    const state = createInitialState(42);
+    expect(state.roundNumber).toBe(1);
   });
 });

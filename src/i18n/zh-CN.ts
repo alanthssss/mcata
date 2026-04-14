@@ -13,7 +13,7 @@ const zhCN: TranslationMap = {
   'ui.momentum': '动量',
 
   // ─── UI: Panels ────────────────────────────────────────────────────────────
-  'ui.active_catalysts': '催化器 ({count}/3)',
+  'ui.active_catalysts': '催化器 ({count}/6)',
   'ui.no_catalysts': '暂无催化器',
   'ui.signals': '信号 ({count}/{max})',
   'ui.no_signals': '暂无信号',
@@ -61,9 +61,16 @@ const zhCN: TranslationMap = {
   'ui.protocol_in_effect': '当前协议：',
   'ui.help_btn': '? 帮助',
   'ui.select_protocol': '选择协议',
-  'protocol.difficulty.standard':    '标准',
-  'protocol.difficulty.tactical':    '策略',
-  'protocol.difficulty.overclocked': '超载',
+  'protocol.stakes.standard':    '标准',
+  'protocol.stakes.tactical':    '策略',
+  'protocol.stakes.overclocked': '超载',
+
+  // ─── UI: Round Complete ────────────────────────────────────────────────────
+  'ui.round_complete_title': '🌀 第{round}轮完成！',
+  'ui.round_complete_subtitle': '反应链持续稳定，进入下一轮。',
+  'ui.round_score': '本轮产出',
+  'ui.round_number': '第{round}轮',
+  'ui.continue_run': '继续 →',
 
   // ─── UI: End Screen ────────────────────────────────────────────────────────
   'ui.victory_title': '🏆 本局完成！',
@@ -75,7 +82,7 @@ const zhCN: TranslationMap = {
 
   // ─── UI: Forge ─────────────────────────────────────────────────────────────
   'ui.forge_title': '⚗ 熔炉',
-  'ui.forge_subtitle': '选择一个催化器装备。最多3个槽位。',
+  'ui.forge_subtitle': '选择一个催化器装备。最多6个槽位。',
   'ui.forge_not_enough': '能量不足',
   'ui.forge_equip': '装备',
   'ui.forge_slots_full': '槽位已满，替换哪个催化器？',

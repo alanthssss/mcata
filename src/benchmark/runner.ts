@@ -1,5 +1,6 @@
 /**
  * Benchmark runner: drives a single game run with an agent headlessly.
+ * Supports the endless round-based progression (round_complete screen).
  */
 import { Agent }        from '../ai/types';
 import { RunMetrics, actionEntropy } from './metrics';
@@ -10,10 +11,11 @@ import {
   selectInfusion,
   buyFromForge,
   skipForge,
+  advanceRound,
 } from '../core/engine';
 import { GameState, Direction, CatalystId, AscensionLevel } from '../core/types';
 import { getEmptyCells, getHighestTileValue } from '../core/board';
-import { PHASES } from '../core/phases';
+import { getPhasesForRound, PHASES_PER_ROUND } from '../core/phases';
 import { MAX_CATALYSTS } from '../core/config';
 import { ProtocolId } from '../core/types';
 import { DEFAULT_PROTOCOL } from '../core/protocols';
@@ -21,7 +23,7 @@ import { calculateRunReward } from '../core/profile';
 
 // ─── Auto-pilot helpers for non-playing screens ───────────────────────────────
 function autoInfusion(state: GameState): GameState {
-  if (state.infusionOptions.length === 0) return { ...state, screen: 'playing' };
+  if (state.infusionOptions.length === 0) return { ...state, screen: 'forge' };
   // When at max catalysts, a catalyst choice does nothing — prefer steps instead.
   const atMaxCatalysts = state.activeCatalysts.length >= MAX_CATALYSTS;
   let choice: typeof state.infusionOptions[0];
@@ -55,8 +57,13 @@ export interface RunOptions {
   maxSteps?: number; // safety guard (default 2000)
   /** Protocol to use (default: corner_protocol) */
   protocol?: ProtocolId;
-  /** Ascension difficulty level 0–8 (default: 0) */
+  /** Ascension level 0–8 (default: 0) */
   ascensionLevel?: AscensionLevel;
+  /**
+   * Maximum number of rounds to simulate (default: 10).
+   * Keeps benchmark runs finite for headless mode.
+   */
+  maxRounds?: number;
   /**
    * When provided, only catalysts in this list appear in Forge / Infusion.
    * Leave undefined for full pool (benchmark default).
@@ -67,6 +74,7 @@ export interface RunOptions {
 export function runSingle(opts: RunOptions): RunMetrics {
   const { seed, agent } = opts;
   const maxSteps = opts.maxSteps ?? 2000;
+  const maxRounds = opts.maxRounds ?? 10;
   const protocol       = opts.protocol ?? DEFAULT_PROTOCOL;
   const ascensionLevel = opts.ascensionLevel ?? 0;
   const unlockedCatalysts = opts.unlockedCatalysts;
@@ -85,43 +93,63 @@ export function runSingle(opts: RunOptions): RunMetrics {
   let anomalyPhasesSurvived = 0;
   let totalMergesPerMove   = 0;
   let emptyCellSum         = 0;
+  let roundsCleared        = 0;
+  let highestRound         = 1;
   const actionCounts: Record<string, number> = { up: 0, down: 0, left: 0, right: 0 };
 
-  while (state.screen === 'playing' && totalSteps < maxSteps) {
-    const dir: Direction = agent.nextAction(state);
-    const prevOutput = state.output;
-    const prevState  = state;
-    state = processMoveAction(state, dir);
+  const isRunning = () =>
+    state.screen !== 'game_over' &&
+    state.screen !== 'run_complete' &&
+    totalSteps < maxSteps &&
+    state.roundNumber <= maxRounds;
 
-    if (state === prevState) {
-      // invalid move — try fallback directions
-      const dirs: Direction[] = ['up', 'down', 'left', 'right'];
-      for (const d of dirs) {
-        const next = processMoveAction(state, d);
-        if (next !== state) { state = next; actionCounts[d]++; break; }
+  while (isRunning()) {
+    if (state.screen === 'playing') {
+      const dir: Direction = agent.nextAction(state);
+      const prevOutput = state.output;
+      const prevState  = state;
+      state = processMoveAction(state, dir);
+
+      if (state === prevState) {
+        // invalid move — try fallback directions
+        const dirs: Direction[] = ['up', 'down', 'left', 'right'];
+        for (const d of dirs) {
+          const next = processMoveAction(state, d);
+          if (next !== state) { state = next; actionCounts[d]++; break; }
+        }
+      } else {
+        actionCounts[dir]++;
       }
-    } else {
-      actionCounts[dir]++;
+
+      totalSteps++;
+      emptyCellSum   += getEmptyCells(state.grid).length;
+      const mergesThisMove = state.reactionLog[0]?.merges.length ?? 0;
+      totalMergesPerMove   += mergesThisMove;
+
+      // Energy tracking
+      if (state.screen === 'infusion' || state.screen === 'forge') {
+        totalEnergyEarned += state.energy - prevOutput; // rough proxy
+      }
     }
 
-    totalSteps++;
-    emptyCellSum   += getEmptyCells(state.grid).length;
-    const mergesThisMove = state.reactionLog[0]?.merges.length ?? 0;
-    totalMergesPerMove   += mergesThisMove;
-
-    // Energy tracking: if output increased and phase may have ended
-    if (state.screen === 'infusion' || state.screen === 'forge') {
-      totalEnergyEarned += state.energy - prevOutput; // rough proxy
-    }
-
-    // Handle screen transitions
-    while (state.screen !== 'playing' &&
-           state.screen !== 'game_over' &&
-           state.screen !== 'run_complete') {
+    // Handle all non-playing, non-terminal screens
+    while (
+      state.screen !== 'playing' &&
+      state.screen !== 'game_over' &&
+      state.screen !== 'run_complete'
+    ) {
       if (state.screen === 'infusion') {
         state = autoInfusion(state);
       } else if (state.screen === 'forge') {
         state = autoForge(state);
+      } else if (state.screen === 'round_complete') {
+        roundsCleared++;
+        highestRound = Math.max(highestRound, state.roundNumber);
+        if (state.roundNumber >= maxRounds) {
+          // Treat hitting maxRounds as a "won enough" condition
+          break;
+        }
+        state = advanceRound(state);
       } else {
         break;
       }
@@ -130,33 +158,42 @@ export function runSingle(opts: RunOptions): RunMetrics {
     // Track catalyst changes
     const curCatalysts = [...state.activeCatalysts].sort();
     const prevSorted   = [...prevCatalysts].sort();
-    const gained   = curCatalysts.filter(c => !prevSorted.includes(c)).length;
     const replaced = prevSorted.filter(c => !curCatalysts.includes(c)).length;
     totalCatalysts       = state.activeCatalysts.length;
     catalystReplacements += replaced;
-    if (gained > 0) prevCatalysts = curCatalysts;
+    if (curCatalysts.join() !== prevSorted.join()) prevCatalysts = curCatalysts;
   }
 
   // Final screen handling
-  while (state.screen !== 'game_over' && state.screen !== 'run_complete') {
+  while (
+    state.screen !== 'game_over' &&
+    state.screen !== 'run_complete' &&
+    state.screen !== 'round_complete'
+  ) {
     if (state.screen === 'infusion') state = autoInfusion(state);
     else if (state.screen === 'forge') state = autoForge(state);
     else break;
   }
 
-  // Compute anomaly survival rate
-  for (const ph of PHASES) {
+  // Track last round
+  highestRound = Math.max(highestRound, state.roundNumber);
+
+  // Compute anomaly survival rate across all rounds played
+  const phasesForCurrentRound = getPhasesForRound(state.roundNumber);
+  for (const ph of phasesForCurrentRound) {
     if (ph.anomaly) {
       anomalyPhaseCount++;
-      // If state survived past that phase index, count as survived
-      if (state.phaseIndex > PHASES.indexOf(ph) ||
-          state.screen === 'run_complete') {
+      if (
+        state.phaseIndex > phasesForCurrentRound.indexOf(ph) ||
+        state.screen === 'round_complete' ||
+        state.screen === 'run_complete'
+      ) {
         anomalyPhasesSurvived++;
       }
     }
   }
 
-  const won          = state.screen === 'run_complete';
+  const won = state.screen === 'round_complete' || state.screen === 'run_complete';
   const phasesCleared = state.phaseIndex + (won ? 1 : 0);
   const finalOutput  = state.totalOutput;
   const maxTile      = getHighestTileValue(state.grid);
@@ -188,6 +225,8 @@ export function runSingle(opts: RunOptions): RunMetrics {
     invalidMoveRate:      0, // agents should never hit invalid moves
     ascensionLevel:       ascensionLevel,
     coreShards:           reward.metaCurrencyEarned,
+    roundsCleared,
+    highestRound,
   };
 }
 

@@ -13,6 +13,7 @@ import { ForgeModal } from './components/ForgeModal';
 import { InfusionModal } from './components/InfusionModal';
 import { StartScreen } from './components/StartScreen';
 import { EndScreen } from './components/EndScreen';
+import { RoundCompleteScreen } from './components/RoundCompleteScreen';
 import { SignalPanel } from './components/SignalPanel';
 import { ProtocolPanel } from './components/ProtocolBadge';
 import { MomentumBar } from './components/MomentumBar';
@@ -51,6 +52,17 @@ export const App: React.FC = () => {
 
   if (state.screen === 'start') {
     return <StartScreen onStart={(protocol) => state.initAndStart(undefined, protocol)} />;
+  }
+
+  if (state.screen === 'round_complete') {
+    return (
+      <RoundCompleteScreen
+        roundNumber={state.roundNumber}
+        totalOutput={state.totalOutput}
+        onContinue={() => state.nextRound()}
+        onQuit={() => state.initGame()}
+      />
+    );
   }
 
   if (state.screen === 'run_complete') {

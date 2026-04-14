@@ -13,7 +13,7 @@ const en: TranslationMap = {
   'ui.momentum': 'Momentum',
 
   // ─── UI: Panels ────────────────────────────────────────────────────────────
-  'ui.active_catalysts': 'Active Catalysts ({count}/3)',
+  'ui.active_catalysts': 'Active Catalysts ({count}/6)',
   'ui.no_catalysts': 'No catalysts active',
   'ui.signals': 'Signals ({count}/{max})',
   'ui.no_signals': 'No signals available',
@@ -61,9 +61,16 @@ const en: TranslationMap = {
   'ui.protocol_in_effect': 'Protocol in effect:',
   'ui.help_btn': '? Help',
   'ui.select_protocol': 'Select Protocol',
-  'protocol.difficulty.standard':    'Standard',
-  'protocol.difficulty.tactical':    'Tactical',
-  'protocol.difficulty.overclocked': 'Overclocked',
+  'protocol.stakes.standard':    'Standard',
+  'protocol.stakes.tactical':    'Tactical',
+  'protocol.stakes.overclocked': 'Overclocked',
+
+  // ─── UI: Round Complete ────────────────────────────────────────────────────
+  'ui.round_complete_title': '🌀 Round {round} Complete!',
+  'ui.round_complete_subtitle': 'The reaction chain holds. Entering the next round.',
+  'ui.round_score': 'Round Score',
+  'ui.round_number': 'Round {round}',
+  'ui.continue_run': 'Continue Run →',
 
   // ─── UI: End Screen ────────────────────────────────────────────────────────
   'ui.victory_title': '🏆 Run Complete!',
@@ -75,7 +82,7 @@ const en: TranslationMap = {
 
   // ─── UI: Forge ─────────────────────────────────────────────────────────────
   'ui.forge_title': '⚗ Forge',
-  'ui.forge_subtitle': 'Select a Catalyst to equip. Max 3 slots.',
+  'ui.forge_subtitle': 'Select a Catalyst to equip. Up to 6 slots.',
   'ui.forge_not_enough': 'Not enough Energy',
   'ui.forge_equip': 'Equip',
   'ui.forge_slots_full': 'Slots full. Replace which Catalyst?',

@@ -38,8 +38,8 @@ export const StartScreen: React.FC<StartScreenProps> = ({ onStart }) => {
               <span className="protocol-card__icon">{protocol.icon}</span>
               <span className="protocol-card__name">{t(`protocol.${protocol.id}.name`)}</span>
               <span className="protocol-card__desc">{t(`protocol.${protocol.id}.description`)}</span>
-              <span className={`protocol-card__tag protocol-card__tag--${protocol.difficulty}`}>
-                {t(`protocol.difficulty.${protocol.difficulty}`)}
+              <span className={`protocol-card__tag protocol-card__tag--${protocol.stakes}`}>
+                {t(`protocol.stakes.${protocol.stakes}`)}
               </span>
             </button>
           ))}
