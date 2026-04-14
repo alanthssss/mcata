@@ -2,7 +2,7 @@
 
 ## Overview
 
-Merge Catalyst is a roguelike puzzle game built on a discrete tile-merge grid.  The player progresses through 6 Phases, each with an Output target and step limit.  Between Phase 3 and 4, the Forge allows purchasing Catalysts.  After each phase, an Infusion reward is offered.  Two Anomaly phases add asymmetric challenges.
+Merge Catalyst is a roguelike puzzle game built on a discrete tile-merge grid.  The player progresses through **endless rounds**, each containing 6 Phases.  After every phase, the player enters an **Intermission**: first choosing an Infusion reward, then optionally shopping at the Forge.  Two Anomaly phases per round add asymmetric challenges.  Rounds scale in difficulty — targets increase by 12% per round — so score-chasing runs grow progressively more demanding.
 
 The player-facing tile visuals are driven by a **pluggable theme layer** — the default shell uses a generic progression ladder (Seed → Singularity) rather than raw numeric labels.  Core game logic always operates on internal power-of-two values; the theme layer is purely presentational.
 
@@ -18,10 +18,13 @@ It also ships a complete **benchmark-aware simulation framework** that allows AI
 | Category | Catalyst classification (Amplifier / Stabilizer / Generator / Modifier / Legacy) |
 | Signal | One-time-use tactical ability |
 | Protocol | Immutable base ruleset selected at run start |
-| Phase | Game stage/level |
-| Anomaly | Special challenge modifier |
-| Forge | Shop for buying Catalysts |
-| Infusion | Post-phase reward |
+| RunStakes | Descriptor tag on a Protocol expressing how demanding its ruleset is (`standard` / `tactical` / `overclocked`) |
+| Phase | One stage within a round (6 phases = 1 round) |
+| Round | Group of 6 phases; runs continue across rounds endlessly |
+| Anomaly | Special challenge modifier active during certain phases |
+| Forge | Shop for buying Catalysts (available after every phase via Intermission) |
+| Intermission | Post-phase node: Infusion choice followed by Forge access |
+| Infusion | Post-phase reward choice |
 | Energy | Currency for the Forge |
 | Output | Score |
 | Steps | Moves remaining |
@@ -37,16 +40,18 @@ It also ships a complete **benchmark-aware simulation framework** that allows AI
 ```
 Select Protocol
   ↓
-Start Run
+Start Run (Round 1)
   ↓
 Phase N (Playing)
   ↓ (output ≥ target OR steps = 0)
 Phase End
-  ├── loss → Game Over
-  ├── forge phase → Forge screen → Phase N+1
-  ├── last phase won → Run Complete
-  └── otherwise → Infusion → Phase N+1
+  ├── loss (output < target, steps = 0) → Game Over
+  ├── pass (not last phase) → Infusion → Forge (skip allowed) → Phase N+1
+  └── pass (last phase = phase 6) → Round Complete → Round N+1
+                                              (run continues, never auto-ends)
 ```
+
+The run continues indefinitely — there is **no final round**.  The run ends only when the player fails a phase (output < target when steps reach 0).
 
 ---
 
@@ -60,20 +65,55 @@ Phase End
 
 ---
 
-## Phase Structure
+## Round & Phase Structure
+
+### Endless Round Model
 
 ```
-Phase 1: targetOutput=70,  steps=12
-Phase 2: targetOutput=80,  steps=12
-Phase 3: targetOutput=75,  steps=10
-→ Forge Phase (between 3 and 4)
-Phase 4: targetOutput=40,  steps=8   [Anomaly: Entropy Tax]
-Phase 5: targetOutput=80,  steps=10
-Phase 6: targetOutput=55,  steps=8   [Anomaly: Collapse Field]
+Round 1 → 6 phases → Round Complete → Round 2 → 6 phases → Round Complete → …
 ```
 
-All phase values are centralised in `src/core/config.ts` for easy tuning.
-Protocol modifiers are applied to step counts per phase.
+- Every **6 phases** form one **round**.
+- After the 6th phase passes, the player sees the **Round Complete** screen, then the run continues into the next round.
+- Phase targets scale with `ROUND_TARGET_SCALE = 0.12` (12% harder per round).
+- Templates rotate every 3 rounds: Round 1 = alpha, Round 2 = beta, Round 3 = gamma, Round 4 = alpha (scaled), …
+
+### Round Templates
+
+Three named templates define different 6-phase structures:
+
+| Template | ID | Flavour |
+|----------|----|---------|
+| Standard Circuit | `alpha` | Balanced ramp; two anomaly climaxes |
+| Pressure Gauntlet | `beta` | Anomalies arrive early and often |
+| Economic Surge | `gamma` | Long phases reward patient economy |
+
+Each template specifies per-phase: `targetOutput`, `steps`, optional `anomaly`, `challengeTier`, and `modifier`.
+
+### Phase Roles (across all templates)
+
+| Role | Purpose |
+|------|---------|
+| Opener | Low target; get the board moving |
+| Economy | Longer steps; build energy and catalysts |
+| Combo Pressure | Moderate target; chain bonuses are needed |
+| Anomaly Pressure | Anomaly active; survive with existing build |
+| Recovery / Spike | High steps or high target; push score |
+| Climax | Final phase of the round; boss-tier challenge |
+
+### Intermission (Post-Phase Flow)
+
+After every phase clear:
+1. **Infusion** screen — choose one of 2–3 rewards (catalyst / energy / steps / multiplier).
+2. **Forge** screen — optionally buy a catalyst.  "Skip Forge" proceeds immediately.
+3. **Playing** — next phase begins with a fresh grid.
+
+```
+Phase End (pass)
+  → Infusion (choose reward)
+  → Forge (buy or skip)
+  → Playing (next phase)
+```
 
 ---
 

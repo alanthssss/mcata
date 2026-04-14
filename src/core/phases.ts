@@ -19,9 +19,9 @@ export function getPhasesForRound(roundNumber: number): PhaseDef[] {
 
   return template.phases.map(phase => ({
     ...phase,
-    targetOutput:   Math.ceil(phase.targetOutput   * scaleFactor),
-    expectedOutput: Math.ceil(phase.expectedOutput * scaleFactor),
-    highSkillOutput: Math.ceil(phase.highSkillOutput * scaleFactor),
+    targetOutput:    Math.ceil(phase.targetOutput   * scaleFactor),
+    expectedOutput:  phase.expectedOutput  != null ? Math.ceil(phase.expectedOutput  * scaleFactor) : undefined,
+    highSkillOutput: phase.highSkillOutput != null ? Math.ceil(phase.highSkillOutput * scaleFactor) : undefined,
   }));
 }
 

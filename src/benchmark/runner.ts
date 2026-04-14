@@ -20,10 +20,20 @@ import { MAX_CATALYSTS } from '../core/config';
 import { ProtocolId } from '../core/types';
 import { DEFAULT_PROTOCOL } from '../core/protocols';
 import { calculateRunReward } from '../core/profile';
+import { generateForgeOffers } from '../core/forge';
+import { createRng } from '../core/rng';
 
 // ─── Auto-pilot helpers for non-playing screens ───────────────────────────────
 function autoInfusion(state: GameState): GameState {
-  if (state.infusionOptions.length === 0) return { ...state, screen: 'forge' };
+  if (state.infusionOptions.length === 0) {
+    // No infusion options — skip directly to forge with pre-populated offers
+    // (this mirrors the path selectInfusion() takes)
+    const rng = createRng(state.rngSeed + 100);
+    const forgeOffers = generateForgeOffers(
+      state.activeCatalysts, 3, rng.next.bind(rng), state.unlockedCatalysts
+    );
+    return { ...state, screen: 'forge', forgeOffers };
+  }
   // When at max catalysts, a catalyst choice does nothing — prefer steps instead.
   const atMaxCatalysts = state.activeCatalysts.length >= MAX_CATALYSTS;
   let choice: typeof state.infusionOptions[0];
@@ -100,6 +110,7 @@ export function runSingle(opts: RunOptions): RunMetrics {
   const isRunning = () =>
     state.screen !== 'game_over' &&
     state.screen !== 'run_complete' &&
+    state.screen !== 'round_complete' &&
     totalSteps < maxSteps &&
     state.roundNumber <= maxRounds;
 

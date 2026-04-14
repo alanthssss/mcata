@@ -31,7 +31,7 @@ export const RoundCompleteScreen: React.FC<RoundCompleteScreenProps> = ({
         </div>
         <div className="end-stat">
           <span className="end-stat__label">{t('ui.round_number', { round: String(roundNumber) })}</span>
-          <span className="end-stat__value">✓</span>
+          <span className="end-stat__value end-stat__value--complete">✓ Cleared</span>
         </div>
       </div>
 
