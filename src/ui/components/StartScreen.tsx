@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
-import { DEFAULT_PROTOCOL } from '../../core/protocols';
+import { ProtocolId } from '../../core/types';
+import { ALL_PROTOCOLS, DEFAULT_PROTOCOL } from '../../core/protocols';
 import { useT } from '../../i18n';
 import { HelpOverlay } from './HelpOverlay';
 
 interface StartScreenProps {
-  onStart: () => void;
+  onStart: (protocol: ProtocolId) => void;
 }
 
 export const StartScreen: React.FC<StartScreenProps> = ({ onStart }) => {
   const t = useT();
+  const [selectedProtocol, setSelectedProtocol] = useState<ProtocolId>(DEFAULT_PROTOCOL);
   const [showHelp, setShowHelp] = useState(false);
-  const protocol = DEFAULT_PROTOCOL;
 
   return (
     <div className="screen start-screen">
@@ -24,13 +25,25 @@ export const StartScreen: React.FC<StartScreenProps> = ({ onStart }) => {
         <p>{t('ui.start_hint_anomaly')}</p>
       </div>
 
-      <div className="start-protocol-info">
-        <div className="start-protocol-label">{t('ui.how_it_works')}</div>
-        <div className="start-protocol-row">
-          <span className="start-protocol-key">{t('ui.protocol_in_effect')}</span>
-          <span className="start-protocol-val">{t(`protocol.${protocol}.name`)}</span>
+      <div className="protocol-select-section">
+        <div className="protocol-select-label">{t('ui.select_protocol')}</div>
+        <div className="protocol-select-grid">
+          {ALL_PROTOCOLS.map(protocol => (
+            <button
+              key={protocol.id}
+              className={`protocol-card ${selectedProtocol === protocol.id ? 'protocol-card--selected' : ''}`}
+              onClick={() => setSelectedProtocol(protocol.id)}
+              aria-pressed={selectedProtocol === protocol.id}
+            >
+              <span className="protocol-card__icon">{protocol.icon}</span>
+              <span className="protocol-card__name">{t(`protocol.${protocol.id}.name`)}</span>
+              <span className="protocol-card__desc">{t(`protocol.${protocol.id}.description`)}</span>
+              <span className={`protocol-card__tag protocol-card__tag--${protocol.difficulty}`}>
+                {t(`protocol.difficulty.${protocol.difficulty}`)}
+              </span>
+            </button>
+          ))}
         </div>
-        <div className="start-protocol-desc">{t(`protocol.${protocol}.description`)}</div>
       </div>
 
       <div className="controls-info">
@@ -38,7 +51,7 @@ export const StartScreen: React.FC<StartScreenProps> = ({ onStart }) => {
       </div>
 
       <div className="start-actions">
-        <button className="start-btn" onClick={onStart}>{t('ui.start_btn')}</button>
+        <button className="start-btn" onClick={() => onStart(selectedProtocol)}>{t('ui.start_btn')}</button>
         <button className="help-btn" onClick={() => setShowHelp(true)}>{t('ui.help_btn')}</button>
       </div>
 

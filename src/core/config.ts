@@ -8,13 +8,64 @@ export const PHASE_CONFIG: Array<{
   targetOutput: number;
   steps: number;
   anomaly?: 'entropy_tax' | 'collapse_field';
+  expectedOutput: number;
+  highSkillOutput: number;
+  challengeTier: 'small' | 'big' | 'boss';
+  modifier?: string;
 }> = [
-  { phaseNumber: 1, targetOutput: 70,  steps: 12 },
-  { phaseNumber: 2, targetOutput: 80,  steps: 12 },
-  { phaseNumber: 3, targetOutput: 75,  steps: 10 },
-  { phaseNumber: 4, targetOutput: 40,  steps: 8,  anomaly: 'entropy_tax' },
-  { phaseNumber: 5, targetOutput: 80,  steps: 10 },
-  { phaseNumber: 6, targetOutput: 55,  steps: 8,  anomaly: 'collapse_field' },
+  {
+    phaseNumber: 1,
+    targetOutput: 70,
+    steps: 12,
+    expectedOutput: 90,
+    highSkillOutput: 140,
+    challengeTier: 'small',
+  },
+  {
+    phaseNumber: 2,
+    targetOutput: 80,
+    steps: 12,
+    expectedOutput: 110,
+    highSkillOutput: 180,
+    challengeTier: 'big',
+  },
+  {
+    phaseNumber: 3,
+    targetOutput: 75,
+    steps: 10,
+    expectedOutput: 100,
+    highSkillOutput: 160,
+    challengeTier: 'boss',
+    modifier: 'Corner bonus disabled — chain merges are your only edge',
+  },
+  {
+    phaseNumber: 4,
+    targetOutput: 40,
+    steps: 8,
+    anomaly: 'entropy_tax',
+    expectedOutput: 55,
+    highSkillOutput: 90,
+    challengeTier: 'small',
+    modifier: 'Entropy Tax: one cell blocked each move',
+  },
+  {
+    phaseNumber: 5,
+    targetOutput: 80,
+    steps: 10,
+    expectedOutput: 110,
+    highSkillOutput: 200,
+    challengeTier: 'big',
+  },
+  {
+    phaseNumber: 6,
+    targetOutput: 55,
+    steps: 8,
+    anomaly: 'collapse_field',
+    expectedOutput: 75,
+    highSkillOutput: 130,
+    challengeTier: 'boss',
+    modifier: 'Collapse Field: every 4 scoring moves removes the lowest tile',
+  },
 ];
 
 // After which phase index (0-based) the Forge screen is shown.

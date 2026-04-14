@@ -122,10 +122,20 @@ export interface SignalDef {
 // ─── Protocol ────────────────────────────────────────────────────────────────
 export type ProtocolId = 'corner_protocol' | 'sparse_protocol' | 'overload_protocol';
 
+/**
+ * Difficulty tier for a protocol.  Each value carries an in-game label that
+ * lives with the protocol rather than being hardcoded in UI components.
+ */
+export type ProtocolDifficulty = 'standard' | 'tactical' | 'overclocked';
+
 export interface ProtocolDef {
   id: ProtocolId;
   name: string;
   description: string;
+  /** Emoji icon displayed on the protocol selection card */
+  icon: string;
+  /** Difficulty tier — expresses how demanding this protocol is to clear */
+  difficulty: ProtocolDifficulty;
   /** Extra corner multiplier applied on top of base corner bonuses */
   cornerMultiplier: number;
   /** Number of starting tiles (default 2) */
@@ -164,12 +174,24 @@ export interface AnomalyDef {
 }
 
 // ─── Phase ───────────────────────────────────────────────────────────────────
+
+/** Tier of challenge within a run. Boss phases carry a rule modifier. */
+export type ChallengeTier = 'small' | 'big' | 'boss';
+
 export interface PhaseDef {
   phaseNumber: number;
   targetOutput: number;
   steps: number;
   anomaly?: AnomalyId;
   isForge?: boolean;
+  /** Average output a typical player achieves — benchmark lower bound. */
+  expectedOutput?: number;
+  /** Output a skilled player can consistently achieve — benchmark upper bound. */
+  highSkillOutput?: number;
+  /** Challenge tier: small / big / boss. Bosses carry a rule modifier. */
+  challengeTier?: ChallengeTier;
+  /** Human-readable description of the active rule modifier (boss phases). */
+  modifier?: string;
 }
 
 // ─── Forge ───────────────────────────────────────────────────────────────────

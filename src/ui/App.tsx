@@ -1,5 +1,6 @@
 import React, { useEffect, useCallback, useState } from 'react';
 import { useGameStore } from '../store/gameStore';
+import { useProfileStore } from '../store/profileStore';
 import { Direction } from '../core/types';
 import { GridView } from './components/GridView';
 import { Header } from './components/Header';
@@ -28,6 +29,7 @@ const KEY_MAP: Record<string, Direction> = {
 
 export const App: React.FC = () => {
   const state = useGameStore();
+  const { profile } = useProfileStore();
   const t = useT();
   const [showCollection, setShowCollection] = useState(false);
 
@@ -48,7 +50,7 @@ export const App: React.FC = () => {
   }, [handleMove, state.screen]);
 
   if (state.screen === 'start') {
-    return <StartScreen onStart={state.start} />;
+    return <StartScreen onStart={(protocol) => state.initAndStart(undefined, protocol)} />;
   }
 
   if (state.screen === 'run_complete') {
@@ -151,7 +153,7 @@ export const App: React.FC = () => {
 
       {showCollection && (
         <CatalystCollectionView
-          unlockedIds={state.unlockedCatalysts ?? undefined}
+          unlockedIds={profile.unlockedCatalysts}
           onClose={() => setShowCollection(false)}
         />
       )}
