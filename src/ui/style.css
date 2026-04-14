@@ -1628,3 +1628,305 @@ button:not(:disabled):active {
   border-color: var(--accent);
   color: var(--accent);
 }
+
+/* ─── Round Complete (enhanced) ─────────────────────────────────────────────── */
+.round-complete-banner {
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.round-complete-pulse {
+  animation: pulse-glow 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes pulse-glow {
+  from { text-shadow: 0 0 8px var(--accent); }
+  to   { text-shadow: 0 0 24px var(--accent), 0 0 40px rgba(124, 109, 240, 0.4); }
+}
+
+.round-complete-flavor {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--accent-2);
+  margin: 4px 0;
+}
+
+.round-complete-stats {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.end-stat {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.end-stat__label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.end-stat__value {
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: var(--accent);
+}
+
+.end-stat__value--highlight {
+  color: var(--accent-2);
+}
+
+.end-stat__value--complete {
+  color: var(--success);
+}
+
+.round-complete-build {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 20px;
+  width: 100%;
+  max-width: 480px;
+}
+
+.round-complete-section {
+  margin-bottom: 10px;
+}
+
+.round-complete-section__title {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 6px 0;
+}
+
+.round-complete-catalysts, .round-complete-synergies {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.catalyst-badge {
+  padding: 3px 8px;
+  border-radius: 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: var(--bg-panel-2);
+  border: 1px solid var(--border);
+}
+
+.catalyst-badge--epic   { border-color: #c084fc; color: #c084fc; }
+.catalyst-badge--rare   { border-color: var(--accent); color: var(--accent); }
+.catalyst-badge--common { border-color: var(--text-muted); }
+
+.synergy-badge {
+  padding: 3px 10px;
+  border-radius: 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: rgba(240, 164, 74, 0.12);
+  border: 1px solid rgba(240, 164, 74, 0.4);
+  color: var(--accent-2);
+}
+
+.round-complete-highlights {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.round-complete-highlight {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-panel-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 6px 12px;
+  font-size: 0.82rem;
+}
+
+.round-complete-highlight--mvp     { border-color: #c084fc; }
+.round-complete-highlight--synergy { border-color: rgba(240, 164, 74, 0.5); }
+
+.highlight-icon { font-size: 1rem; }
+.highlight-label { color: var(--text-muted); font-size: 0.75rem; }
+.highlight-value { font-weight: 700; color: var(--text); }
+
+.round-complete-none { color: var(--text-muted); font-size: 0.85rem; }
+
+.round-complete-reward {
+  background: rgba(124, 109, 240, 0.1);
+  border: 1px solid rgba(124, 109, 240, 0.3);
+  border-radius: var(--radius);
+  padding: 10px 20px;
+  text-align: center;
+}
+
+.round-complete-reward__title {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.round-complete-reward__items {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+}
+
+.reward-item {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.start-btn--pulse {
+  animation: pulse-glow 1.5s ease-in-out infinite alternate;
+}
+
+.start-btn--secondary {
+  background: rgba(124, 109, 240, 0.2);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+}
+
+.start-btn--daily {
+  background: color-mix(in srgb, var(--accent-2) 15%, transparent);
+  border: 1px solid var(--accent-2);
+  color: var(--accent-2);
+}
+
+/* ─── Milestone Notification ─────────────────────────────────────────────────── */
+.milestone-notification {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg-panel);
+  border: 2px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 12px 18px;
+  box-shadow: 0 4px 16px rgba(124, 109, 240, 0.3);
+  cursor: pointer;
+  z-index: 200;
+  animation: slide-in-right 0.3s ease-out;
+  max-width: 280px;
+}
+
+.milestone-notification--jackpot {
+  border-color: var(--accent-2);
+  box-shadow: 0 4px 24px rgba(240, 164, 74, 0.4);
+  animation: slide-in-right 0.3s ease-out, jackpot-pulse 0.5s ease-in-out 3;
+}
+
+@keyframes slide-in-right {
+  from { transform: translateX(120%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+@keyframes jackpot-pulse {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.05); }
+}
+
+.milestone-notification__icon { font-size: 1.8rem; flex-shrink: 0; }
+.milestone-notification__title { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.milestone-notification__label { font-size: 1rem; font-weight: 700; color: var(--accent); }
+.milestone-notification__reward { font-size: 0.82rem; color: var(--success); font-weight: 600; margin-top: 2px; }
+
+/* ─── Jackpot Banner ─────────────────────────────────────────────────────────── */
+.jackpot-banner {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: linear-gradient(135deg, #1a1d2e, #2a2d42);
+  border: 3px solid var(--accent-2);
+  border-radius: var(--radius);
+  padding: 24px 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  z-index: 300;
+  box-shadow: 0 8px 32px rgba(240, 164, 74, 0.5);
+  cursor: pointer;
+  animation: jackpot-appear 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes jackpot-appear {
+  from { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+  to   { transform: translate(-50%, -50%) scale(1);   opacity: 1; }
+}
+
+.jackpot-banner__icon { font-size: 3rem; }
+.jackpot-banner__text { font-size: 2rem; font-weight: 900; color: var(--accent-2); }
+.jackpot-banner__reward { font-size: 1rem; color: var(--text-muted); }
+
+/* ─── Challenge Select ────────────────────────────────────────────────────────── */
+.challenge-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+  width: 100%;
+  max-width: 680px;
+  margin: 12px 0;
+}
+
+.challenge-card {
+  background: var(--bg-panel);
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  color: var(--text);
+}
+
+.challenge-card:hover {
+  border-color: var(--accent);
+  box-shadow: 0 0 8px rgba(124, 109, 240, 0.3);
+}
+
+.challenge-card__name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+
+.challenge-card__desc {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.challenge-card__rules {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  padding-left: 16px;
+  margin: 0 0 8px 0;
+  list-style: disc;
+}
+
+.challenge-card__win {
+  font-size: 0.78rem;
+  color: var(--success);
+  font-weight: 600;
+}

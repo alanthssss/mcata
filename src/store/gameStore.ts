@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import { GameState, Direction, InfusionChoice, CatalystDef, SignalId, ProtocolId } from '../core/types';
+import { ChallengeId } from '../core/challenges';
+import { getDailySeed } from '../core/dailyRun';
 import {
   createInitialState, startGame, processMoveAction,
   selectInfusion, buyFromForge, rerollForge, skipForge,
@@ -20,6 +22,12 @@ interface GameStore extends GameState {
   addSignal: (signalId: SignalId) => void;
   /** Advance the run into the next round after seeing the round_complete screen. */
   nextRound: () => void;
+  /** Navigate to challenge selection screen */
+  showChallengeSelect: () => void;
+  startChallenge: (challengeId: ChallengeId, seed?: number) => void;
+  startDailyRun: () => void;
+  dismissMilestone: () => void;
+  dismissJackpot: () => void;
 }
 
 export const useGameStore = create<GameStore>((set) => ({
@@ -67,5 +75,29 @@ export const useGameStore = create<GameStore>((set) => ({
 
   nextRound: () => {
     set(state => advanceRound(state));
+  },
+
+  showChallengeSelect: () => {
+    set(state => ({ ...state, screen: 'challenge_select' }));
+  },
+
+  startChallenge: (challengeId: ChallengeId, seed?: number) => {
+    set(startGame({ ...createInitialState(seed ?? Date.now()), challengeId, isDailyRun: false }));
+  },
+
+  startDailyRun: () => {
+    const seed = getDailySeed();
+    set(startGame({ ...createInitialState(seed), isDailyRun: true, challengeId: null }));
+  },
+
+  dismissMilestone: () => {
+    set(state => ({
+      ...state,
+      pendingMilestones: state.pendingMilestones.slice(1),
+    }));
+  },
+
+  dismissJackpot: () => {
+    set(state => ({ ...state, jackpotTriggered: false }));
   },
 }));

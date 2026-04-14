@@ -569,3 +569,28 @@ If unlocks feel too cheap (trivial to obtain), increase `UNLOCK_COSTS` in the sa
 This ~20 percentage point gap is intentional and meaningful — it validates that unlocking content provides real power while the game remains playable from the start.
 
 All values remain centralised in `src/core/unlockConfig.ts` and `src/core/ascensionModifiers.ts`.
+
+---
+
+## v5 — Reward Systems Balance
+
+### Round-End Rewards
+- **+3 Energy per round**: Equivalent to ~1 Forge purchase every 2–3 rounds. This is intentionally generous to keep the Forge feel of progression alive.
+- **+5% Global Multiplier per round**: Stacks multiplicatively. By Round 10, the player has an extra ×1.5 on top of base multiplier. This is the primary driver of "score feels bigger over time" without breaking individual phase targets (which scale by +12% per round).
+
+### Jackpot System
+- Triggered at 2% probability when a single move scores ≥50 output
+- Expected jackpots per run: ~2–5 depending on skill
+- Output bonus (+100 internal = +1,000 display) is ~1–2 phases worth of bonus; felt but not dominant
+- Recommendation: monitor `avgJackpots` in benchmark. If > 8 per run, lower `JACKPOT_PROBABILITY` to 0.015.
+
+### Streak System
+- Qualifies at ≥5 output per move (very easy to maintain in mid-game)
+- Energy reward: +1 every 5 qualifying moves ≈ +2–4 energy per phase in good runs
+- Does not affect output multipliers, only economy; safe to have generous thresholds
+- Reset condition is intentionally lenient (any sub-5 output move) to be forgiving
+
+### Milestone Rewards
+- Energy rewards (small): designed to give small boosts, never enough to significantly shift the Forge economy
+- Multiplier rewards: each milestone grants +0.1–0.2 to global multiplier; across all milestones this could add up to +1.5 multiplier in a long run, which is meaningful but earned over many rounds
+

@@ -251,6 +251,52 @@ const zhCN: TranslationMap = {
   'synergy.amplified_stability.description': '稳定场 + 阈值涌现：稳定棋盘解锁涌现倍率（×1.35）',
   'synergy.phase_reactor.name': '阶段反应堆',
   'synergy.phase_reactor.description': '阶段共振 + 能量循环：后期产出驱动能量循环（×1.3）',
+
+  // ─── UI: Round Complete (enhanced) ────────────────────────────────────────
+  'ui.round_output_gained': '本轮产出',
+  'ui.best_move_output': '最佳行动',
+  'ui.build_summary': '构建摘要',
+  'ui.active_synergies_label': '激活协同',
+  'ui.mvp_catalyst': '🏆 MVP 催化剂',
+  'ui.strongest_synergy': '⚡ 最强协同',
+  'ui.round_reward_title': '🎁 轮次奖励',
+
+  // ─── UI: Milestone / Jackpot ──────────────────────────────────────────────
+  'ui.milestone_reached': '🏅 里程碑达成！',
+  'ui.milestone_reward_energy': '+{n} 能量',
+  'ui.milestone_reward_multiplier': '+{n}% 全局倍率',
+  'ui.jackpot_title': '🎰 大奖！',
+  'ui.jackpot_reward': '+产出奖励 & +能量',
+
+  // ─── UI: Challenge Select ─────────────────────────────────────────────────
+  'ui.challenge_select_title': '⚔ 挑战模式',
+  'ui.challenge_select_subtitle': '选择一个有独特限制的精选挑战运行。',
+  'ui.challenge_win': '获胜条件',
+  'ui.challenge_btn': '⚔ 挑战',
+
+  // ─── UI: Daily Run ────────────────────────────────────────────────────────
+  'ui.daily_run_btn': '📅 每日挑战',
+  'ui.daily_run_title': '📅 每日挑战',
+  'ui.daily_run_date': '今天：{date}',
+  'ui.daily_run_best': '最佳：{output}',
+  'ui.daily_run_rounds': '轮次：{rounds}',
+
+  // ─── UI: Misc ─────────────────────────────────────────────────────────────
+  'ui.back': '← 返回',
+
+  // ─── Challenges ───────────────────────────────────────────────────────────
+  'challenge.no_corners.name': '禁角模式',
+  'challenge.no_corners.description': '角落加成被禁用。通过链式合并构建。',
+  'challenge.no_corners.win_condition': '在没有角落加成的情况下清除3轮',
+  'challenge.energy_starved.name': '能量匮乏',
+  'challenge.energy_starved.description': '能量获取大幅减少。',
+  'challenge.energy_starved.win_condition': '在有限能量下到达第3轮',
+  'challenge.chain_master.name': '链式大师',
+  'challenge.chain_master.description': '只有链式得分才算数。',
+  'challenge.chain_master.win_condition': '使用链式得分清除3轮',
+  'challenge.anomaly_storm.name': '异常风暴',
+  'challenge.anomaly_storm.description': '异常触发频率加倍。',
+  'challenge.anomaly_storm.win_condition': '在持续异常压力下生存3轮',
 };
 
 export default zhCN;

@@ -14,6 +14,8 @@ import { InfusionModal } from './components/InfusionModal';
 import { StartScreen } from './components/StartScreen';
 import { EndScreen } from './components/EndScreen';
 import { RoundCompleteScreen } from './components/RoundCompleteScreen';
+import { ChallengeSelectScreen } from './components/ChallengeSelectScreen';
+import { MilestoneNotification, JackpotBanner } from './components/MilestoneNotification';
 import { SignalPanel } from './components/SignalPanel';
 import { ProtocolPanel } from './components/ProtocolBadge';
 import { MomentumBar } from './components/MomentumBar';
@@ -51,14 +53,30 @@ export const App: React.FC = () => {
   }, [handleMove, state.screen]);
 
   if (state.screen === 'start') {
-    return <StartScreen onStart={(protocol) => state.initAndStart(undefined, protocol)} />;
+    return <StartScreen
+      onStart={(protocol) => state.initAndStart(undefined, protocol)}
+      onChallenge={() => state.showChallengeSelect()}
+      onDailyRun={() => state.startDailyRun()}
+    />;
+  }
+
+  if (state.screen === 'challenge_select') {
+    return (
+      <ChallengeSelectScreen
+        onSelect={(challengeId) => state.startChallenge(challengeId)}
+        onBack={() => state.initGame()}
+      />
+    );
   }
 
   if (state.screen === 'round_complete') {
     return (
       <RoundCompleteScreen
         roundNumber={state.roundNumber}
+        roundOutput={state.roundOutput}
         totalOutput={state.totalOutput}
+        bestMoveOutput={state.bestMoveOutput}
+        activeCatalysts={state.activeCatalysts}
         onContinue={() => state.nextRound()}
         onQuit={() => state.initGame()}
       />
@@ -168,6 +186,16 @@ export const App: React.FC = () => {
           unlockedIds={profile.unlockedCatalysts}
           onClose={() => setShowCollection(false)}
         />
+      )}
+
+      {state.pendingMilestones.length > 0 && (
+        <MilestoneNotification
+          milestoneId={state.pendingMilestones[0]}
+          onDismiss={state.dismissMilestone}
+        />
+      )}
+      {state.jackpotTriggered && (
+        <JackpotBanner onDismiss={state.dismissJackpot} />
       )}
     </div>
   );
