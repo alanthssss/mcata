@@ -10,7 +10,7 @@ import { describe, it, expect } from 'vitest';
 import { DEFAULT_PROFILE } from './profile';
 import { BASE_UNLOCKED_CATALYSTS, BASE_UNLOCKED_PROTOCOLS } from './unlockConfig';
 import { PHASE_CONFIG } from './config';
-import type { PhaseDef } from './types';
+import type { PhaseDef, ChallengeTier } from './types';
 
 // ─── Profile defaults ──────────────────────────────────────────────────────────
 
@@ -64,9 +64,9 @@ describe('PHASE_CONFIG benchmark fields', () => {
   });
 
   it('every phase has a challengeTier', () => {
-    const validTiers = new Set(['small', 'big', 'boss']);
+    const validTiers: ChallengeTier[] = ['small', 'big', 'boss'];
     for (const phase of PHASE_CONFIG) {
-      expect(validTiers.has(phase.challengeTier)).toBe(true);
+      expect(validTiers).toContain(phase.challengeTier);
     }
   });
 
