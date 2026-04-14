@@ -668,6 +668,20 @@ describe('catalystPool (run-level unique-per-run enforcement)', () => {
     expect(after.catalystPool).not.toContain('lucky_seed');
   });
 
+  it('unpurchased forge items stay in pool (return-to-pool behavior)', () => {
+    const unlocked = ['lucky_seed', 'corner_crown', 'combo_wire'] as const;
+    const initialPool = [...unlocked];
+    const state = {
+      ...startGame(createInitialState(1, 'corner_protocol', { unlockedCatalysts: [...unlocked] })),
+      energy: 0, // not enough to buy
+      forgeOffers: [makeDef('lucky_seed'), makeDef('corner_crown')],
+    };
+    // Skipping forge (or failing to buy) must not shrink the pool
+    const afterSkip = skipForge(state);
+    expect(afterSkip.catalystPool).toEqual(expect.arrayContaining(initialPool));
+    expect(afterSkip.catalystPool).toHaveLength(initialPool.length);
+  });
+
   it('catalystPool is undefined when full-pool mode (no unlockedCatalysts)', () => {
     const state = startGame(createInitialState(42));
     const result = buyFromForge({ ...state, energy: 20 }, makeDef('lucky_seed'));

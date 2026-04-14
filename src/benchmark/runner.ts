@@ -30,7 +30,7 @@ function autoInfusion(state: GameState): GameState {
     // (this mirrors the path selectInfusion() takes)
     const rng = createRng(state.rngSeed + 100);
     const forgeOffers = generateForgeOffers(
-      state.activeCatalysts, 3, rng.next.bind(rng), state.unlockedCatalysts
+      state.activeCatalysts, 3, rng.next.bind(rng), state.catalystPool
     );
     return { ...state, screen: 'forge', forgeOffers };
   }
@@ -105,6 +105,10 @@ export function runSingle(opts: RunOptions): RunMetrics {
   let emptyCellSum         = 0;
   let roundsCleared        = 0;
   let highestRound         = 1;
+  // Phase pacing metrics
+  let phaseStepSum         = 0;  // total steps across all completed phases
+  let phasesTracked        = 0;  // number of phases where we measured steps
+  let phaseStepStart       = 0;  // step count at the start of the current phase
   const actionCounts: Record<string, number> = { up: 0, down: 0, left: 0, right: 0 };
 
   const isRunning = () =>
@@ -150,6 +154,10 @@ export function runSingle(opts: RunOptions): RunMetrics {
       state.screen !== 'run_complete'
     ) {
       if (state.screen === 'infusion') {
+        // Phase just ended — record how many steps were spent in it
+        phaseStepSum += (totalSteps - phaseStepStart);
+        phasesTracked++;
+        phaseStepStart = totalSteps;
         state = autoInfusion(state);
       } else if (state.screen === 'forge') {
         state = autoForge(state);
@@ -161,6 +169,7 @@ export function runSingle(opts: RunOptions): RunMetrics {
           break;
         }
         state = advanceRound(state);
+        phaseStepStart = totalSteps;
       } else {
         break;
       }
@@ -213,6 +222,8 @@ export function runSingle(opts: RunOptions): RunMetrics {
   const avgEmptyCells    = totalSteps > 0 ? emptyCellSum / totalSteps : 0;
   const moveDiversity    = actionEntropy(actionCounts) / Math.log2(4); // normalised 0–1
   const anomalySurvivalRate = anomalyPhaseCount > 0 ? anomalyPhasesSurvived / anomalyPhaseCount : 1;
+  const avgMovesPerPhase = phasesTracked > 0 ? phaseStepSum / phasesTracked : 0;
+  const uniqueCatalystsAcquired = new Set(state.activeCatalysts).size;
 
   const reward = calculateRunReward(state, anomalySurvivalRate);
 
@@ -238,6 +249,8 @@ export function runSingle(opts: RunOptions): RunMetrics {
     coreShards:           reward.metaCurrencyEarned,
     roundsCleared,
     highestRound,
+    avgMovesPerPhase,
+    uniqueCatalystsAcquired,
   };
 }
 

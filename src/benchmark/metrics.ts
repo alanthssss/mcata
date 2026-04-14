@@ -32,6 +32,11 @@ export interface RunMetrics {
   maxStreak?:           number;  // best streak this run
   challengeId?:         string | null; // challenge mode used (null = standard)
   isDailyRun?:          boolean; // whether this was a daily run
+  // Phase pacing metrics
+  /** Average number of moves (steps) per completed phase */
+  avgMovesPerPhase?:    number;
+  /** Number of distinct catalyst ids acquired this run */
+  uniqueCatalystsAcquired?: number;
 }
 
 // ─── Aggregate suite metrics ──────────────────────────────────────────────────
@@ -60,6 +65,10 @@ export interface SuiteMetrics {
   avgJackpots:         number;
   /** Average best streak per run */
   avgBestStreak:       number;
+  /** Average moves (steps) per completed phase — pacing metric */
+  avgMovesPerPhase:    number;
+  /** Average unique catalyst ids acquired per run — build diversity metric */
+  avgUniqueCatalysts:  number;
 }
 
 // ─── Aggregate helpers ────────────────────────────────────────────────────────
@@ -112,6 +121,8 @@ export function buildSuiteMetrics(runs: RunMetrics[]): SuiteMetrics {
       avgMilestones: 0,
       avgJackpots:   0,
       avgBestStreak: 0,
+      avgMovesPerPhase: 0,
+      avgUniqueCatalysts: 0,
     };
   }
 
@@ -145,6 +156,8 @@ export function buildSuiteMetrics(runs: RunMetrics[]): SuiteMetrics {
     avgMilestones:       mean(runs.map(r => r.milestoneCount ?? 0)),
     avgJackpots:         mean(runs.map(r => r.jackpotCount ?? 0)),
     avgBestStreak:       mean(runs.map(r => r.maxStreak ?? 0)),
+    avgMovesPerPhase:    mean(runs.map(r => r.avgMovesPerPhase ?? 0)),
+    avgUniqueCatalysts:  mean(runs.map(r => r.uniqueCatalystsAcquired ?? 0)),
   };
 }
 
