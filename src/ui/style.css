@@ -1258,19 +1258,19 @@ button:not(:disabled):active {
   margin-top: 4px;
 }
 
-.protocol-card__tag--corner_protocol {
+.protocol-card__tag--standard {
   background: rgba(76, 175, 125, 0.15);
   border: 1px solid rgba(76, 175, 125, 0.3);
   color: var(--success);
 }
 
-.protocol-card__tag--sparse_protocol {
+.protocol-card__tag--tactical {
   background: rgba(240, 164, 74, 0.15);
   border: 1px solid rgba(240, 164, 74, 0.3);
   color: var(--warning);
 }
 
-.protocol-card__tag--overload_protocol {
+.protocol-card__tag--overclocked {
   background: rgba(224, 90, 90, 0.15);
   border: 1px solid rgba(224, 90, 90, 0.3);
   color: var(--danger);

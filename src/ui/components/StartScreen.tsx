@@ -8,20 +8,6 @@ interface StartScreenProps {
   onStart: (protocol: ProtocolId) => void;
 }
 
-const PROTOCOL_ICON: Record<ProtocolId, string> = {
-  corner_protocol:   '📐',
-  sparse_protocol:   '🌑',
-  overload_protocol: '⚡',
-};
-
-type DifficultyKey = 'ui.difficulty_beginner' | 'ui.difficulty_intermediate' | 'ui.difficulty_advanced';
-
-const PROTOCOL_DIFFICULTY: Record<ProtocolId, DifficultyKey> = {
-  corner_protocol:   'ui.difficulty_beginner',
-  sparse_protocol:   'ui.difficulty_intermediate',
-  overload_protocol: 'ui.difficulty_advanced',
-};
-
 export const StartScreen: React.FC<StartScreenProps> = ({ onStart }) => {
   const t = useT();
   const [selectedProtocol, setSelectedProtocol] = useState<ProtocolId>(DEFAULT_PROTOCOL);
@@ -49,11 +35,11 @@ export const StartScreen: React.FC<StartScreenProps> = ({ onStart }) => {
               onClick={() => setSelectedProtocol(protocol.id)}
               aria-pressed={selectedProtocol === protocol.id}
             >
-              <span className="protocol-card__icon">{PROTOCOL_ICON[protocol.id]}</span>
+              <span className="protocol-card__icon">{protocol.icon}</span>
               <span className="protocol-card__name">{t(`protocol.${protocol.id}.name`)}</span>
               <span className="protocol-card__desc">{t(`protocol.${protocol.id}.description`)}</span>
-              <span className={`protocol-card__tag protocol-card__tag--${protocol.id}`}>
-                {t(PROTOCOL_DIFFICULTY[protocol.id])}
+              <span className={`protocol-card__tag protocol-card__tag--${protocol.difficulty}`}>
+                {t(`protocol.difficulty.${protocol.difficulty}`)}
               </span>
             </button>
           ))}

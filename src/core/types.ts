@@ -122,10 +122,20 @@ export interface SignalDef {
 // ─── Protocol ────────────────────────────────────────────────────────────────
 export type ProtocolId = 'corner_protocol' | 'sparse_protocol' | 'overload_protocol';
 
+/**
+ * Difficulty tier for a protocol.  Each value carries an in-game label that
+ * lives with the protocol rather than being hardcoded in UI components.
+ */
+export type ProtocolDifficulty = 'standard' | 'tactical' | 'overclocked';
+
 export interface ProtocolDef {
   id: ProtocolId;
   name: string;
   description: string;
+  /** Emoji icon displayed on the protocol selection card */
+  icon: string;
+  /** Difficulty tier — expresses how demanding this protocol is to clear */
+  difficulty: ProtocolDifficulty;
   /** Extra corner multiplier applied on top of base corner bonuses */
   cornerMultiplier: number;
   /** Number of starting tiles (default 2) */

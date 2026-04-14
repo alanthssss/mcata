@@ -106,16 +106,26 @@ describe('Protocol system', () => {
   });
 
   it('all protocols have required fields', () => {
+    const validDifficulties = new Set(['standard', 'tactical', 'overclocked']);
     for (const protocol of ALL_PROTOCOLS) {
       expect(typeof protocol.id).toBe('string');
       expect(typeof protocol.name).toBe('string');
       expect(typeof protocol.description).toBe('string');
+      expect(typeof protocol.icon).toBe('string');
+      expect(protocol.icon.length).toBeGreaterThan(0);
+      expect(validDifficulties).toContain(protocol.difficulty);
       expect(typeof protocol.cornerMultiplier).toBe('number');
       expect(typeof protocol.startTiles).toBe('number');
       expect(typeof protocol.spawnFrequencyFactor).toBe('number');
       expect(typeof protocol.outputScale).toBe('number');
       expect(typeof protocol.stepsReduction).toBe('number');
     }
+  });
+
+  it('all protocols have unique difficulty tiers', () => {
+    const difficulties = ALL_PROTOCOLS.map(p => p.difficulty);
+    const unique = new Set(difficulties);
+    expect(unique.size).toBe(ALL_PROTOCOLS.length);
   });
 
   it('overload_protocol has higher outputScale than corner_protocol', () => {

@@ -61,9 +61,9 @@ const en: TranslationMap = {
   'ui.protocol_in_effect': 'Protocol in effect:',
   'ui.help_btn': '? Help',
   'ui.select_protocol': 'Select Protocol',
-  'ui.difficulty_beginner': 'Beginner',
-  'ui.difficulty_intermediate': 'Intermediate',
-  'ui.difficulty_advanced': 'Advanced',
+  'protocol.difficulty.standard':    'Standard',
+  'protocol.difficulty.tactical':    'Tactical',
+  'protocol.difficulty.overclocked': 'Overclocked',
 
   // ─── UI: End Screen ────────────────────────────────────────────────────────
   'ui.victory_title': '🏆 Run Complete!',

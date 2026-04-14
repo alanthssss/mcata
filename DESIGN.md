@@ -311,21 +311,41 @@ Signals are **one-time-use tactical abilities** within a run. They are consumabl
 
 Protocols define the **immutable base ruleset** for a run, selected at run start and fixed throughout.
 
+### Pre-Run Selection UI
+
+The Start Screen shows a **Protocol Selection** grid with a card for each protocol.  Each card displays:
+- **Icon** (emoji) — from `ProtocolDef.icon`
+- **Name** — from i18n key `protocol.<id>.name`
+- **Description** — from i18n key `protocol.<id>.description`
+- **Difficulty badge** — from `ProtocolDef.difficulty`, styled with a semantic colour
+
+The difficulty badge comes directly from the protocol definition — there is no separate mapping in the UI component.
+
 ### Available Protocols
 
-| ID | Name | Effect |
-|----|------|--------|
-| corner_protocol | Corner Protocol | Corner merges gain extra ×1.5 multiplier |
-| sparse_protocol | Sparse Protocol | Start with 1 tile; spawn freq halved; output ×1.2 |
-| overload_protocol | Overload Protocol | Output ×1.4 but each phase has 2 fewer steps |
+| Icon | ID | Name | Difficulty | Effect |
+|---|---|---|---|---|
+| 📐 | corner_protocol | Corner Protocol | Standard | Corner merges gain extra ×1.5 multiplier |
+| 🌑 | sparse_protocol | Sparse Protocol | Tactical | Start with 1 tile; spawn freq halved; output ×1.2 |
+| ⚡ | overload_protocol | Overload Protocol | Overclocked | Output ×1.4 but each phase has 2 fewer steps |
 
 ### Protocol Fields
+
 Each `ProtocolDef` defines:
+- `icon`: emoji displayed on the selection card
+- `difficulty`: `'standard' | 'tactical' | 'overclocked'` — the difficulty tier
 - `cornerMultiplier`: extra corner bonus
 - `startTiles`: initial tiles placed (1 or 2)
 - `spawnFrequencyFactor`: >1 = less frequent spawns (implemented via chance)
 - `outputScale`: global output scaling
 - `stepsReduction`: steps removed from each phase
+
+### Adding a New Protocol
+
+1. Add the `ProtocolId` literal to `src/core/types.ts`
+2. Add the `ProtocolDef` (with `icon` and `difficulty`) to `src/core/protocols.ts`
+3. Add i18n keys `protocol.<id>.name` and `protocol.<id>.description` to `en.ts` / `zh-CN.ts`
+4. The protocol will appear automatically on the Start Screen
 
 ---
 
@@ -886,6 +906,27 @@ The default profile (`DEFAULT_PROFILE` in `src/core/profile.ts`) unlocks only:
 - The 8 legacy catalysts
 - `corner_protocol`
 - Both anomalies (always in play)
+
+### Persistence (localStorage)
+
+Profile progress is stored in `localStorage` under key `merge_catalyst_progress`.
+
+**Initialization logic** (`src/store/profileStore.ts`):
+```
+On startup:
+  if localStorage["merge_catalyst_progress"] exists
+    → parse and merge with DEFAULT_PROFILE (forward-compat with new fields)
+  else
+    → use DEFAULT_PROFILE (8 legacy catalysts only)
+
+?debug=unlock_all in URL
+    → treat all catalysts as unlocked (dev/playtesting only)
+```
+
+This ensures:
+- **First visit / incognito mode** → only starter catalysts are unlocked
+- **Returning visit** → progress is restored from storage
+- **Corrupt data** → silently falls back to DEFAULT_PROFILE
 
 ---
 

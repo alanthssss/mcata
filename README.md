@@ -26,7 +26,32 @@ npm run preview
 - Survive **Anomaly** phases with special modifiers
 - Complete all 6 phases to win the run
 
-## Phases
+## Protocols
+
+A Protocol is a **run-level rule modifier** chosen before the run begins. It
+changes fundamental game parameters — corner bonuses, starting tiles, spawn
+frequency, output scaling, and step budgets.
+
+### Choosing a Protocol
+
+On the Start Screen you will see a **Protocol Selection** grid.  Click one of
+the three cards to select it, then click **Start Run**.
+
+| Protocol | Icon | Difficulty | Effect |
+|---|---|---|---|
+| Corner Protocol | 📐 | Standard | Corner merges gain an extra ×1.5 multiplier |
+| Sparse Protocol | 🌑 | Tactical | Start with 1 tile; spawn halved, output ×1.2 |
+| Overload Protocol | ⚡ | Overclocked | Output ×1.4, but each phase has 2 fewer steps |
+
+The selected protocol is displayed in the top bar throughout the run, and
+affects the engine's scoring formula immediately.
+
+- **Default fallback**: if no protocol is explicitly chosen, `corner_protocol`
+  is used.
+- **Benchmark bypass**: the benchmark suite passes the protocol directly to
+  `createInitialState(seed, protocol)`, skipping the UI entirely.
+- **Localization**: protocol names, descriptions, and difficulty labels are all
+  fully translated via the i18n system.
 
 | Phase | Target Output | Steps | Anomaly |
 |-------|--------------|-------|---------|
