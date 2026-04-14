@@ -1804,7 +1804,7 @@ button:not(:disabled):active {
 }
 
 .start-btn--daily {
-  background: rgba(240, 164, 74, 0.15);
+  background: color-mix(in srgb, var(--accent-2) 15%, transparent);
   border: 1px solid var(--accent-2);
   color: var(--accent-2);
 }

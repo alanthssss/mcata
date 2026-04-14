@@ -24,7 +24,7 @@ export function getDailySeed(dateStr?: string): number {
   for (let i = 0; i < date.length; i++) {
     const char = date.charCodeAt(i);
     hash = (hash << 5) - hash + char;
-    hash = hash & hash; // convert to 32-bit int
+    hash |= 0; // convert to 32-bit int
   }
   return Math.abs(hash);
 }

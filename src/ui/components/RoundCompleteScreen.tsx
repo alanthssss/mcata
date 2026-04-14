@@ -60,7 +60,7 @@ export const RoundCompleteScreen: React.FC<RoundCompleteScreenProps> = ({
   onQuit,
 }) => {
   const t = useT();
-  const flavorText = ROUND_FLAVORS[(roundNumber - 1) % ROUND_FLAVORS.length];
+  const flavorText = ROUND_FLAVORS[(Math.max(roundNumber, 1) - 1) % ROUND_FLAVORS.length];
   const activeSynergies = getActiveSynergies(activeCatalysts);
   const mvpCatalyst = getBestCatalyst(activeCatalysts);
   const strongestSynergy = getBestSynergy(activeCatalysts);

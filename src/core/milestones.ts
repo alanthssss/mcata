@@ -37,7 +37,7 @@ export const ALL_MILESTONES = Object.values(MILESTONE_DEFS);
 
 /** Output thresholds for milestone checking */
 export const OUTPUT_MILESTONE_THRESHOLDS: Partial<Record<MilestoneId, number>> = {
-  output_1k:   100,   // internal = 100 (display = 1000 with DISPLAY_SCORE_SCALE=10)
+  output_1k:   100,   // internal value; multiply by DISPLAY_SCORE_SCALE for display
   output_5k:   500,
   output_10k:  1000,
   output_50k:  5000,
