@@ -594,3 +594,53 @@ All values remain centralised in `src/core/unlockConfig.ts` and `src/core/ascens
 - Energy rewards (small): designed to give small boosts, never enough to significantly shift the Forge economy
 - Multiplier rewards: each milestone grants +0.1–0.2 to global multiplier; across all milestones this could add up to +1.5 multiplier in a long run, which is meaningful but earned over many rounds
 
+
+---
+
+## Balance v6 — Phase Pacing & Catalyst Pool
+
+### Phase Pacing Overhaul
+
+Previous phase targets (v4) were too low, causing phases to end in 2–3 moves.
+v5/v6 targets are calibrated so a skilled player with no catalysts needs
+**6–12 moves** to clear any phase.
+
+#### Alpha Template (Standard Circuit)
+
+| Phase | v4 Target | v6 Target | v4 Steps | v6 Steps |
+|-------|-----------|-----------|----------|----------|
+| 1 | 70 | 150 | 12 | 15 |
+| 2 | 80 | 180 | 12 | 15 |
+| 3 | 75 | 160 | 10 | 13 |
+| 4 (Entropy) | 40 | 90 | 8 | 11 |
+| 5 | 80 | 200 | 10 | 13 |
+| 6 (Collapse) | 55 | 130 | 8 | 11 |
+
+#### Tuning Rationale
+
+- A 2-tile board merge (4+4=8) gives ~8 base output.  A 3-chain merge at mid-game
+  might give ~40 output.  The old target of 70 was reachable in 2 lucky merges.
+- New target of 150 typically requires 5–8 productive moves, matching the design
+  goal of meaningful phase length.
+- Anomaly phases (Entropy Tax / Collapse Field) remain harder than clean phases
+  per step, so their targets are still lower in absolute terms.
+
+### Catalyst Pool — Build Diversity Impact
+
+The run-level `catalystPool` enforces unique-per-run acquisition.  Balance impact:
+
+- **Reduced re-roll gaming**: Previously a player could keep re-rolling the forge
+  to see the same powerful catalyst repeatedly.  Now once acquired, it's gone.
+- **Mid-game variety**: Late forge offerings pull from a smaller pool, encouraging
+  creative builds rather than always picking the same catalyst.
+- **Expected diversity**: In a typical 8-catalyst unlock pool, by phase 4 the
+  player has acquired 1–3 catalysts, leaving 5–7 unique options still available.
+
+### Pacing Metrics (Target)
+
+| Metric | Target |
+|--------|--------|
+| Avg moves per phase | 6–12 |
+| Avg max tile (round 1 end) | 32–64 |
+| Phases ending on step limit | < 20 % |
+| Phases ending on output target | > 80 % |

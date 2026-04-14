@@ -598,3 +598,79 @@ describe('intermission flow', () => {
     expect(afterForge.screen).toBe('playing');
   });
 });
+
+// ─── Catalyst pool system ─────────────────────────────────────────────────────
+
+describe('catalystPool (run-level unique-per-run enforcement)', () => {
+  const makeDef = (id: 'lucky_seed' | 'corner_crown' | 'combo_wire') => ({
+    id,
+    name: id,
+    description: '',
+    rarity: 'common' as const,
+    cost: 3,
+    category: 'legacy' as const,
+    trigger: 'on_merge' as const,
+    effectParams: {},
+    tags: ['combo' as CatalystTag],
+    unlockCondition: '',
+  });
+
+  it('initialises catalystPool equal to unlockedCatalysts', () => {
+    const unlocked = ['lucky_seed', 'corner_crown'] as const;
+    const state = createInitialState(1, 'corner_protocol', {
+      unlockedCatalysts: [...unlocked],
+    });
+    expect(state.catalystPool).toEqual(expect.arrayContaining([...unlocked]));
+    expect(state.catalystPool).toHaveLength(unlocked.length);
+  });
+
+  it('catalystPool is undefined when unlockedCatalysts is undefined (full pool)', () => {
+    const state = createInitialState(1);
+    expect(state.catalystPool).toBeUndefined();
+  });
+
+  it('buyFromForge removes acquired catalyst from catalystPool', () => {
+    const unlocked = ['lucky_seed', 'corner_crown', 'combo_wire'] as const;
+    const state = {
+      ...startGame(createInitialState(1, 'corner_protocol', { unlockedCatalysts: [...unlocked] })),
+      energy: 20,
+    };
+    const result = buyFromForge(state, makeDef('lucky_seed'));
+    expect(result.activeCatalysts).toContain('lucky_seed');
+    expect(result.catalystPool).not.toContain('lucky_seed');
+    // Other catalysts remain in pool
+    expect(result.catalystPool).toContain('corner_crown');
+  });
+
+  it('selectInfusion with catalyst removes it from catalystPool', () => {
+    const unlocked = ['lucky_seed', 'corner_crown', 'combo_wire'] as const;
+    const state = {
+      ...startGame(createInitialState(1, 'corner_protocol', { unlockedCatalysts: [...unlocked] })),
+      screen: 'infusion' as const,
+      infusionOptions: [],
+    };
+    const result = selectInfusion(state, { type: 'catalyst', catalyst: makeDef('lucky_seed') });
+    expect(result.activeCatalysts).toContain('lucky_seed');
+    expect(result.catalystPool).not.toContain('lucky_seed');
+    expect(result.catalystPool).toContain('corner_crown');
+  });
+
+  it('pool catalysts are not re-offered after being acquired via forge', () => {
+    const unlocked = ['lucky_seed', 'corner_crown', 'combo_wire'] as const;
+    const state = {
+      ...startGame(createInitialState(1, 'corner_protocol', { unlockedCatalysts: [...unlocked] })),
+      energy: 30,
+      forgeOffers: [],
+    };
+    // Acquire lucky_seed
+    const after = buyFromForge(state, makeDef('lucky_seed'));
+    // Pool no longer includes lucky_seed
+    expect(after.catalystPool).not.toContain('lucky_seed');
+  });
+
+  it('catalystPool is undefined when full-pool mode (no unlockedCatalysts)', () => {
+    const state = startGame(createInitialState(42));
+    const result = buyFromForge({ ...state, energy: 20 }, makeDef('lucky_seed'));
+    expect(result.catalystPool).toBeUndefined();
+  });
+});

@@ -96,6 +96,7 @@ export function createInitialState(
     echoOutputLast: 0,
     ascensionLevel,
     unlockedCatalysts,
+    catalystPool: unlockedCatalysts ? [...unlockedCatalysts] : undefined,
     roundNumber,
     roundOutput: 0,
     bestMoveOutput: 0,
@@ -492,7 +493,7 @@ function handlePhaseEnd(state: GameState): GameState {
   const rng = createRng(state.rngSeed + 200);
   const infusionOptions = generateInfusionOptions(
     state.activeCatalysts, rng.next.bind(rng),
-    state.unlockedCatalysts, ascMod.infusionChoiceCount
+    state.catalystPool, ascMod.infusionChoiceCount
   );
 
   return {
@@ -513,6 +514,11 @@ export function selectInfusion(state: GameState, choice: InfusionChoice): GameSt
     case 'catalyst':
       if (newState.activeCatalysts.length < MAX_CATALYSTS) {
         newState.activeCatalysts = [...newState.activeCatalysts, choice.catalyst.id];
+        // Remove the acquired catalyst from the run-level pool so it cannot be
+        // offered again later in the same run.
+        if (newState.catalystPool !== undefined) {
+          newState.catalystPool = newState.catalystPool.filter(id => id !== choice.catalyst.id);
+        }
         if (choice.catalyst.id === 'frozen_cell' && !newState.frozenCell) {
           newState.frozenCell = { row: 1, col: 1 };
         }
@@ -538,7 +544,7 @@ export function selectInfusion(state: GameState, choice: InfusionChoice): GameSt
   // After infusion, always enter the intermission forge
   const rng = createRng(newState.rngSeed + 100);
   const forgeOffers = generateForgeOffers(
-    newState.activeCatalysts, 3, rng.next.bind(rng), newState.unlockedCatalysts
+    newState.activeCatalysts, 3, rng.next.bind(rng), newState.catalystPool
   );
   newState.forgeOffers = forgeOffers;
   newState.screen = 'forge';
@@ -567,14 +573,20 @@ export function buyFromForge(state: GameState, catalyst: CatalystDef, replaceInd
     frozenCell = { row: 1, col: 1 };
   }
 
-  return { ...state, activeCatalysts: newCatalysts, energy, frozenCell };
+  // Remove the acquired catalyst from the run-level pool so it cannot
+  // be offered again later in the same run.
+  const catalystPool = state.catalystPool !== undefined
+    ? state.catalystPool.filter(id => id !== catalyst.id)
+    : undefined;
+
+  return { ...state, activeCatalysts: newCatalysts, energy, frozenCell, catalystPool };
 }
 
 export function rerollForge(state: GameState): GameState {
   if (state.energy < 1) return state;
   const rng = createRng(state.rngSeed + state.forgeOffers.length + 500);
   const forgeOffers = generateForgeOffers(
-    state.activeCatalysts, 3, rng.next.bind(rng), state.unlockedCatalysts
+    state.activeCatalysts, 3, rng.next.bind(rng), state.catalystPool
   );
   return { ...state, energy: state.energy - 1, forgeOffers };
 }

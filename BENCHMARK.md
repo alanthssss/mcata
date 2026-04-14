@@ -334,3 +334,49 @@ The benchmark system tracks additional metrics for the new progression features.
 
 **Milestone System**: Output milestones (1k–100k) fire roughly once every 1–3 rounds depending on skill level, providing steady long-term rewards. Tile milestones are rarer and celebrate exceptional board states.
 
+
+---
+
+## Phase Pacing Benchmark (v6)
+
+### Pacing Report
+
+After the v6 rebalance, benchmark runs should show the following metrics per
+phase (Ascension 0, HeuristicAgent, 50 runs):
+
+| Metric | Expected Range |
+|--------|---------------|
+| Avg moves per phase | 6–12 |
+| Avg max tile at round 1 end | 32–64 |
+| Phases ending on step limit | < 20 % |
+| Phases ending on output target | > 80 % |
+
+### Build Report (Catalyst Pool)
+
+The run-level `catalystPool` ensures no duplicate catalyst is offered twice in
+the same run.  The benchmark should confirm:
+
+| Metric | Expected |
+|--------|---------|
+| Duplicate catalyst in single run | 0 |
+| Unique catalysts per run (8-pool) | ≥ 2 |
+| Pool utilisation (acquired/available) | 20–50 % |
+| Most dominant catalyst pick rate | < 2× global average |
+
+### RunOptions — Updated Fields
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `catalystPool` | `CatalystId[] \| undefined` | mirrors `unlockedCatalysts` | Run-level pool (auto-initialised) |
+
+`catalystPool` is automatically populated by `createInitialState` — benchmark
+scripts do not need to set it manually.
+
+### Detecting Imbalance
+
+- **Phases too short** (< 4 moves avg): increase `targetOutput` in `ROUND_TEMPLATES`
+- **Phases too long** (> 15 moves avg): decrease `targetOutput` or increase `steps`
+- **Pool exhaustion in round 1**: profile has too few catalysts unlocked — check
+  `DEFAULT_PROFILE.unlockedCatalysts` or run with `ignoreUnlocks: true`
+- **Dominant catalyst**: single catalyst appearing in > 50 % of runs — consider
+  adjusting its `cost` or `rarity`

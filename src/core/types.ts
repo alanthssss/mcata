@@ -322,6 +322,9 @@ export interface GameState {
   // Meta progression
   ascensionLevel: AscensionLevel;
   unlockedCatalysts: CatalystId[] | undefined; // undefined = full pool
+  // Run-level catalyst pool — starts as unlockedCatalysts, shrinks as catalysts are acquired
+  // undefined = full pool (mirrors unlockedCatalysts); empty array = pool exhausted
+  catalystPool: CatalystId[] | undefined;
   // Round progression
   roundNumber: number;                         // current round (starts at 1)
   // Round stats
