@@ -644,3 +644,99 @@ The run-level `catalystPool` enforces unique-per-run acquisition.  Balance impac
 | Avg max tile (round 1 end) | 32–64 |
 | Phases ending on step limit | < 20 % |
 | Phases ending on output target | > 80 % |
+
+---
+
+## Balance v6 — Late-Game Pacing Fix
+
+### Root Cause Analysis
+
+After v5, phases were still clearing in 2–3 moves by round 4+ despite the increased
+targets.  The root cause was a **linear vs exponential mismatch**:
+
+| Growth | Type | Rate |
+|--------|------|------|
+| Round target scaling (v5) | Linear | +12 % per round |
+| Global multiplier (Infusion) | Additive / multiplicative | +0.1 per choice → 1.7+ by round 5 |
+| Catalyst stack | Multiplicative | ×1.5 × 1.4 × 1.3 × … = 2–8× |
+| Synergy bonuses | Multiplicative | ×1.25–1.4 on top |
+| Momentum | Multiplicative | up to ×2.0 |
+| Board tile values | Exponential | 16 → 64 → 256 |
+
+By round 5 with 4–5 catalysts, a single good merge produced 300–500+ output against
+targets of only 220 (150 × 1.48 linear).
+
+### v6 Pacing Model
+
+**Two complementary changes:**
+
+#### 1. Compound Round Scaling
+`ROUND_TARGET_SCALE` raised from `0.12` to `0.15`, and scaling switched from linear
+to compound (`Math.pow(1.15, round-1)` instead of `1 + (round-1) * 0.12`):
+
+| Round | Linear (v5) | Compound (v6) |
+|-------|------------|--------------|
+| 1 | 1.00× | 1.00× |
+| 2 | 1.12× | 1.15× |
+| 3 | 1.24× | 1.32× |
+| 4 | 1.36× | 1.52× |
+| 5 | 1.48× | 1.75× |
+| 8 | 1.84× | 2.66× |
+| 10 | 2.08× | 3.52× |
+
+#### 2. Build-Aware Target Scaling (`getBuildAwareTargetScale`)
+At every phase transition the effective target is multiplied by a build factor that
+directly counters the player's accumulated power:
+
+```
+buildFactor = min(
+  1 + catalystCount × 0.12 + (globalMultiplier − 1.0) × 0.30,
+  3.0
+)
+```
+
+Examples:
+| Build | Catalysts | Multiplier | Build Factor |
+|-------|-----------|------------|-------------|
+| No build | 0 | 1.0 | 1.00× |
+| Early (round 2) | 1 | 1.1 | 1.15× |
+| Mid (round 4) | 3 | 1.3 | 1.45× |
+| Strong (round 6) | 5 | 1.6 | 1.78× |
+| Expert (round 8+) | 6 | 2.0 | 2.02× (capped at 3.0) |
+
+### Combined Effect
+
+For a median player at round 5 (3 catalysts, mult 1.2):
+- Compound round factor: `1.15^4 = 1.75`
+- Build factor: `1 + 3×0.12 + 0.2×0.30 = 1.42`
+- Alpha P1 effective target: `150 × 1.75 × 1.42 = 373`
+- Typical output per move (32 tile, 4× mult stack): ~30–50
+- **Expected moves: 7–12** ✓
+
+For expert play at round 5 (5 cats, mult 1.5):
+- Build factor: `1 + 5×0.12 + 0.5×0.30 = 1.75`
+- Alpha P1 effective target: `150 × 1.75 × 1.75 = 459`
+- Expert output per move: ~80–120
+- **Expected moves: 4–6** (acceptable — they earned their build)
+
+### phaseTargetOutput Field
+
+`GameState.phaseTargetOutput` now stores the **pre-computed effective target** for
+the current phase.  It is:
+
+- Set at run start (phase 0 of round 1, no build = base × ascension only)
+- Recomputed at every phase transition using the player's current build
+- Used consistently for both the engine success check and the UI progress display
+
+This also fixes a pre-existing UI bug: `Header` and `PhasePanel` previously showed
+the stale round-1 template target (`PHASES[phaseIndex].targetOutput`) regardless of
+the current round.  They now read `state.phaseTargetOutput`.
+
+### Pacing Metrics (v6 Targets)
+
+| Metric | v5 Target | v6 Target |
+|--------|-----------|-----------|
+| Avg moves per phase (all rounds) | 6–12 | 6–12 |
+| Short-clear rate (≤ 3 moves) | < 20 % | < 10 % |
+| Late-game short-clear rate (round 4+) | — | < 5 % |
+| Phases ending on step limit | < 20 % | < 15 % |

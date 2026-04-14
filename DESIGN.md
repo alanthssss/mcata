@@ -1265,3 +1265,78 @@ development (target: **6–12 moves per phase**).
   top of the new base values, keeping late-game rounds difficult.
 
 All values are centralised in `ROUND_TEMPLATES` inside `src/core/config.ts`.
+
+---
+
+## Phase Pacing — Build-Aware Scaling (v6)
+
+### Problem
+
+After v5, late-game phases (round 4+) could still be cleared in 2–3 moves
+because the flat 12% linear round scale was outpaced by the player's
+exponential build power (catalyst stacks, global multiplier, synergies).
+
+### Solution
+
+**Two-layer scaling** applied at every phase transition:
+
+#### Layer 1: Compound Round Scaling
+
+```ts
+scaleFactor = Math.pow(1 + ROUND_TARGET_SCALE, roundNumber - 1)
+// replaces: 1 + (roundNumber - 1) * ROUND_TARGET_SCALE
+```
+
+This makes targets grow exponentially to better match the exponential power
+curve of a strong build.  Controlled by:
+- `ROUND_TARGET_SCALE = 0.15` (rate per round)
+- `ROUND_SCALE_COMPOUND = true` (toggle; `false` restores legacy linear behaviour)
+
+#### Layer 2: Build-Aware Factor
+
+```ts
+export function getBuildAwareTargetScale(
+  catalystCount: number,
+  globalMultiplier: number,
+): number
+```
+
+Returns:
+```
+min(1 + catalystCount × 0.12 + (globalMultiplier − 1.0) × 0.30, 3.0)
+```
+
+Applied at each phase start using `state.activeCatalysts.length` and
+`state.globalMultiplier` — the actual current build, not a static estimate.
+
+Controlled by:
+- `BUILD_AWARE_SCALING.enabled` (toggle)
+- `BUILD_AWARE_SCALING.catalystWeight`
+- `BUILD_AWARE_SCALING.multiplierWeight`
+- `BUILD_AWARE_SCALING.maxFactor`
+
+All values live in `src/core/config.ts`.
+
+### phaseTargetOutput in GameState
+
+`GameState.phaseTargetOutput` stores the fully-computed effective target for
+the current phase:
+
+```
+phaseTargetOutput = ceil(templateTarget × roundScaleFactor × ascensionScale × buildFactor)
+```
+
+- Set in `createInitialState` (no build yet → buildFactor = 1.0)
+- Recomputed in `handlePhaseEnd` (advancing to the next phase)
+- Recomputed in `advanceRound` (first phase of the new round)
+
+The engine success check (`output >= phaseTargetOutput`) and the UI progress
+display both read this field, ensuring they are always consistent.
+
+### Design Constraints
+
+- Early game (round 1, no catalysts): build factor = 1.0 → same as before
+- Phase pacing target: **6–12 moves** for a median player in any round
+- Expert players with full builds will clear faster (4–6 moves) — this is intentional
+- `ROUND_SCALE_COMPOUND = false` and `BUILD_AWARE_SCALING.enabled = false` fully
+  restore the pre-v6 behaviour for A/B testing

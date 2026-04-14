@@ -380,3 +380,49 @@ scripts do not need to set it manually.
   `DEFAULT_PROFILE.unlockedCatalysts` or run with `ignoreUnlocks: true`
 - **Dominant catalyst**: single catalyst appearing in > 50 % of runs — consider
   adjusting its `cost` or `rarity`
+
+---
+
+## Balance v6 — Late-Game Pacing Verification
+
+The v6 build adds `PhaseRecord` granular tracking to benchmark runs.  Every
+cleared (and failed) phase is recorded with:
+
+| Field | Description |
+|-------|-------------|
+| `round` | Round number |
+| `phaseIndex` | Phase index within the round (0–5) |
+| `movesUsed` | Steps spent in this phase |
+| `targetOutput` | Effective target (including build-aware factor) |
+| `actualOutput` | Output achieved |
+| `maxTile` | Highest board tile when the phase ended |
+| `cleared` | Whether the phase was successfully cleared |
+
+### New Aggregate Metrics
+
+| Metric | SuiteMetrics field | Description |
+|--------|-------------------|-------------|
+| Short-clear rate | `shortClearRate` | Fraction of cleared phases ≤ 3 moves |
+| Late-game short-clear rate | `lateGameShortClearRate` | Same, restricted to round 4+ |
+| Avg moves by round | `avgMovesPerPhaseByRound` | `Record<round, avgMoves>` |
+
+### v6 Benchmark Targets (HeuristicAgent, Ascension 0, 50 runs)
+
+| Metric | v5 Expected | v6 Expected |
+|--------|-------------|-------------|
+| Avg moves per phase | 6–12 | 6–12 |
+| Short-clear rate | < 20 % | < 10 % |
+| Late-game short-clear rate (round 4+) | — | < 5 % |
+| Rounds cleared (median) | 2–4 | 2–4 |
+| Win rate (clearing round 1) | > 80 % | > 80 % |
+
+### Detecting Regressions
+
+- **Short-clear rate above 10 %**: build power is outpacing target curve again
+  → increase `BUILD_AWARE_SCALING.catalystWeight` or `multiplierWeight`
+- **Late-game short-clear rate above 5 %**: compound scaling insufficient for high
+  rounds → increase `ROUND_TARGET_SCALE` or reduce `maxFactor`
+- **Win rate drops below 60 %** for round 1: early-game overtightened
+  → reduce base targets in `ROUND_TEMPLATES[0]` (alpha template, phase 1–3)
+- **Avg moves per phase > 15**: targets are too high for typical builds
+  → reduce `BUILD_AWARE_SCALING.maxFactor` or `catalystWeight`
