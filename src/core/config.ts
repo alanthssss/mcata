@@ -3,7 +3,7 @@
 
 import type { RoundTemplate } from './types';
 
-export const BALANCE_VERSION = 'v4';
+export const BALANCE_VERSION = 'v6';
 
 // ─── Round template definitions ───────────────────────────────────────────────
 // Each template defines 6 phases for one round.  Templates rotate across rounds
@@ -17,54 +17,54 @@ export const ROUND_TEMPLATES: RoundTemplate[] = [
     phases: [
       {
         phaseNumber: 1,
-        targetOutput: 70,
-        steps: 12,
-        expectedOutput: 90,
-        highSkillOutput: 140,
+        targetOutput: 150,
+        steps: 15,
+        expectedOutput: 200,
+        highSkillOutput: 300,
         challengeTier: 'small',
       },
       {
         phaseNumber: 2,
-        targetOutput: 80,
-        steps: 12,
-        expectedOutput: 110,
-        highSkillOutput: 180,
+        targetOutput: 180,
+        steps: 15,
+        expectedOutput: 240,
+        highSkillOutput: 380,
         challengeTier: 'big',
       },
       {
         phaseNumber: 3,
-        targetOutput: 75,
-        steps: 10,
-        expectedOutput: 100,
-        highSkillOutput: 160,
+        targetOutput: 160,
+        steps: 13,
+        expectedOutput: 220,
+        highSkillOutput: 340,
         challengeTier: 'boss',
         modifier: 'Corner bonus disabled — chain merges are your only edge',
       },
       {
         phaseNumber: 4,
-        targetOutput: 40,
-        steps: 8,
+        targetOutput: 90,
+        steps: 11,
         anomaly: 'entropy_tax',
-        expectedOutput: 55,
-        highSkillOutput: 90,
+        expectedOutput: 120,
+        highSkillOutput: 200,
         challengeTier: 'small',
         modifier: 'Entropy Tax: one cell blocked each move',
       },
       {
         phaseNumber: 5,
-        targetOutput: 80,
-        steps: 10,
-        expectedOutput: 110,
-        highSkillOutput: 200,
+        targetOutput: 200,
+        steps: 13,
+        expectedOutput: 260,
+        highSkillOutput: 420,
         challengeTier: 'big',
       },
       {
         phaseNumber: 6,
-        targetOutput: 55,
-        steps: 8,
+        targetOutput: 130,
+        steps: 11,
         anomaly: 'collapse_field',
-        expectedOutput: 75,
-        highSkillOutput: 130,
+        expectedOutput: 175,
+        highSkillOutput: 290,
         challengeTier: 'boss',
         modifier: 'Collapse Field: every 4 scoring moves removes the lowest tile',
       },
@@ -77,54 +77,54 @@ export const ROUND_TEMPLATES: RoundTemplate[] = [
     phases: [
       {
         phaseNumber: 1,
-        targetOutput: 60,
-        steps: 10,
-        expectedOutput: 80,
-        highSkillOutput: 130,
+        targetOutput: 130,
+        steps: 13,
+        expectedOutput: 175,
+        highSkillOutput: 280,
         challengeTier: 'small',
       },
       {
         phaseNumber: 2,
-        targetOutput: 45,
-        steps: 8,
+        targetOutput: 100,
+        steps: 11,
         anomaly: 'entropy_tax',
-        expectedOutput: 60,
-        highSkillOutput: 100,
+        expectedOutput: 135,
+        highSkillOutput: 220,
         challengeTier: 'small',
         modifier: 'Entropy Tax: one cell blocked each move',
       },
       {
         phaseNumber: 3,
-        targetOutput: 90,
-        steps: 12,
-        expectedOutput: 120,
-        highSkillOutput: 200,
+        targetOutput: 200,
+        steps: 15,
+        expectedOutput: 265,
+        highSkillOutput: 420,
         challengeTier: 'big',
       },
       {
         phaseNumber: 4,
-        targetOutput: 50,
-        steps: 8,
+        targetOutput: 110,
+        steps: 11,
         anomaly: 'collapse_field',
-        expectedOutput: 70,
-        highSkillOutput: 120,
+        expectedOutput: 150,
+        highSkillOutput: 250,
         challengeTier: 'boss',
         modifier: 'Collapse Field: every 4 scoring moves removes the lowest tile',
       },
       {
         phaseNumber: 5,
-        targetOutput: 85,
-        steps: 10,
-        expectedOutput: 115,
-        highSkillOutput: 190,
+        targetOutput: 190,
+        steps: 13,
+        expectedOutput: 255,
+        highSkillOutput: 400,
         challengeTier: 'big',
       },
       {
         phaseNumber: 6,
-        targetOutput: 70,
-        steps: 10,
-        expectedOutput: 95,
-        highSkillOutput: 160,
+        targetOutput: 160,
+        steps: 13,
+        expectedOutput: 210,
+        highSkillOutput: 340,
         challengeTier: 'boss',
         modifier: 'Corner bonus disabled — chain merges are your only edge',
       },
@@ -137,54 +137,54 @@ export const ROUND_TEMPLATES: RoundTemplate[] = [
     phases: [
       {
         phaseNumber: 1,
-        targetOutput: 80,
-        steps: 14,
-        expectedOutput: 110,
-        highSkillOutput: 170,
+        targetOutput: 170,
+        steps: 16,
+        expectedOutput: 230,
+        highSkillOutput: 360,
         challengeTier: 'small',
       },
       {
         phaseNumber: 2,
-        targetOutput: 100,
-        steps: 14,
-        expectedOutput: 140,
-        highSkillOutput: 220,
+        targetOutput: 220,
+        steps: 16,
+        expectedOutput: 300,
+        highSkillOutput: 470,
         challengeTier: 'big',
       },
       {
         phaseNumber: 3,
-        targetOutput: 60,
-        steps: 10,
+        targetOutput: 135,
+        steps: 13,
         anomaly: 'entropy_tax',
-        expectedOutput: 80,
-        highSkillOutput: 130,
+        expectedOutput: 180,
+        highSkillOutput: 290,
         challengeTier: 'small',
         modifier: 'Entropy Tax: one cell blocked each move',
       },
       {
         phaseNumber: 4,
-        targetOutput: 110,
-        steps: 14,
-        expectedOutput: 150,
-        highSkillOutput: 240,
+        targetOutput: 240,
+        steps: 16,
+        expectedOutput: 320,
+        highSkillOutput: 510,
         challengeTier: 'big',
       },
       {
         phaseNumber: 5,
-        targetOutput: 65,
-        steps: 10,
+        targetOutput: 150,
+        steps: 13,
         anomaly: 'collapse_field',
-        expectedOutput: 85,
-        highSkillOutput: 145,
+        expectedOutput: 200,
+        highSkillOutput: 320,
         challengeTier: 'boss',
         modifier: 'Collapse Field: every 4 scoring moves removes the lowest tile',
       },
       {
         phaseNumber: 6,
-        targetOutput: 120,
-        steps: 14,
-        expectedOutput: 160,
-        highSkillOutput: 260,
+        targetOutput: 260,
+        steps: 16,
+        expectedOutput: 345,
+        highSkillOutput: 550,
         challengeTier: 'boss',
         modifier: 'Corner bonus disabled — chain merges are your only edge',
       },
@@ -208,9 +208,26 @@ export const PHASE_CONFIG: Array<{
 /** Per-round multiplier applied to every phase's targetOutput.
  *  Round 1 = no scaling.  Round 2 = +ROUND_TARGET_SCALE.  Etc.
  */
-export const ROUND_TARGET_SCALE = 0.12; // 12 % harder per round
+export const ROUND_TARGET_SCALE = 0.15; // 15 % harder per round (compound)
 
-/** Per-round scaling applied to economy (energy gain rate) to keep Forge relevant. */
+/** When true, round scaling compounds: Math.pow(1+ROUND_TARGET_SCALE, round-1).
+ *  When false, linear scaling: 1 + (round-1) * ROUND_TARGET_SCALE (old behaviour). */
+export const ROUND_SCALE_COMPOUND = true;
+
+/** Build-aware target scaling: phases become harder as the player's build grows.
+ *  The factor is computed from activeCatalysts.length and globalMultiplier,
+ *  directly countering the compounding power of a strong mid/late-game build.
+ */
+export const BUILD_AWARE_SCALING = {
+  /** Enable/disable the entire mechanic (false = pre-v6 behaviour). */
+  enabled: true,
+  /** Additional fraction of base target per active catalyst (0.12 = +12 % each). */
+  catalystWeight: 0.12,
+  /** Additional fraction per 1.0 of globalMultiplier above the baseline of 1.0. */
+  multiplierWeight: 0.30,
+  /** Hard cap on the build factor (prevents unreachable targets). */
+  maxFactor: 3.0,
+};
 export const ROUND_ECONOMY_SCALE = 0.08; // 8 % more energy per round
 
 // ─── Scoring config ───────────────────────────────────────────────────────────

@@ -74,6 +74,37 @@ Up to **6 Catalysts** can be active at once.  Acquire them via Infusion rewards 
 | Combo Wire | Rare | 3 consecutive scoring moves → ×1.3 |
 | High Tribute | Rare | Highest tile merge → ×1.4 |
 
+### Unlock System & Collection
+
+The **Collection** screen shows every Catalyst in the game and whether it has
+been unlocked.
+
+**Unlock rule**: A Catalyst is **permanently unlocked** the first time you
+**acquire** it in any run — either from the Forge or as an Infusion reward.
+
+- Unlock state is written to `localStorage` immediately on acquisition so the
+  Collection updates without needing to restart the game.
+- The same Catalyst can only be unlocked once — duplicate writes are silently
+  ignored.
+- On a fresh session (or incognito mode) only the 8 legacy Catalysts are
+  unlocked by default.
+- Corrupted or missing storage data falls back safely to the default profile.
+
+### Per-Run Catalyst Pool
+
+Within a single run each Catalyst can be **acquired at most once**.  The
+run-level pool starts as a copy of your unlocked Catalysts:
+
+- When you **acquire** a Catalyst (Forge purchase or Infusion choice) it is
+  permanently removed from the pool for that run.
+- When a Catalyst is **shown but not selected** in the Forge it returns to the
+  pool and may appear again later.
+- If the pool is exhausted the Forge shows no catalyst cards and Infusion offers
+  only Energy / Steps / Multiplier.
+
+Advanced Catalysts beyond the 8 legacy ones can be unlocked by spending
+**Core Shards** (see Meta Progression below).
+
 ## Scoring
 
 ```
@@ -89,6 +120,48 @@ finalOutput = floor(base × chain × condition × catalyst × global)
 **Display score**: All player-facing output values are multiplied by
 `DISPLAY_SCORE_SCALE` (default ×10) for readability.  Internal raw scores
 (used by the engine and benchmarks) are unchanged.
+
+## Meta Progression
+
+Merge Catalyst has a lightweight meta-progression layer built on top of the
+run loop.
+
+### Core Shards
+
+Every run earns **Core Shards** — the meta currency:
+
+```
+shards = base(10) + phases_cleared × 5 + anomaly_survived × 10
+       + floor((output − 200) / 100)
+```
+
+Shards accumulate across runs and are spent in the Collection screen to unlock
+new content.
+
+| Content | Cost |
+|---------|------|
+| Common catalyst | 15 Core Shards |
+| Rare catalyst | 25 Core Shards |
+| Epic catalyst | 40 Core Shards |
+| Protocol | 30 Core Shards |
+| Signal | 20 Core Shards |
+| Ascension level N | N × 20 Core Shards |
+
+### Ascension
+
+**Ascension (0–8)** is an optional difficulty system.  Each level stacks one
+additional penalty (fewer steps, higher targets, anomaly frequency, etc.).
+Level 0 is the baseline — identical to a classic run.
+
+### Collection & Unlock Persistence
+
+The Collection screen shows every Catalyst, Protocol, Signal, and Anomaly in
+the game together with their unlock status.
+
+- Unlocks are written to `localStorage` immediately on acquisition.
+- A fresh profile (no prior data) ships with 8 legacy Catalysts unlocked.
+- Corrupted or missing storage falls back safely to the default profile.
+- The Collection reflects new unlocks in real time — no restart needed.
 
 ## Theme System
 

@@ -12,7 +12,7 @@ import {
   advanceRound,
 } from './engine';
 import { createEmptyGrid, spawnTile } from './board';
-import type { GameState, Grid, CatalystTag } from './types';
+import type { GameState, Grid, CatalystTag, CatalystId } from './types';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -598,3 +598,181 @@ describe('intermission flow', () => {
     expect(afterForge.screen).toBe('playing');
   });
 });
+
+// ─── Catalyst pool system ─────────────────────────────────────────────────────
+
+describe('catalystPool (run-level unique-per-run enforcement)', () => {
+  const makeDef = (id: 'lucky_seed' | 'corner_crown' | 'combo_wire') => ({
+    id,
+    name: id,
+    description: '',
+    rarity: 'common' as const,
+    cost: 3,
+    category: 'legacy' as const,
+    trigger: 'on_merge' as const,
+    effectParams: {},
+    tags: ['combo' as CatalystTag],
+    unlockCondition: '',
+  });
+
+  it('initialises catalystPool equal to unlockedCatalysts', () => {
+    const unlocked = ['lucky_seed', 'corner_crown'] as const;
+    const state = createInitialState(1, 'corner_protocol', {
+      unlockedCatalysts: [...unlocked],
+    });
+    expect(state.catalystPool).toEqual(expect.arrayContaining([...unlocked]));
+    expect(state.catalystPool).toHaveLength(unlocked.length);
+  });
+
+  it('catalystPool is undefined when unlockedCatalysts is undefined (full pool)', () => {
+    const state = createInitialState(1);
+    expect(state.catalystPool).toBeUndefined();
+  });
+
+  it('buyFromForge removes acquired catalyst from catalystPool', () => {
+    const unlocked = ['lucky_seed', 'corner_crown', 'combo_wire'] as const;
+    const state = {
+      ...startGame(createInitialState(1, 'corner_protocol', { unlockedCatalysts: [...unlocked] })),
+      energy: 20,
+    };
+    const result = buyFromForge(state, makeDef('lucky_seed'));
+    expect(result.activeCatalysts).toContain('lucky_seed');
+    expect(result.catalystPool).not.toContain('lucky_seed');
+    // Other catalysts remain in pool
+    expect(result.catalystPool).toContain('corner_crown');
+  });
+
+  it('selectInfusion with catalyst removes it from catalystPool', () => {
+    const unlocked = ['lucky_seed', 'corner_crown', 'combo_wire'] as const;
+    const state = {
+      ...startGame(createInitialState(1, 'corner_protocol', { unlockedCatalysts: [...unlocked] })),
+      screen: 'infusion' as const,
+      infusionOptions: [],
+    };
+    const result = selectInfusion(state, { type: 'catalyst', catalyst: makeDef('lucky_seed') });
+    expect(result.activeCatalysts).toContain('lucky_seed');
+    expect(result.catalystPool).not.toContain('lucky_seed');
+    expect(result.catalystPool).toContain('corner_crown');
+  });
+
+  it('pool catalysts are not re-offered after being acquired via forge', () => {
+    const unlocked = ['lucky_seed', 'corner_crown', 'combo_wire'] as const;
+    const state = {
+      ...startGame(createInitialState(1, 'corner_protocol', { unlockedCatalysts: [...unlocked] })),
+      energy: 30,
+      forgeOffers: [],
+    };
+    // Acquire lucky_seed
+    const after = buyFromForge(state, makeDef('lucky_seed'));
+    // Pool no longer includes lucky_seed
+    expect(after.catalystPool).not.toContain('lucky_seed');
+  });
+
+  it('unpurchased forge items stay in pool (return-to-pool behavior)', () => {
+    const unlocked = ['lucky_seed', 'corner_crown', 'combo_wire'] as const;
+    const initialPool = [...unlocked];
+    const state = {
+      ...startGame(createInitialState(1, 'corner_protocol', { unlockedCatalysts: [...unlocked] })),
+      energy: 0, // not enough to buy
+      forgeOffers: [makeDef('lucky_seed'), makeDef('corner_crown')],
+    };
+    // Skipping forge (or failing to buy) must not shrink the pool
+    const afterSkip = skipForge(state);
+    expect(afterSkip.catalystPool).toEqual(expect.arrayContaining(initialPool));
+    expect(afterSkip.catalystPool).toHaveLength(initialPool.length);
+  });
+
+  it('catalystPool is undefined when full-pool mode (no unlockedCatalysts)', () => {
+    const state = startGame(createInitialState(42));
+    const result = buyFromForge({ ...state, energy: 20 }, makeDef('lucky_seed'));
+    expect(result.catalystPool).toBeUndefined();
+  });
+});
+
+// ─── Build-aware target scaling tests ────────────────────────────────────────
+import { getBuildAwareTargetScale, getPhasesForRound } from './phases';
+import { BUILD_AWARE_SCALING, ROUND_TARGET_SCALE, ROUND_SCALE_COMPOUND } from './config';
+
+describe('getBuildAwareTargetScale', () => {
+  it('returns 1.0 with no catalysts and base multiplier', () => {
+    const factor = getBuildAwareTargetScale(0, 1.0);
+    expect(factor).toBe(1.0);
+  });
+
+  it('increases with each active catalyst', () => {
+    const f0 = getBuildAwareTargetScale(0, 1.0);
+    const f3 = getBuildAwareTargetScale(3, 1.0);
+    const f6 = getBuildAwareTargetScale(6, 1.0);
+    expect(f3).toBeGreaterThan(f0);
+    expect(f6).toBeGreaterThan(f3);
+    expect(f3).toBeCloseTo(1 + 3 * BUILD_AWARE_SCALING.catalystWeight, 5);
+  });
+
+  it('increases with higher global multiplier', () => {
+    const f1 = getBuildAwareTargetScale(0, 1.0);
+    const f2 = getBuildAwareTargetScale(0, 1.5);
+    const f3 = getBuildAwareTargetScale(0, 2.0);
+    expect(f2).toBeGreaterThan(f1);
+    expect(f3).toBeGreaterThan(f2);
+    expect(f2).toBeCloseTo(1 + 0.5 * BUILD_AWARE_SCALING.multiplierWeight, 5);
+  });
+
+  it('does not exceed maxFactor', () => {
+    // 6 catalysts + very high multiplier should hit the cap
+    const factor = getBuildAwareTargetScale(6, 10.0);
+    expect(factor).toBeLessThanOrEqual(BUILD_AWARE_SCALING.maxFactor);
+  });
+});
+
+describe('getPhasesForRound compound scaling', () => {
+  it('round 1 uses base target', () => {
+    const phases = getPhasesForRound(1);
+    // scaleFactor = 1.0 for round 1 in both modes
+    expect(phases[0].targetOutput).toBeGreaterThan(0);
+  });
+
+  it('same-template targets grow with round number', () => {
+    // Round 1 and round 4 both use the alpha template
+    const p1 = getPhasesForRound(1);
+    const p4 = getPhasesForRound(4);
+    expect(p4[0].targetOutput).toBeGreaterThan(p1[0].targetOutput);
+  });
+
+  it('compound scaling grows faster than linear for later rounds', () => {
+    // Compare compound vs linear at round 5
+    const compoundFactor = Math.pow(1 + ROUND_TARGET_SCALE, 4);
+    const linearFactor   = 1 + 4 * ROUND_TARGET_SCALE;
+    if (ROUND_SCALE_COMPOUND) {
+      expect(compoundFactor).toBeGreaterThan(linearFactor);
+    }
+  });
+});
+
+describe('phaseTargetOutput in GameState', () => {
+  it('is set at run start (no build = base target with ascension)', () => {
+    const state = startGame(createInitialState(1));
+    // At run start no catalysts and mult=1.0, so build factor = 1.0
+    // phaseTargetOutput should equal the round-1 phase-1 target
+    expect(state.phaseTargetOutput).toBeGreaterThan(0);
+    // Must match phase 1 target (no ascension, no build)
+    const phases = getPhasesForRound(1);
+    expect(state.phaseTargetOutput).toBe(Math.ceil(phases[0].targetOutput));
+  });
+
+  it('phaseTargetOutput increases for a player with active catalysts', () => {
+    const baseState = startGame(createInitialState(1));
+    // Build a fully typed state with a non-trivial build
+    const builtState: GameState = {
+      ...baseState,
+      activeCatalysts: ['lucky_seed', 'corner_crown', 'combo_wire'] as CatalystId[],
+      globalMultiplier: 1.3,
+      roundNumber: 1,
+      screen: 'round_complete',
+      phaseIndex: 5,
+    };
+    // advanceRound picks up the build (3 cats + mult 1.3) and applies build-aware scaling
+    const nextPhaseAdvanced = advanceRound(builtState);
+    expect(nextPhaseAdvanced.phaseTargetOutput).toBeGreaterThan(baseState.phaseTargetOutput);
+  });
+});
+

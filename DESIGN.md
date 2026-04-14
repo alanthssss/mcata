@@ -990,6 +990,27 @@ Unlocks are **intentional long-term gates**, not time gates.
 The Forge and Infusion rewards only show catalysts the player has unlocked.
 Benchmark mode can bypass this restriction (`ignoreUnlocks: true`) for full-pool runs.
 
+#### Catalyst Unlock Rule
+
+A Catalyst is **permanently unlocked** the first time it is **acquired** in any run:
+
+- Acquired via the **Forge** (purchased with Energy), **or**
+- Acquired via **Infusion** (chosen as a phase-clear reward)
+
+This immediately updates `ProfileState.unlockedCatalysts` and persists to
+`localStorage`, so the Collection view reflects the unlock without requiring a
+restart.
+
+```
+Acquire Catalyst (forge or infusion)
+    → useProfileStore.unlockCatalysts([id])
+        → deduplicated merge with existing list
+        → persistProfile() → localStorage write
+```
+
+**No duplicate entries**: `unlockCatalysts` uses `Set` merge so the same catalyst
+id is never stored twice even if acquired multiple times across runs.
+
 ---
 
 ### Ascension Philosophy
@@ -1162,3 +1183,160 @@ Every day all players share the same seeded run, enabling comparison.
 - **Records**: best output, best rounds reached, play count per day, kept for 30 days
 - **UI**: "Daily Run" button on the Start Screen shows today's date and personal best
 
+
+---
+
+## Catalyst Pool System
+
+### Overview
+
+Each run maintains a **run-level Catalyst Pool** (`GameState.catalystPool`) that
+ensures each Catalyst appears **at most once per run**.  This enforces build
+diversity and prevents the same powerful Catalyst from dominating every session.
+
+### Initialisation
+
+```
+Run starts
+  catalystPool = [...unlockedCatalysts]   // full profile unlock list
+  (or undefined in full-pool / benchmark mode)
+```
+
+### Pool Depletion
+
+Every time a Catalyst is **acquired** it is removed from `catalystPool`:
+
+| Action | Effect on pool |
+|--------|---------------|
+| Buy from Forge | Remove acquired catalyst id |
+| Choose Catalyst from Infusion | Remove acquired catalyst id |
+
+Catalysts shown in the Forge or Infusion but **not selected** are **not**
+removed — they remain available for future offers in the same run.
+
+### Offer Generation
+
+Both `generateForgeOffers` and `generateInfusionOptions` draw from `catalystPool`
+(rather than the raw `unlockedCatalysts` list) and additionally filter out any
+catalysts already in `activeCatalysts`.  This gives two layers of de-duplication:
+
+1. **Pool layer** — catalogue-level uniqueness across the run
+2. **Active layer** — never re-offer what's already equipped
+
+### Pool Exhaustion
+
+If `catalystPool` is empty (all unlocked catalysts have been acquired in this
+run), `generateForgeOffers` returns an empty array.  The Forge UI gracefully
+handles this by showing no catalyst cards.  Infusion always offers the three
+non-catalyst options (Energy, Steps, Multiplier) regardless of pool state.
+
+### Full-Pool Mode (Benchmark)
+
+When `unlockedCatalysts` is `undefined` (benchmark `ignoreUnlocks: true`) the
+`catalystPool` is also `undefined`, which instructs the offer generators to draw
+from the full catalogue.  Pool depletion tracking is skipped in this mode.
+
+---
+
+## Phase Pacing (Balance v5)
+
+Phase pacing was rebalanced in v5 to ensure each phase requires meaningful board
+development (target: **6–12 moves per phase**).
+
+### Key Changes
+
+| Metric | Before (v4) | After (v5) |
+|--------|-------------|------------|
+| Phase 1 target (alpha) | 70 | 150 |
+| Phase steps (alpha P1) | 12 | 15 |
+| Anomaly phase target | 40–55 | 90–130 |
+| Anomaly phase steps | 8 | 11 |
+| Gamma template max target | 120 | 260 |
+
+### Rationale
+
+- **Targets were too low**: A single mid-game merge chain could meet the old
+  targets in 2–3 moves, leaving the remaining steps trivially easy.
+- **Steps increased**: More steps give players time to develop the board,
+  build tile combos, and express strategy.
+- **Anomaly phases proportionally increased**: Entropy Tax and Collapse Field
+  phases now have higher targets to stay challenging despite the anomaly penalty.
+- **Scaling preserved**: `ROUND_TARGET_SCALE = 0.12` per round still applies on
+  top of the new base values, keeping late-game rounds difficult.
+
+All values are centralised in `ROUND_TEMPLATES` inside `src/core/config.ts`.
+
+---
+
+## Phase Pacing — Build-Aware Scaling (v6)
+
+### Problem
+
+After v5, late-game phases (round 4+) could still be cleared in 2–3 moves
+because the flat 12% linear round scale was outpaced by the player's
+exponential build power (catalyst stacks, global multiplier, synergies).
+
+### Solution
+
+**Two-layer scaling** applied at every phase transition:
+
+#### Layer 1: Compound Round Scaling
+
+```ts
+scaleFactor = Math.pow(1 + ROUND_TARGET_SCALE, roundNumber - 1)
+// replaces: 1 + (roundNumber - 1) * ROUND_TARGET_SCALE
+```
+
+This makes targets grow exponentially to better match the exponential power
+curve of a strong build.  Controlled by:
+- `ROUND_TARGET_SCALE = 0.15` (rate per round)
+- `ROUND_SCALE_COMPOUND = true` (toggle; `false` restores legacy linear behaviour)
+
+#### Layer 2: Build-Aware Factor
+
+```ts
+export function getBuildAwareTargetScale(
+  catalystCount: number,
+  globalMultiplier: number,
+): number
+```
+
+Returns:
+```
+min(1 + catalystCount × 0.12 + (globalMultiplier − 1.0) × 0.30, 3.0)
+```
+
+Applied at each phase start using `state.activeCatalysts.length` and
+`state.globalMultiplier` — the actual current build, not a static estimate.
+
+Controlled by:
+- `BUILD_AWARE_SCALING.enabled` (toggle)
+- `BUILD_AWARE_SCALING.catalystWeight`
+- `BUILD_AWARE_SCALING.multiplierWeight`
+- `BUILD_AWARE_SCALING.maxFactor`
+
+All values live in `src/core/config.ts`.
+
+### phaseTargetOutput in GameState
+
+`GameState.phaseTargetOutput` stores the fully-computed effective target for
+the current phase:
+
+```
+phaseTargetOutput = ceil(templateTarget × roundScaleFactor × ascensionScale × buildFactor)
+```
+
+- Set in `createInitialState` (no build yet → buildFactor = 1.0)
+- Recomputed in `handlePhaseEnd` (advancing to the next phase)
+- Recomputed in `advanceRound` (first phase of the new round)
+
+The engine success check (`output >= phaseTargetOutput`) and the UI progress
+display both read this field, ensuring they are always consistent.
+
+### Design Constraints
+
+- Early game (round 1, no catalysts): build factor = 1.0 → same as before
+- Phase pacing target: **6–12 moves** for a median player in any round
+- Expert players with full builds will clear faster (4–6 moves) — this is intentional
+- `ROUND_SCALE_COMPOUND = false` and `BUILD_AWARE_SCALING.enabled = false` fully
+  restore the pre-v6 behaviour for A/B testing

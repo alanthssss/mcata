@@ -18,7 +18,7 @@ describe('generateForgeOffers', () => {
     expect(offers.length).toBeLessThanOrEqual(2);
   });
 
-  it('restricts offers to the unlocked pool when provided', () => {
+  it('restricts offers to the catalyst pool when provided', () => {
     const rng = createRng(1);
     const allowed = ALL_CATALYSTS.slice(0, 4).map(c => c.id);
     const offers = generateForgeOffers([], 3, rng.next.bind(rng), allowed);
@@ -27,7 +27,7 @@ describe('generateForgeOffers', () => {
     }
   });
 
-  it('uses the full pool when no unlockedCatalysts list is provided', () => {
+  it('uses the full pool when no catalystPool is provided', () => {
     const rng = createRng(1);
     const offers = generateForgeOffers([], 3, rng.next.bind(rng));
     expect(offers).toHaveLength(3);
@@ -52,5 +52,28 @@ describe('generateForgeOffers', () => {
     const offers = generateForgeOffers([], 3, rng.next.bind(rng));
     const ids = offers.map(o => o.id);
     expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it('excludes already-active catalysts from offers', () => {
+    const rng = createRng(1);
+    // All catalysts active except the last one
+    const activeIds = ALL_CATALYSTS.slice(0, -1).map(c => c.id);
+    const offers = generateForgeOffers(activeIds, 3, rng.next.bind(rng));
+    for (const offer of offers) {
+      expect(activeIds).not.toContain(offer.id);
+    }
+  });
+
+  it('returns empty array when pool is exhausted (empty array)', () => {
+    const rng = createRng(1);
+    const offers = generateForgeOffers([], 3, rng.next.bind(rng), []);
+    expect(offers).toHaveLength(0);
+  });
+
+  it('returns empty array when all pool catalysts are already active', () => {
+    const rng = createRng(1);
+    const pool = ALL_CATALYSTS.slice(0, 3).map(c => c.id);
+    const offers = generateForgeOffers(pool, 3, rng.next.bind(rng), pool);
+    expect(offers).toHaveLength(0);
   });
 });

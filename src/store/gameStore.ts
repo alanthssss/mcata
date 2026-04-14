@@ -7,6 +7,7 @@ import {
   selectInfusion, buyFromForge, rerollForge, skipForge,
   queueSignal, grantSignal, advanceRound,
 } from '../core/engine';
+import { useProfileStore } from './profileStore';
 
 interface GameStore extends GameState {
   initGame: (seed?: number, protocol?: ProtocolId) => void;
@@ -51,10 +52,18 @@ export const useGameStore = create<GameStore>((set) => ({
 
   chooseInfusion: (choice: InfusionChoice) => {
     set(state => selectInfusion(state, choice));
+    // Unlock persistence: mark the catalyst as unlocked in the profile
+    // immediately when it is acquired via Infusion.
+    if (choice.type === 'catalyst') {
+      useProfileStore.getState().unlockCatalysts([choice.catalyst.id]);
+    }
   },
 
   purchaseCatalyst: (catalyst: CatalystDef, replaceIndex?: number) => {
     set(state => buyFromForge(state, catalyst, replaceIndex));
+    // Unlock persistence: mark the catalyst as unlocked in the profile
+    // immediately when it is acquired via the Forge.
+    useProfileStore.getState().unlockCatalysts([catalyst.id]);
   },
 
   reroll: () => {

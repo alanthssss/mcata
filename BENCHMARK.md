@@ -334,3 +334,95 @@ The benchmark system tracks additional metrics for the new progression features.
 
 **Milestone System**: Output milestones (1k–100k) fire roughly once every 1–3 rounds depending on skill level, providing steady long-term rewards. Tile milestones are rarer and celebrate exceptional board states.
 
+
+---
+
+## Phase Pacing Benchmark (v5)
+
+### Pacing Report
+
+After the v5 rebalance, benchmark runs should show the following metrics per
+phase (Ascension 0, HeuristicAgent, 50 runs):
+
+| Metric | Expected Range |
+|--------|---------------|
+| Avg moves per phase | 6–12 |
+| Avg max tile at round 1 end | 32–64 |
+| Phases ending on step limit | < 20 % |
+| Phases ending on output target | > 80 % |
+
+### Build Report (Catalyst Pool)
+
+The run-level `catalystPool` ensures no duplicate catalyst is offered twice in
+the same run.  The benchmark should confirm:
+
+| Metric | Expected |
+|--------|---------|
+| Duplicate catalyst in single run | 0 |
+| Unique catalysts per run (8-pool) | ≥ 2 |
+| Pool utilisation (acquired/available) | 20–50 % |
+| Most dominant catalyst pick rate | < 2× global average |
+
+### RunOptions — Updated Fields
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `catalystPool` | `CatalystId[] \| undefined` | mirrors `unlockedCatalysts` | Run-level pool (auto-initialised) |
+
+`catalystPool` is automatically populated by `createInitialState` — benchmark
+scripts do not need to set it manually.
+
+### Detecting Imbalance
+
+- **Phases too short** (< 4 moves avg): increase `targetOutput` in `ROUND_TEMPLATES`
+- **Phases too long** (> 15 moves avg): decrease `targetOutput` or increase `steps`
+- **Pool exhaustion in round 1**: profile has too few catalysts unlocked — check
+  `DEFAULT_PROFILE.unlockedCatalysts` or run with `ignoreUnlocks: true`
+- **Dominant catalyst**: single catalyst appearing in > 50 % of runs — consider
+  adjusting its `cost` or `rarity`
+
+---
+
+## Balance v6 — Late-Game Pacing Verification
+
+The v6 build adds `PhaseRecord` granular tracking to benchmark runs.  Every
+cleared (and failed) phase is recorded with:
+
+| Field | Description |
+|-------|-------------|
+| `round` | Round number |
+| `phaseIndex` | Phase index within the round (0–5) |
+| `movesUsed` | Steps spent in this phase |
+| `targetOutput` | Effective target (including build-aware factor) |
+| `actualOutput` | Output achieved |
+| `maxTile` | Highest board tile when the phase ended |
+| `cleared` | Whether the phase was successfully cleared |
+
+### New Aggregate Metrics
+
+| Metric | SuiteMetrics field | Description |
+|--------|-------------------|-------------|
+| Short-clear rate | `shortClearRate` | Fraction of cleared phases ≤ 3 moves |
+| Late-game short-clear rate | `lateGameShortClearRate` | Same, restricted to round 4+ |
+| Avg moves by round | `avgMovesPerPhaseByRound` | `Record<round, avgMoves>` |
+
+### v6 Benchmark Targets (HeuristicAgent, Ascension 0, 50 runs)
+
+| Metric | v5 Expected | v6 Expected |
+|--------|-------------|-------------|
+| Avg moves per phase | 6–12 | 6–12 |
+| Short-clear rate | < 20 % | < 10 % |
+| Late-game short-clear rate (round 4+) | — | < 5 % |
+| Rounds cleared (median) | 2–4 | 2–4 |
+| Win rate (clearing round 1) | > 80 % | > 80 % |
+
+### Detecting Regressions
+
+- **Short-clear rate above 10 %**: build power is outpacing target curve again
+  → increase `BUILD_AWARE_SCALING.catalystWeight` or `multiplierWeight`
+- **Late-game short-clear rate above 5 %**: compound scaling insufficient for high
+  rounds → increase `ROUND_TARGET_SCALE` or reduce `maxFactor`
+- **Win rate drops below 60 %** for round 1: early-game overtightened
+  → reduce base targets in `ROUND_TEMPLATES[0]` (alpha template, phase 1–3)
+- **Avg moves per phase > 15**: targets are too high for typical builds
+  → reduce `BUILD_AWARE_SCALING.maxFactor` or `catalystWeight`
