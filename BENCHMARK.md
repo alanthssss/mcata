@@ -303,3 +303,34 @@ xychart-beta
 | `coreShards` | `number` | Meta currency earned this run |
 | `roundsCleared` | `number` | Complete rounds finished |
 | `highestRound` | `number` | Highest round number reached |
+
+---
+
+## New Progression Metrics (v2)
+
+The benchmark system tracks additional metrics for the new progression features.
+
+### RunMetrics additions
+| Field | Description |
+|---|---|
+| `milestoneCount` | Total milestones triggered during the run |
+| `jackpotCount` | Total jackpot events during the run |
+| `maxStreak` | Highest consecutive high-output move streak |
+| `challengeId` | Which challenge was active (null = standard) |
+| `isDailyRun` | Whether this was a daily seeded run |
+
+### SuiteMetrics additions
+| Field | Description |
+|---|---|
+| `avgMilestones` | Average milestones per run |
+| `avgJackpots` | Average jackpot events per run |
+| `avgBestStreak` | Average best streak per run |
+
+### Balance Analysis
+
+**Jackpot System**: At 2% probability per eligible move (output ≥ 50), jackpots are rare in early rounds but become more frequent in late rounds when output is consistently high. The +100 output bonus is meaningful but capped to avoid breaking phase targets.
+
+**Streak System**: At the default threshold of 5 qualifying moves, streaks grant +1 energy per threshold. This adds roughly 1–3 energy per round for skilled play, which is enough to be noticeable but not game-breaking. Streaks reset on any below-threshold move, naturally balancing the reward.
+
+**Milestone System**: Output milestones (1k–100k) fire roughly once every 1–3 rounds depending on skill level, providing steady long-term rewards. Tile milestones are rarer and celebrate exceptional board states.
+

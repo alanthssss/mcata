@@ -1071,3 +1071,94 @@ flowchart TD
     U -->|"Ascension"| UA["unlockAscensionLevel()"]
     UC & UP & US & UA --> NP["Updated ProfileState"]
 ```
+
+---
+
+## Round-End Reward System
+
+When a player clears all 6 phases of a round, they see the **Round Complete** screen before entering the next round.
+
+### Round Complete Screen
+- Displays: **round number**, **round output** (output gained this round), **cumulative total output**, **best single-move output** this run
+- Shows **build summary**: active Catalysts (up to 4 shown) and active Synergies
+- Highlights: **MVP Catalyst** (highest rarity equipped) and **Strongest Synergy** (highest multiplier)
+- Shows animated **flavor text** (e.g. "System Stabilized", "Chain Reaction Amplified") that cycles per round
+- Displays the **Round Reward**: +3 Energy and +5% Global Multiplier
+- Contains a pulsing **"Continue Run →"** button and a "New Run" exit button
+
+### Round Reward (config-driven)
+| Constant | Value | Effect |
+|---|---|---|
+| `ROUND_COMPLETE_ENERGY_BONUS` | 3 | +3 Energy granted immediately |
+| `ROUND_COMPLETE_MULTIPLIER_BONUS` | 0.05 | +5% global output multiplier |
+
+---
+
+## Milestone System
+
+Milestones fire when the player crosses predefined thresholds, rewarding them with energy or global multiplier bonuses.
+
+### Milestone Types
+| Category | Milestones | Reward |
+|---|---|---|
+| Output | 1k, 5k, 10k, 50k, 100k | Energy or +multiplier |
+| Round | Round 3, 5, 10 | Energy or +multiplier |
+| Max Tile | 256, 512, 1024, 2048 | Energy or +multiplier |
+
+Milestones are checked after every move via `checkMilestones()` in `src/core/milestones.ts`. Each milestone fires at most once per run. A toast notification slides in from the bottom-right and auto-dismisses after 3 seconds.
+
+---
+
+## Jackpot System
+
+A **Jackpot** is a rare reward that triggers on high-output moves.
+
+- **Probability**: 2% per move (`JACKPOT_PROBABILITY`)
+- **Trigger condition**: move output ≥ 50 (`JACKPOT_MIN_OUTPUT`)
+- **Effect**: +100 output bonus + +3 energy (`JACKPOT_OUTPUT_BONUS`, `JACKPOT_ENERGY_BONUS`)
+- **UI**: Full-screen banner with a bounce-in animation, auto-dismisses after 2.5 seconds
+
+---
+
+## Streak System
+
+A **Streak** tracks consecutive high-output moves (output ≥ `STREAK_MIN_OUTPUT = 5`).
+
+- Each qualifying move increments `streakCount`
+- Any move below the threshold resets the streak to 0
+- Every 5 consecutive qualifying moves grants +1 Energy (`STREAK_BONUS_THRESHOLD`, `STREAK_ENERGY_BONUS`)
+- `bestStreak` is the all-time best streak for the current run, never resets between rounds
+
+---
+
+## Challenge Mode
+
+Challenge runs impose curated rule modifications for a more demanding experience.
+
+### Challenges
+| Challenge | Key Rule | Win Condition |
+|---|---|---|
+| **No Corners** | Corner bonuses disabled | Clear 3 rounds |
+| **Energy Starved** | Energy gain × 0.3 | Reach Round 3 |
+| **Chain Master** | Only chain-based scoring | Clear 3 rounds |
+| **Anomaly Storm** | Anomaly frequency × 2 | Survive 3 rounds |
+
+Challenges are defined in `src/core/challenges.ts`. Each `ChallengeDef` includes a `baseProtocol`, `rules` list, `winCondition`, and `overrides` record. The `overrides` object contains flags that can be applied on top of the base protocol config.
+
+### Challenge Selection Flow
+```
+Start Screen → "Challenge" button → ChallengeSelectScreen → Select challenge → Run starts
+```
+
+---
+
+## Daily Run System
+
+Every day all players share the same seeded run, enabling comparison.
+
+- **Seed generation**: `getDailySeed(dateStr)` hashes the date string `YYYY-MM-DD` to a 32-bit integer
+- **Fixed sequence**: same seed → same phase sequence, catalyst pool, anomaly sequence
+- **Local leaderboard** (MVP): persisted to `localStorage` under key `merge_catalyst_daily_runs`
+- **Records**: best output, best rounds reached, play count per day, kept for 30 days
+- **UI**: "Daily Run" button on the Start Screen shows today's date and personal best
+

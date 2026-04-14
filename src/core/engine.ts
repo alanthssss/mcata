@@ -22,7 +22,11 @@ import {
   STARTING_ENERGY,
   COLLAPSE_FIELD_PERIOD,
   SPAWN_4_PROBABILITY,
+  STREAK_MIN_OUTPUT, STREAK_BONUS_THRESHOLD, STREAK_ENERGY_BONUS,
+  JACKPOT_PROBABILITY, JACKPOT_MIN_OUTPUT, JACKPOT_OUTPUT_BONUS, JACKPOT_ENERGY_BONUS,
+  ROUND_COMPLETE_ENERGY_BONUS, ROUND_COMPLETE_MULTIPLIER_BONUS,
 } from './config';
+import { checkMilestones, MILESTONE_DEFS, MilestoneId } from './milestones';
 
 const MAX_LOG = 10;
 
@@ -93,6 +97,15 @@ export function createInitialState(
     ascensionLevel,
     unlockedCatalysts,
     roundNumber,
+    roundOutput: 0,
+    bestMoveOutput: 0,
+    streakCount: 0,
+    bestStreak: 0,
+    triggeredMilestones: [],
+    pendingMilestones: [],
+    jackpotTriggered: false,
+    challengeId: null,
+    isDailyRun: false,
   };
 }
 
@@ -296,8 +309,34 @@ export function processMoveAction(state: GameState, dir: Direction): GameState {
   newGrid = resetMergedFlags(newGrid);
 
   const newSteps = state.stepsRemaining - 1;
-  const newOutput = state.output + finalOutputAdjusted;
-  const newTotalOutput = state.totalOutput + finalOutputAdjusted;
+
+  // ── Streak system ─────────────────────────────────────────────────────────
+  let newStreakCount = state.streakCount;
+  let newBestStreak = state.bestStreak;
+  let streakEnergyBonus = 0;
+  if (finalOutputAdjusted >= STREAK_MIN_OUTPUT) {
+    newStreakCount++;
+    if (newStreakCount > newBestStreak) newBestStreak = newStreakCount;
+    if (newStreakCount > 0 && newStreakCount % STREAK_BONUS_THRESHOLD === 0) {
+      streakEnergyBonus = STREAK_ENERGY_BONUS;
+    }
+  } else {
+    newStreakCount = 0;
+  }
+
+  // ── Jackpot system ────────────────────────────────────────────────────────
+  let jackpotOutputBonus = 0;
+  let jackpotEnergyBonus = 0;
+  let jackpotTriggered = false;
+  if (finalOutputAdjusted >= JACKPOT_MIN_OUTPUT && rng.next() < JACKPOT_PROBABILITY) {
+    jackpotOutputBonus = JACKPOT_OUTPUT_BONUS;
+    jackpotEnergyBonus = JACKPOT_ENERGY_BONUS;
+    jackpotTriggered = true;
+  }
+  const finalOutputWithBonuses = finalOutputAdjusted + jackpotOutputBonus;
+
+  const newOutput = state.output + finalOutputWithBonuses;
+  const newTotalOutput = state.totalOutput + finalOutputWithBonuses;
 
   const logEntry: ReactionLogEntry = {
     step: phases[state.phaseIndex].steps - newSteps,
@@ -309,7 +348,7 @@ export function processMoveAction(state: GameState, dir: Direction): GameState {
     anomalyEffect: anomalyEffectPost || null,
     base: scoreResult.base,
     multipliers: scoreResult.multipliers,
-    finalOutput: finalOutputAdjusted,
+    finalOutput: finalOutputWithBonuses,
     triggeredCatalysts: scoreResult.triggeredCatalysts,
     synergyMultiplier: scoreResult.synergyMultiplier,
     triggeredSynergies: scoreResult.triggeredSynergies,
@@ -336,16 +375,48 @@ export function processMoveAction(state: GameState, dir: Direction): GameState {
     momentumMultiplier: newMomentumMultiplier,
     stabilityCount: newStabilityCount,
     delayedSpawnCount: newDelayedSpawnCount,
-    echoOutputLast: finalOutputAdjusted,
-    energy: state.energy + energyGain,
+    echoOutputLast: finalOutputWithBonuses,
+    energy: state.energy + energyGain + streakEnergyBonus + jackpotEnergyBonus,
     pendingSignal: null,
     signals: usedSignal
       ? state.signals.filter(s => s !== usedSignal)
       : state.signals,
+    roundOutput: state.roundOutput + finalOutputWithBonuses,
+    bestMoveOutput: Math.max(state.bestMoveOutput, finalOutputWithBonuses),
+    streakCount: newStreakCount,
+    bestStreak: newBestStreak,
+    jackpotTriggered,
   };
 
   if (newOutput >= currentPhase.targetOutput || newSteps <= 0) {
     newState = handlePhaseEnd(newState);
+  }
+
+  // ── Milestone check ───────────────────────────────────────────────────────
+  if (newState.screen === 'playing') {
+    const maxTileOnBoard = getMaxTile(newState.grid);
+    const newMilestones = checkMilestones(
+      newState.totalOutput,
+      newState.roundNumber,
+      maxTileOnBoard,
+      newState.triggeredMilestones
+    );
+    if (newMilestones.length > 0) {
+      let milestoneEnergy = 0;
+      let milestoneMultiplier = 0;
+      for (const mid of newMilestones) {
+        const def = MILESTONE_DEFS[mid];
+        if (def.reward.type === 'energy') milestoneEnergy += def.reward.amount;
+        if (def.reward.type === 'multiplier') milestoneMultiplier += def.reward.amount;
+      }
+      newState = {
+        ...newState,
+        triggeredMilestones: [...newState.triggeredMilestones, ...newMilestones],
+        pendingMilestones: [...newState.pendingMilestones, ...newMilestones],
+        energy: newState.energy + milestoneEnergy,
+        globalMultiplier: Math.round((newState.globalMultiplier + milestoneMultiplier) * 100) / 100,
+      };
+    }
   }
 
   // Chain Trigger signal: force re-processing after a move
@@ -361,6 +432,16 @@ export function processMoveAction(state: GameState, dir: Direction): GameState {
   }
 
   return newState;
+}
+
+function getMaxTile(grid: Grid): number {
+  let max = 0;
+  for (const row of grid) {
+    for (const cell of row) {
+      if (cell && cell.value > max) max = cell.value;
+    }
+  }
+  return max;
 }
 
 function handlePhaseEnd(state: GameState): GameState {
@@ -392,7 +473,15 @@ function handlePhaseEnd(state: GameState): GameState {
 
   // Last phase of the round cleared — transition to round_complete
   if (state.phaseIndex >= PHASES_PER_ROUND - 1) {
-    return { ...state, screen: 'round_complete', output, energy };
+    const roundCompleteEnergy = energy + ROUND_COMPLETE_ENERGY_BONUS;
+    const roundCompleteMultiplier = Math.round((state.globalMultiplier + ROUND_COMPLETE_MULTIPLIER_BONUS) * 100) / 100;
+    return {
+      ...state,
+      screen: 'round_complete',
+      output,
+      energy: roundCompleteEnergy,
+      globalMultiplier: roundCompleteMultiplier,
+    };
   }
 
   // Not the last phase — advance to next phase via infusion (intermission)
@@ -562,6 +651,10 @@ export function advanceRound(state: GameState): GameState {
     collapseFieldCounter: 0,
     entropyBlockedCell: null,
     roundNumber: nextRound,
+    roundOutput: 0,
+    pendingMilestones: [],
+    jackpotTriggered: false,
+    streakCount: 0,
   };
 }
 

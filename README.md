@@ -227,3 +227,36 @@ A `<LocaleSwitcher>` component is embedded in the Header. Clicking it toggles be
 ---
 
 
+
+## Game Flow
+
+### Standard Run
+1. Select a **Protocol** (Corner / Sparse / Overload)
+2. Play through **6 phases** per round (output target + step limit)
+3. After each phase: **Infusion** reward → optional **Forge** purchase
+4. After 6 phases: **Round Complete** screen with stats and reward (+Energy, +Multiplier)
+5. Continue into the next round (difficulty scales +12% per round)
+6. Run ends only when you fail to reach a phase target within the step limit
+
+### Challenge Mode
+1. Click **⚔ Challenge** on the Start Screen
+2. Select one of 4 challenge runs with unique constraints
+3. The run applies rule overrides on top of the base protocol
+
+Available challenges:
+- **No Corners**: corner bonuses disabled
+- **Energy Starved**: energy gain at 30% of normal
+- **Chain Master**: only chain-based scoring counts
+- **Anomaly Storm**: anomaly frequency doubled
+
+### Daily Run
+1. Click **📅 Daily Run** on the Start Screen
+2. Every player shares the same seed derived from today's date (`YYYY-MM-DD`)
+3. Your best result (output + rounds) is saved locally
+
+### Milestones & Rewards
+- **Milestones** trigger on output thresholds, round numbers, and max tile values
+- Each milestone grants a bonus (energy or global multiplier)
+- **Jackpot**: 2% chance on high-output moves for a big bonus (+output + energy)
+- **Streaks**: consecutive high-output moves grant energy bonuses every 5 moves
+

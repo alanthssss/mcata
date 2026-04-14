@@ -6,9 +6,11 @@ import { HelpOverlay } from './HelpOverlay';
 
 interface StartScreenProps {
   onStart: (protocol: ProtocolId) => void;
+  onChallenge: () => void;
+  onDailyRun: () => void;
 }
 
-export const StartScreen: React.FC<StartScreenProps> = ({ onStart }) => {
+export const StartScreen: React.FC<StartScreenProps> = ({ onStart, onChallenge, onDailyRun }) => {
   const t = useT();
   const [selectedProtocol, setSelectedProtocol] = useState<ProtocolId>(DEFAULT_PROTOCOL);
   const [showHelp, setShowHelp] = useState(false);
@@ -52,6 +54,8 @@ export const StartScreen: React.FC<StartScreenProps> = ({ onStart }) => {
 
       <div className="start-actions">
         <button className="start-btn" onClick={() => onStart(selectedProtocol)}>{t('ui.start_btn')}</button>
+        <button className="start-btn start-btn--secondary" onClick={onChallenge}>{t('ui.challenge_btn')}</button>
+        <button className="start-btn start-btn--daily" onClick={onDailyRun}>{t('ui.daily_run_btn')}</button>
         <button className="help-btn" onClick={() => setShowHelp(true)}>{t('ui.help_btn')}</button>
       </div>
 

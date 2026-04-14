@@ -284,7 +284,8 @@ export type GameScreen =
   | 'infusion'
   | 'game_over'
   | 'round_complete'
-  | 'run_complete';   // kept for potential "end run early" UI flow
+  | 'run_complete'    // kept for potential "end run early" UI flow
+  | 'challenge_select';
 
 export interface GameState {
   screen: GameScreen;
@@ -323,4 +324,18 @@ export interface GameState {
   unlockedCatalysts: CatalystId[] | undefined; // undefined = full pool
   // Round progression
   roundNumber: number;                         // current round (starts at 1)
+  // Round stats
+  roundOutput: number;          // output accumulated in the current round
+  bestMoveOutput: number;       // highest single-move output this run
+  // Streak system
+  streakCount: number;          // consecutive high-output moves (≥ STREAK_MIN_OUTPUT)
+  bestStreak: number;           // best streak this run
+  // Milestone/jackpot system
+  triggeredMilestones: import('./milestones').MilestoneId[];
+  pendingMilestones: import('./milestones').MilestoneId[];  // queued for display
+  jackpotTriggered: boolean;    // true for 1 tick after jackpot
+  // Challenge mode
+  challengeId: import('./challenges').ChallengeId | null;
+  // Daily run flag
+  isDailyRun: boolean;
 }

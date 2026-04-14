@@ -251,6 +251,51 @@ const en: TranslationMap = {
   'synergy.amplified_stability.description': 'Stability Field + Threshold Surge: stable board unlocks surge multiplier (×1.35)',
   'synergy.phase_reactor.name': 'Phase Reactor',
   'synergy.phase_reactor.description': 'Phase Resonance + Energy Loop: late-phase output feeds energy loop (×1.3)',
+  // ─── UI: Round Complete (enhanced) ────────────────────────────────────────
+  'ui.round_output_gained': 'Round Output',
+  'ui.best_move_output': 'Best Move',
+  'ui.build_summary': 'Build Summary',
+  'ui.active_synergies_label': 'Active Synergies',
+  'ui.mvp_catalyst': '🏆 MVP Catalyst',
+  'ui.strongest_synergy': '⚡ Strongest Synergy',
+  'ui.round_reward_title': '🎁 Round Reward',
+
+  // ─── UI: Milestone / Jackpot ──────────────────────────────────────────────
+  'ui.milestone_reached': '🏅 Milestone Reached!',
+  'ui.milestone_reward_energy': '+{n} Energy',
+  'ui.milestone_reward_multiplier': '+{n}% Global Multiplier',
+  'ui.jackpot_title': '🎰 Jackpot!',
+  'ui.jackpot_reward': '+Output Bonus & +Energy',
+
+  // ─── UI: Challenge Select ─────────────────────────────────────────────────
+  'ui.challenge_select_title': '⚔ Challenge Mode',
+  'ui.challenge_select_subtitle': 'Choose a curated challenge run with unique constraints.',
+  'ui.challenge_win': 'Win',
+  'ui.challenge_btn': '⚔ Challenge',
+
+  // ─── UI: Daily Run ────────────────────────────────────────────────────────
+  'ui.daily_run_btn': '📅 Daily Run',
+  'ui.daily_run_title': '📅 Daily Run',
+  'ui.daily_run_date': 'Today: {date}',
+  'ui.daily_run_best': 'Best: {output}',
+  'ui.daily_run_rounds': 'Rounds: {rounds}',
+
+  // ─── UI: Misc ─────────────────────────────────────────────────────────────
+  'ui.back': '← Back',
+
+  // ─── Challenges ───────────────────────────────────────────────────────────
+  'challenge.no_corners.name': 'No Corners',
+  'challenge.no_corners.description': 'Corner bonuses are disabled. Build through chains.',
+  'challenge.no_corners.win_condition': 'Clear 3 rounds without corner bonuses',
+  'challenge.energy_starved.name': 'Energy Starved',
+  'challenge.energy_starved.description': 'Energy gain is severely reduced.',
+  'challenge.energy_starved.win_condition': 'Reach Round 3 with limited energy',
+  'challenge.chain_master.name': 'Chain Master',
+  'challenge.chain_master.description': 'Only chain-based scoring matters.',
+  'challenge.chain_master.win_condition': 'Clear 3 rounds using chain scoring',
+  'challenge.anomaly_storm.name': 'Anomaly Storm',
+  'challenge.anomaly_storm.description': 'Anomalies trigger twice as often.',
+  'challenge.anomaly_storm.win_condition': 'Survive 3 rounds under anomaly pressure',
 };
 
 export default en;

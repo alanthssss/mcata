@@ -315,3 +315,27 @@ export const DISPLAY_SCORE_SCALE = 10;
 //   "value-only"  — show only the raw internal value (debug / accessibility)
 export type TileDisplayMode = 'label' | 'label+value' | 'value-only';
 export const TILE_DISPLAY_MODE: TileDisplayMode = 'label+value';
+
+// ─── Streak system ────────────────────────────────────────────────────────────
+/** Minimum output for a move to count toward the streak counter */
+export const STREAK_MIN_OUTPUT = 5;
+/** Number of consecutive streak moves before granting a bonus */
+export const STREAK_BONUS_THRESHOLD = 5;
+/** Energy bonus awarded at each streak threshold */
+export const STREAK_ENERGY_BONUS = 1;
+
+// ─── Jackpot system ──────────────────────────────────────────────────────────
+/** Probability of triggering a jackpot on an exceptional move */
+export const JACKPOT_PROBABILITY = 0.02;
+/** Minimum output multiplier on a single move to be eligible for jackpot */
+export const JACKPOT_MIN_OUTPUT = 50;
+/** Output bonus added when jackpot triggers */
+export const JACKPOT_OUTPUT_BONUS = 100;
+/** Energy bonus added when jackpot triggers */
+export const JACKPOT_ENERGY_BONUS = 3;
+
+// ─── Round-end reward ────────────────────────────────────────────────────────
+/** Energy bonus granted on every round completion */
+export const ROUND_COMPLETE_ENERGY_BONUS = 3;
+/** Global multiplier bonus granted on every round completion */
+export const ROUND_COMPLETE_MULTIPLIER_BONUS = 0.05;

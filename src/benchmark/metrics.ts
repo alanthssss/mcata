@@ -26,6 +26,12 @@ export interface RunMetrics {
   // Endless round tracking
   roundsCleared?:       number;  // total complete rounds finished
   highestRound?:        number;  // highest round number reached
+  // New progression metrics
+  milestoneCount?:      number;  // total milestones triggered
+  jackpotCount?:        number;  // total jackpots triggered
+  maxStreak?:           number;  // best streak this run
+  challengeId?:         string | null; // challenge mode used (null = standard)
+  isDailyRun?:          boolean; // whether this was a daily run
 }
 
 // ─── Aggregate suite metrics ──────────────────────────────────────────────────
@@ -48,6 +54,12 @@ export interface SuiteMetrics {
   avgRoundsCleared:    number;
   /** Highest round number reached across all runs */
   maxRoundReached:     number;
+  /** Average milestones per run */
+  avgMilestones:       number;
+  /** Average jackpots per run */
+  avgJackpots:         number;
+  /** Average best streak per run */
+  avgBestStreak:       number;
 }
 
 // ─── Aggregate helpers ────────────────────────────────────────────────────────
@@ -97,6 +109,9 @@ export function buildSuiteMetrics(runs: RunMetrics[]): SuiteMetrics {
       scoreStdDev: 0,
       avgRoundsCleared: 0,
       maxRoundReached: 0,
+      avgMilestones: 0,
+      avgJackpots:   0,
+      avgBestStreak: 0,
     };
   }
 
@@ -127,6 +142,9 @@ export function buildSuiteMetrics(runs: RunMetrics[]): SuiteMetrics {
     scoreStdDev:         Math.sqrt(v),
     avgRoundsCleared:    mean(runs.map(r => r.roundsCleared ?? 0)),
     maxRoundReached:     Math.max(...runs.map(r => r.highestRound ?? 1)),
+    avgMilestones:       mean(runs.map(r => r.milestoneCount ?? 0)),
+    avgJackpots:         mean(runs.map(r => r.jackpotCount ?? 0)),
+    avgBestStreak:       mean(runs.map(r => r.maxStreak ?? 0)),
   };
 }
 
