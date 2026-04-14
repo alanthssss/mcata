@@ -2,11 +2,77 @@
 
 ## Balancing Goals
 
-1. The game should feel progressively harder across 6 phases
-2. Catalysts should each offer a meaningful choice
-3. Anomaly phases should be challenging but survivable with good play
-4. Better agents should clearly outperform weaker ones (strategic depth)
-5. Win rate for the best agent (MCTS/Heuristic) should be in the 5%–40% range
+1. The game should feel progressively harder across rounds (6 phases per round, endless)
+2. Each round should feel meaningfully different thanks to rotating templates
+3. Catalysts should each offer a meaningful choice — especially with 6 active slots
+4. Anomaly phases should be challenging but survivable with good play
+5. Better agents should clearly outperform weaker ones (strategic depth)
+6. Win rate for round 1 (best agent) should be in the 20%–60% range; later rounds naturally lower
+
+---
+
+## Round Scaling
+
+The game now uses **endless round progression**: every 6 phases complete a round, and rounds continue until the player fails a phase.
+
+### Scaling Parameters
+
+```ts
+// src/core/config.ts
+export const ROUND_TARGET_SCALE  = 0.12; // targetOutput × (1 + (round-1) × 0.12)
+export const ROUND_ECONOMY_SCALE = 0.08; // future energy-gain scaling hook
+```
+
+### Phase Templates
+
+Three templates rotate across rounds.  Each defines a different 6-phase arc:
+
+| Template | ID | Pacing | Anomaly Placement |
+|----------|----|--------|--------------------|
+| Standard Circuit | `alpha` | Balanced ramp | Phases 4 + 6 |
+| Pressure Gauntlet | `beta` | Early anomaly pressure | Phases 2 + 4 |
+| Economic Surge | `gamma` | Long economy phases | Phases 3 + 5 |
+
+Round assignment: `templateIndex = (roundNumber - 1) % 3`
+
+### Expected Run Length (Heuristic agent, ascension 0)
+
+| Round | Expected Win% (approx) |
+|-------|------------------------|
+| 1 | 25–45% |
+| 2 | 15–30% |
+| 3 | 5–15% |
+| 4+ | < 10% |
+
+These are rough targets, not guarantees. Use benchmark data to calibrate.
+
+---
+
+## Catalyst Slot Expansion (3 → 6)
+
+The active catalyst capacity was expanded from **3** to **6** slots.
+
+### Risks to Monitor
+
+| Risk | Mitigation |
+|------|-----------|
+| Runaway synergy stacking | Synergies cap at one bonus per pair — adding more catalysts doesn't stack the same synergy twice |
+| Build identity too easy to achieve | 6 slots means players can hold an entire economy _and_ scoring build simultaneously — watch win rates |
+| Forge economy flooding | Forge now appears every phase; consider adjusting `STARTING_ENERGY` if agents accumulate too much energy |
+
+### Economy Review
+
+Because the Forge is now accessible after every phase (via Intermission):
+- Each phase clear yields an Infusion reward AND Forge access
+- Average energy inflow per phase is unchanged (Infusion → energy option still grants 3)
+- Players can buy more catalysts per run on average — this is intentional
+
+### Recommended Tuning Knobs
+
+If 6-slot builds feel too easy by Round 2:
+- Increase catalyst costs by 1–2 energy
+- Reduce `STARTING_ENERGY` from 5 to 3
+- Add a per-round surcharge to Forge reroll
 
 ---
 

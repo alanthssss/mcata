@@ -21,10 +21,14 @@ npm run preview
 
 - Merge tiles on a 4×4 grid using arrow keys
 - Each **Phase** has a target **Output** you must reach within a step limit
-- Clear phases to earn **Infusion** rewards
-- Visit the **Forge** (between Phase 3 and 4) to buy **Catalysts** with Energy
-- Survive **Anomaly** phases with special modifiers
-- Complete all 6 phases to win the run
+- After every phase:
+  1. Choose an **Infusion** reward (catalyst / energy / steps / global multiplier)
+  2. Optionally shop at the **Forge** to buy Catalysts with Energy
+- Every **6 phases** complete a **Round** — then the next round starts automatically
+- Rounds grow harder each round (targets scale 12% per round)
+- The run ends only when you **fail a phase** (output too low when steps run out)
+- Survive **Anomaly** phases with special modifiers (Entropy Tax, Collapse Field)
+- Build a team of up to **6 Catalysts** for deep synergies and identity
 
 ## Protocols
 
@@ -37,33 +41,27 @@ frequency, output scaling, and step budgets.
 On the Start Screen you will see a **Protocol Selection** grid.  Click one of
 the three cards to select it, then click **Start Run**.
 
-| Protocol | Icon | Difficulty | Effect |
+| Protocol | Icon | Stakes | Effect |
 |---|---|---|---|
 | Corner Protocol | 📐 | Standard | Corner merges gain an extra ×1.5 multiplier |
 | Sparse Protocol | 🌑 | Tactical | Start with 1 tile; spawn halved, output ×1.2 |
 | Overload Protocol | ⚡ | Overclocked | Output ×1.4, but each phase has 2 fewer steps |
 
-The selected protocol is displayed in the top bar throughout the run, and
-affects the engine's scoring formula immediately.
+The selected protocol is displayed in the top bar throughout the run.
 
-- **Default fallback**: if no protocol is explicitly chosen, `corner_protocol`
-  is used.
-- **Benchmark bypass**: the benchmark suite passes the protocol directly to
-  `createInitialState(seed, protocol)`, skipping the UI entirely.
-- **Localization**: protocol names, descriptions, and difficulty labels are all
-  fully translated via the i18n system.
+### Round Templates (phase patterns)
 
-| Phase | Target Output | Steps | Anomaly |
-|-------|--------------|-------|---------|
-| 1 | 70 | 12 | — |
-| 2 | 80 | 12 | — |
-| 3 | 75 | 10 | — |
-| → Forge | — | — | — |
-| 4 | 40 | 8 | Entropy Tax |
-| 5 | 80 | 10 | — |
-| 6 | 55 | 8 | Collapse Field |
+Three templates rotate across rounds:
+
+| Template | Flavour |
+|----------|---------|
+| Standard Circuit (alpha) | Balanced ramp — two anomaly climaxes |
+| Pressure Gauntlet (beta) | Anomalies arrive early and often |
+| Economic Surge (gamma) | Long phases reward patient economy |
 
 ## Catalysts
+
+Up to **6 Catalysts** can be active at once.  Acquire them via Infusion rewards or by buying at the Forge (available after every phase).
 
 | Name | Rarity | Effect |
 |------|--------|--------|

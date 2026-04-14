@@ -55,8 +55,8 @@ flowchart LR
 | Metric | Description |
 |--------|-------------|
 | `finalOutput` | Total Output accumulated across all phases |
-| `phasesCleared` | How many phases were completed |
-| `won` | Whether Phase 6 was completed |
+| `phasesCleared` | How many phases were completed (current round) |
+| `won` | Whether at least one round was completed |
 | `maxTile` | Highest tile value reached |
 | `totalSteps` | Total valid moves made |
 | `totalCatalysts` | How many catalysts were held at the end |
@@ -67,6 +67,8 @@ flowchart LR
 | `avgMergesPerMove` | Average merges per step |
 | `avgEmptyCells` | Average empty cells across all steps |
 | `moveDiversity` | Normalised entropy of action distribution (0=one direction, 1=uniform) |
+| `roundsCleared` | Complete rounds finished in this run |
+| `highestRound` | Highest round number reached |
 
 ### Aggregate Suite Metrics (`SuiteMetrics`)
 
@@ -75,7 +77,7 @@ flowchart LR
 | `meanOutput` | Mean `finalOutput` across all runs |
 | `medianOutput` | Median `finalOutput` |
 | `p90Output` | 90th-percentile `finalOutput` |
-| `winRate` | Fraction of runs that completed Phase 6 |
+| `winRate` | Fraction of runs that cleared at least one round |
 | `maxTileDistribution` | Histogram of max tile values |
 | `phaseClearDist` | Histogram of phases cleared |
 | `avgStepsSurvived` | Mean total steps |
@@ -84,10 +86,8 @@ flowchart LR
 | `anomalySuccessRate` | Mean anomaly survival rate |
 | `scoreVariance` | Variance of `finalOutput` |
 | `scoreStdDev` | Standard deviation |
-
----
-
-## Build Analysis (New in v3)
+| `avgRoundsCleared` | Mean complete rounds cleared per run |
+| `maxRoundReached` | Highest round number reached across all runs |
 
 ### Catalyst Metrics (`catalyst_stats.json`)
 
@@ -173,169 +173,32 @@ npx tsx src/scripts/runBenchmark.ts --suite smoke
 
 | Observation | Interpretation |
 |-------------|---------------|
-| All win rates ≈ 0% | Game too hard — consider reducing phase targets |
-| All win rates > 50% | Game too easy — increase targets or reduce steps |
+| Round 1 win rate ≈ 0% | Game too hard — reduce phase 1–6 targets in alpha template |
+| Round 1 win rate > 80% | Game too easy — increase targets or reduce steps |
+| avgRoundsCleared ≈ 0 for HeuristicAgent | Scaling too steep — reduce `ROUND_TARGET_SCALE` |
+| avgRoundsCleared > 5 | Scaling too flat — increase `ROUND_TARGET_SCALE` |
 | RandomAgent ≈ HeuristicAgent | Game lacks strategic depth |
 | Anomaly survival < 30% | Entropy Tax / Collapse Field too punishing |
 | Catalyst pick rate < 5% | Catalyst too expensive or too weak |
 | Catalyst win rate >> global | Catalyst potentially overpowered |
 | Synergy win rate >> global | Synergy potentially overpowered |
 | High score variance | Game is swingy (possibly by design) |
-| Dominant build > 30% of wins | Build diversity too low |
+| Dominant build > 30% of wins | Build diversity too low — 6-slot economy may be trivial |
 
 ---
 
 ## What "Good Benchmark Results" Look Like
 
 - **Agent distinction**: HeuristicAgent and MCTS clearly outperform RandomAgent
-- **Win rate**: somewhere between 5%–40% for the best agent
-- **Phase ramp**: most runs clear Phases 1–3, fewer clear Phases 4–6
-- **Anomaly challenge**: Phase 4 and 6 cause a measurable survival drop
-- **Catalyst usage**: at least 2–3 catalysts see > 10% pick rate
+- **Round 1 win rate**: 20%–50% for the best agent
+- **Round progression**: agents that clear Round 1 should fail within Round 2–3 most of the time
+- **Phase ramp**: most runs clear Phases 1–4, fewer clear Phase 6
+- **Anomaly challenge**: anomaly phases cause a measurable survival drop
+- **Catalyst usage**: at least 3–5 catalysts see > 10% pick rate (6-slot system enables more diversity)
 - **Synergy spread**: no single synergy accounts for > 50% of wins
 - **Build diversity**: top build frequency < 30%
 - **Reproducibility**: running the same suite twice gives < 5% difference in mean output
-
-
-## Goals
-
-The benchmark framework lets you:
-- Measure how well each AI agent plays the game
-- Identify which phases are too hard or too easy
-- Detect overpowered or underpowered Catalysts
-- Produce reproducible, comparable numbers across code changes
-
----
-
-## Agent Overview
-
-| Agent | Strategy | Notes |
-|-------|----------|-------|
-| RandomAgent | Uniform random from legal moves | Baseline lower bound |
-| GreedyAgent | Best immediate heuristic (output, empty, corner) | Fast, no lookahead |
-| HeuristicAgent | Weighted multi-factor evaluation (empty/mono/smooth/corner/merge/anomaly) | Configurable weights |
-| BeamSearchAgent | Beam search, configurable depth and width | Lookahead without full tree |
-| MCTSAgent | Monte Carlo Tree Search with random rollouts | Best-effort quality |
-
-All agents implement the `Agent` interface from `src/ai/types.ts`.
-
----
-
-## Agent Evaluation Pipeline
-
-```mermaid
-flowchart LR
-    S["GameState"] --> LA["legalMoves()"]
-    LA --> E["evaluate each move"]
-    E --> D["AgentDecision"]
-    D --> Sim["processMoveAction()"]
-    Sim --> NS["Next GameState"]
-    NS --> S
-```
-
----
-
-## Metrics Explained
-
-### Per-Run Metrics (`RunMetrics`)
-
-| Metric | Description |
-|--------|-------------|
-| `finalOutput` | Total Output accumulated across all phases |
-| `phasesCleared` | How many phases were completed |
-| `won` | Whether Phase 6 was completed |
-| `maxTile` | Highest tile value reached |
-| `totalSteps` | Total valid moves made |
-| `totalCatalysts` | How many catalysts were held at the end |
-| `catalystReplacements` | How many times a catalyst was replaced |
-| `totalEnergyEarned` | Proxy for energy economy |
-| `avgOutputPerMove` | finalOutput / totalSteps |
-| `anomalySurvivalRate` | Fraction of anomaly phases survived (0–1) |
-| `avgMergesPerMove` | Average merges per step |
-| `avgEmptyCells` | Average empty cells across all steps |
-| `moveDiversity` | Normalised entropy of action distribution (0=one direction, 1=uniform) |
-
-### Aggregate Suite Metrics (`SuiteMetrics`)
-
-| Metric | Description |
-|--------|-------------|
-| `meanOutput` | Mean `finalOutput` across all runs |
-| `medianOutput` | Median `finalOutput` |
-| `p90Output` | 90th-percentile `finalOutput` |
-| `winRate` | Fraction of runs that completed Phase 6 |
-| `maxTileDistribution` | Histogram of max tile values |
-| `phaseClearDist` | Histogram of phases cleared |
-| `avgStepsSurvived` | Mean total steps |
-| `avgOutputPerMove` | Mean output efficiency |
-| `avgCatalystCount` | Mean catalysts held |
-| `anomalySuccessRate` | Mean anomaly survival rate |
-| `scoreVariance` | Variance of `finalOutput` |
-| `scoreStdDev` | Standard deviation |
-
----
-
-## Suite Definitions
-
-| Suite | Agents | Runs/Agent | Use |
-|-------|--------|-----------|-----|
-| `smoke` | All 5 | 5 | Quick sanity check |
-| `baseline` | All 5 | 100 | Standard comparison |
-| `long` | All 5 | 500 | Stable / publication-ready |
-| `balance` | Greedy, Heuristic | 50 | Balance probing |
-| `phase_stress` | Heuristic, MCTS | 50 | Anomaly phase survival |
-
----
-
-## Benchmark Workflow
-
-```mermaid
-flowchart TD
-    PS["Select Suite (presets.ts)"]
-    PS --> RA["Run Agents (runner.ts)"]
-    RA --> CM["Collect RunMetrics"]
-    CM --> AG["Aggregate SuiteMetrics"]
-    AG --> AN["analyseResults (analysis.ts)"]
-    AN --> EX["Export JSON / CSV / MD (exporters.ts)"]
-    AN --> CH["Generate SVG Charts (charts.ts)"]
-    EX --> AR["artifacts/benchmark/latest/"]
-    CH --> AR
-```
-
----
-
-## How to Run
-
-```bash
-npm run benchmark             # baseline suite
-npm run benchmark:long        # long suite
-npm run balance               # balance + phase stress suites
-npx tsx src/scripts/runBenchmark.ts --suite smoke
-```
-
----
-
-## How to Interpret Results
-
-| Observation | Interpretation |
-|-------------|---------------|
-| All win rates ≈ 0% | Game too hard — consider reducing phase targets |
-| All win rates > 50% | Game too easy — increase targets or reduce steps |
-| RandomAgent ≈ HeuristicAgent | Game lacks strategic depth |
-| Anomaly survival < 30% | Entropy Tax / Collapse Field too punishing |
-| Catalyst pick rate < 5% | Catalyst too expensive or too weak |
-| Catalyst win rate >> global | Catalyst potentially overpowered |
-| High score variance | Game is swingy (possibly by design) |
-
----
-
-## What "Good Benchmark Results" Look Like
-
-- **Agent distinction**: HeuristicAgent and MCTS clearly outperform RandomAgent
-- **Win rate**: somewhere between 5%–40% for the best agent
-- **Phase ramp**: most runs clear Phases 1–3, fewer clear Phases 4–6
-- **Anomaly challenge**: Phase 4 and 6 cause a measurable survival drop
-- **Catalyst usage**: at least 2–3 catalysts see > 10% pick rate
-- **Reproducibility**: running the same suite twice gives < 5% difference in mean output
+- **Round metrics**: `avgRoundsCleared` should be between 0.5–2.0 for MCTS at baseline
 
 ---
 
@@ -343,7 +206,7 @@ npx tsx src/scripts/runBenchmark.ts --suite smoke
 
 The `benchmark:meta` script (`src/scripts/runMetaBenchmark.ts`) adds three analysis modes.
 
-### 1. Ascension Difficulty Sweep (`--mode ascension`)
+### 1. Ascension Level Sweep (`--mode ascension`)
 
 Runs the same agents across all 9 Ascension levels (0–8) and reports per-level win rates.
 
@@ -423,17 +286,20 @@ xychart-beta
 
 ---
 
-### New RunOptions Fields
+### RunOptions Fields
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
-| `ascensionLevel` | `0–8` | `0` | Difficulty tier for the run |
+| `ascensionLevel` | `0–8` | `0` | Ascension level for the run |
 | `protocol` | `ProtocolId` | `corner_protocol` | Protocol to use |
+| `maxRounds` | `number` | `10` | Maximum rounds to simulate (caps endless runs for benchmark) |
 | `unlockedCatalysts` | `CatalystId[] \| undefined` | `undefined` (full pool) | Restricts Forge/Infusion pool |
 
-### New RunMetrics Fields
+### RunMetrics Fields (all)
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `ascensionLevel` | `number` | Difficulty level used for this run |
+| `ascensionLevel` | `number` | Ascension level used for this run |
 | `coreShards` | `number` | Meta currency earned this run |
+| `roundsCleared` | `number` | Complete rounds finished |
+| `highestRound` | `number` | Highest round number reached |

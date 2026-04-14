@@ -1,8 +1,198 @@
 // Centralized tuning configuration for Merge Catalyst.
 // All balance-sensitive values live here so tuning changes are one-line edits.
 
-export const BALANCE_VERSION = 'v3';
+import type { RoundTemplate } from './types';
 
+export const BALANCE_VERSION = 'v4';
+
+// ─── Round template definitions ───────────────────────────────────────────────
+// Each template defines 6 phases for one round.  Templates rotate across rounds
+// so every 3 rounds the cycle restarts (and targets are scaled by ROUND_TARGET_SCALE).
+
+export const ROUND_TEMPLATES: RoundTemplate[] = [
+  {
+    id: 'alpha',
+    name: 'Standard Circuit',
+    description: 'A balanced ramp from opener through two anomaly climaxes.',
+    phases: [
+      {
+        phaseNumber: 1,
+        targetOutput: 70,
+        steps: 12,
+        expectedOutput: 90,
+        highSkillOutput: 140,
+        challengeTier: 'small',
+      },
+      {
+        phaseNumber: 2,
+        targetOutput: 80,
+        steps: 12,
+        expectedOutput: 110,
+        highSkillOutput: 180,
+        challengeTier: 'big',
+      },
+      {
+        phaseNumber: 3,
+        targetOutput: 75,
+        steps: 10,
+        expectedOutput: 100,
+        highSkillOutput: 160,
+        challengeTier: 'boss',
+        modifier: 'Corner bonus disabled — chain merges are your only edge',
+      },
+      {
+        phaseNumber: 4,
+        targetOutput: 40,
+        steps: 8,
+        anomaly: 'entropy_tax',
+        expectedOutput: 55,
+        highSkillOutput: 90,
+        challengeTier: 'small',
+        modifier: 'Entropy Tax: one cell blocked each move',
+      },
+      {
+        phaseNumber: 5,
+        targetOutput: 80,
+        steps: 10,
+        expectedOutput: 110,
+        highSkillOutput: 200,
+        challengeTier: 'big',
+      },
+      {
+        phaseNumber: 6,
+        targetOutput: 55,
+        steps: 8,
+        anomaly: 'collapse_field',
+        expectedOutput: 75,
+        highSkillOutput: 130,
+        challengeTier: 'boss',
+        modifier: 'Collapse Field: every 4 scoring moves removes the lowest tile',
+      },
+    ],
+  },
+  {
+    id: 'beta',
+    name: 'Pressure Gauntlet',
+    description: 'Anomalies arrive early and often — build fast or fail.',
+    phases: [
+      {
+        phaseNumber: 1,
+        targetOutput: 60,
+        steps: 10,
+        expectedOutput: 80,
+        highSkillOutput: 130,
+        challengeTier: 'small',
+      },
+      {
+        phaseNumber: 2,
+        targetOutput: 45,
+        steps: 8,
+        anomaly: 'entropy_tax',
+        expectedOutput: 60,
+        highSkillOutput: 100,
+        challengeTier: 'small',
+        modifier: 'Entropy Tax: one cell blocked each move',
+      },
+      {
+        phaseNumber: 3,
+        targetOutput: 90,
+        steps: 12,
+        expectedOutput: 120,
+        highSkillOutput: 200,
+        challengeTier: 'big',
+      },
+      {
+        phaseNumber: 4,
+        targetOutput: 50,
+        steps: 8,
+        anomaly: 'collapse_field',
+        expectedOutput: 70,
+        highSkillOutput: 120,
+        challengeTier: 'boss',
+        modifier: 'Collapse Field: every 4 scoring moves removes the lowest tile',
+      },
+      {
+        phaseNumber: 5,
+        targetOutput: 85,
+        steps: 10,
+        expectedOutput: 115,
+        highSkillOutput: 190,
+        challengeTier: 'big',
+      },
+      {
+        phaseNumber: 6,
+        targetOutput: 70,
+        steps: 10,
+        expectedOutput: 95,
+        highSkillOutput: 160,
+        challengeTier: 'boss',
+        modifier: 'Corner bonus disabled — chain merges are your only edge',
+      },
+    ],
+  },
+  {
+    id: 'gamma',
+    name: 'Economic Surge',
+    description: 'Longer phases reward patient economy and deep catalyst builds.',
+    phases: [
+      {
+        phaseNumber: 1,
+        targetOutput: 80,
+        steps: 14,
+        expectedOutput: 110,
+        highSkillOutput: 170,
+        challengeTier: 'small',
+      },
+      {
+        phaseNumber: 2,
+        targetOutput: 100,
+        steps: 14,
+        expectedOutput: 140,
+        highSkillOutput: 220,
+        challengeTier: 'big',
+      },
+      {
+        phaseNumber: 3,
+        targetOutput: 60,
+        steps: 10,
+        anomaly: 'entropy_tax',
+        expectedOutput: 80,
+        highSkillOutput: 130,
+        challengeTier: 'small',
+        modifier: 'Entropy Tax: one cell blocked each move',
+      },
+      {
+        phaseNumber: 4,
+        targetOutput: 110,
+        steps: 14,
+        expectedOutput: 150,
+        highSkillOutput: 240,
+        challengeTier: 'big',
+      },
+      {
+        phaseNumber: 5,
+        targetOutput: 65,
+        steps: 10,
+        anomaly: 'collapse_field',
+        expectedOutput: 85,
+        highSkillOutput: 145,
+        challengeTier: 'boss',
+        modifier: 'Collapse Field: every 4 scoring moves removes the lowest tile',
+      },
+      {
+        phaseNumber: 6,
+        targetOutput: 120,
+        steps: 14,
+        expectedOutput: 160,
+        highSkillOutput: 260,
+        challengeTier: 'boss',
+        modifier: 'Corner bonus disabled — chain merges are your only edge',
+      },
+    ],
+  },
+];
+
+// Convenience alias: first template used as the baseline phase config.
 export const PHASE_CONFIG: Array<{
   phaseNumber: number;
   targetOutput: number;
@@ -12,64 +202,16 @@ export const PHASE_CONFIG: Array<{
   highSkillOutput: number;
   challengeTier: 'small' | 'big' | 'boss';
   modifier?: string;
-}> = [
-  {
-    phaseNumber: 1,
-    targetOutput: 70,
-    steps: 12,
-    expectedOutput: 90,
-    highSkillOutput: 140,
-    challengeTier: 'small',
-  },
-  {
-    phaseNumber: 2,
-    targetOutput: 80,
-    steps: 12,
-    expectedOutput: 110,
-    highSkillOutput: 180,
-    challengeTier: 'big',
-  },
-  {
-    phaseNumber: 3,
-    targetOutput: 75,
-    steps: 10,
-    expectedOutput: 100,
-    highSkillOutput: 160,
-    challengeTier: 'boss',
-    modifier: 'Corner bonus disabled — chain merges are your only edge',
-  },
-  {
-    phaseNumber: 4,
-    targetOutput: 40,
-    steps: 8,
-    anomaly: 'entropy_tax',
-    expectedOutput: 55,
-    highSkillOutput: 90,
-    challengeTier: 'small',
-    modifier: 'Entropy Tax: one cell blocked each move',
-  },
-  {
-    phaseNumber: 5,
-    targetOutput: 80,
-    steps: 10,
-    expectedOutput: 110,
-    highSkillOutput: 200,
-    challengeTier: 'big',
-  },
-  {
-    phaseNumber: 6,
-    targetOutput: 55,
-    steps: 8,
-    anomaly: 'collapse_field',
-    expectedOutput: 75,
-    highSkillOutput: 130,
-    challengeTier: 'boss',
-    modifier: 'Collapse Field: every 4 scoring moves removes the lowest tile',
-  },
-];
+}> = ROUND_TEMPLATES[0].phases as typeof PHASE_CONFIG;
 
-// After which phase index (0-based) the Forge screen is shown.
-export const FORGE_AFTER_PHASE = 2;
+// ─── Round scaling ────────────────────────────────────────────────────────────
+/** Per-round multiplier applied to every phase's targetOutput.
+ *  Round 1 = no scaling.  Round 2 = +ROUND_TARGET_SCALE.  Etc.
+ */
+export const ROUND_TARGET_SCALE = 0.12; // 12 % harder per round
+
+/** Per-round scaling applied to economy (energy gain rate) to keep Forge relevant. */
+export const ROUND_ECONOMY_SCALE = 0.08; // 8 % more energy per round
 
 // ─── Scoring config ───────────────────────────────────────────────────────────
 export const CATALYST_MULTIPLIERS = {
@@ -147,7 +289,7 @@ export const INFUSION_MULTIPLIER_BONUS = 0.1;
 
 // ─── Forge ────────────────────────────────────────────────────────────────────
 export const FORGE_REROLL_COST = 1;
-export const MAX_CATALYSTS     = 3;
+export const MAX_CATALYSTS     = 6;
 
 // ─── Anomaly intensity ───────────────────────────────────────────────────────
 export const COLLAPSE_FIELD_PERIOD = 4; // every N scoring moves triggers collapse

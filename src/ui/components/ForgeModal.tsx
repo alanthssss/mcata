@@ -38,7 +38,7 @@ export const ForgeModal: React.FC<ForgeModalProps> = ({
   const [pendingCatalyst, setPendingCatalyst] = useState<CatalystDef | null>(null);
 
   const handleBuyClick = (catalyst: CatalystDef) => {
-    if (activeCatalysts.length >= 3) {
+    if (activeCatalysts.length >= 6) {
       setPendingCatalyst(catalyst);
     } else {
       onBuy(catalyst);

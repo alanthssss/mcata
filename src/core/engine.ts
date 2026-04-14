@@ -7,7 +7,7 @@ import {
   spawnTile, resetMergedFlags
 } from './board';
 import { applyEntropyTax, applyCollapseField } from './anomalies';
-import { PHASES, FORGE_AFTER_PHASE_INDEX } from './phases';
+import { getPhasesForRound, PHASES_PER_ROUND } from './phases';
 import { generateForgeOffers } from './forge';
 import { generateInfusionOptions } from './infusion';
 import { ReactionLogEntry } from './types';
@@ -55,7 +55,9 @@ export function createInitialState(
   const ascMod = ASCENSION_MODIFIER_DEFS[ascensionLevel];
   const protocolDef = PROTOCOL_DEFS[protocol];
   const { grid, idCounter } = makeInitialGrid(rngSeed, protocolDef.startTiles);
-  const phase = PHASES[0];
+  const roundNumber = 1;
+  const phases = getPhasesForRound(roundNumber);
+  const phase = phases[0];
 
   const stepsForPhase = Math.max(1, phase.steps - protocolDef.stepsReduction - ascMod.stepsReduction);
   const startingEnergy = Math.floor(STARTING_ENERGY * ascMod.startingEnergyFactor);
@@ -90,6 +92,7 @@ export function createInitialState(
     echoOutputLast: 0,
     ascensionLevel,
     unlockedCatalysts,
+    roundNumber,
   };
 }
 
@@ -136,7 +139,8 @@ export function processMoveAction(state: GameState, dir: Direction): GameState {
   let entropyBlockedCell: Position | null = null;
   let anomalyEffectPre = '';
   let anomalyTriggered = false;
-  const currentPhase = PHASES[state.phaseIndex];
+  const phases = getPhasesForRound(state.roundNumber);
+  const currentPhase = phases[state.phaseIndex];
   if (currentPhase.anomaly === 'entropy_tax') {
     const { blockedCell, description } = applyEntropyTax(state.grid, rng);
     entropyBlockedCell = blockedCell;
@@ -296,7 +300,7 @@ export function processMoveAction(state: GameState, dir: Direction): GameState {
   const newTotalOutput = state.totalOutput + finalOutputAdjusted;
 
   const logEntry: ReactionLogEntry = {
-    step: PHASES[state.phaseIndex].steps - newSteps,
+    step: phases[state.phaseIndex].steps - newSteps,
     action: dir,
     gridBefore,
     gridAfter: cloneGrid(newGrid),
@@ -360,7 +364,8 @@ export function processMoveAction(state: GameState, dir: Direction): GameState {
 }
 
 function handlePhaseEnd(state: GameState): GameState {
-  const currentPhase = PHASES[state.phaseIndex];
+  const phases = getPhasesForRound(state.roundNumber);
+  const currentPhase = phases[state.phaseIndex];
   const protocolDef = PROTOCOL_DEFS[state.protocol];
   const ascMod = ASCENSION_MODIFIER_DEFS[state.ascensionLevel];
   let energy = state.energy;
@@ -375,7 +380,7 @@ function handlePhaseEnd(state: GameState): GameState {
   }
 
   if (state.activeCatalysts.includes('reserve_bank')) {
-    energy += (PHASES[state.phaseIndex].steps - state.stepsRemaining) * CATALYST_MULTIPLIERS.reserve_bank_energy_per_step;
+    energy += (phases[state.phaseIndex].steps - state.stepsRemaining) * CATALYST_MULTIPLIERS.reserve_bank_energy_per_step;
   }
 
   const effectiveTarget = Math.ceil(currentPhase.targetOutput * ascMod.targetOutputScale);
@@ -385,30 +390,15 @@ function handlePhaseEnd(state: GameState): GameState {
     return { ...state, screen: 'game_over', output, energy };
   }
 
-  if (state.phaseIndex >= PHASES.length - 1) {
-    return { ...state, screen: 'run_complete', output, energy };
+  // Last phase of the round cleared — transition to round_complete
+  if (state.phaseIndex >= PHASES_PER_ROUND - 1) {
+    return { ...state, screen: 'round_complete', output, energy };
   }
 
+  // Not the last phase — advance to next phase via infusion (intermission)
   const nextPhaseIndex = state.phaseIndex + 1;
-  const nextPhase = PHASES[nextPhaseIndex];
+  const nextPhase = phases[nextPhaseIndex];
   const nextSteps = Math.max(1, nextPhase.steps - protocolDef.stepsReduction - ascMod.stepsReduction);
-
-  if (state.phaseIndex === FORGE_AFTER_PHASE_INDEX) {
-    const rng = createRng(state.rngSeed + 100);
-    const forgeOffers = generateForgeOffers(
-      state.activeCatalysts, 3, rng.next.bind(rng), state.unlockedCatalysts
-    );
-
-    return {
-      ...state,
-      screen: 'forge',
-      output,
-      energy,
-      forgeOffers,
-      phaseIndex: nextPhaseIndex,
-      stepsRemaining: nextSteps,
-    };
-  }
 
   const rng = createRng(state.rngSeed + 200);
   const infusionOptions = generateInfusionOptions(
@@ -451,30 +441,18 @@ export function selectInfusion(state: GameState, choice: InfusionChoice): GameSt
   }
 
   newState.output = 0;
-  newState.screen = 'playing';
   // Reset momentum on new phase
   newState.consecutiveValidMoves = 0;
   newState.momentumMultiplier = 1.0;
   newState.stabilityCount = 0;
 
-  const rng = createRng(newState.rngSeed + 300);
-  let grid = createEmptyGrid();
-  let idCounter = newState.tileIdCounter;
-  const protocolDef = PROTOCOL_DEFS[newState.protocol];
-  const startTiles = protocolDef.startTiles;
-  for (let i = 0; i < startTiles; i++) {
-    const empty = getEmptyCells(grid);
-    if (empty.length > 0) {
-      const pos = rng.pick(empty);
-      const val = rng.next() < 0.9 ? 2 : 4;
-      const r = spawnTile(grid, val, pos, idCounter);
-      grid = r.grid;
-      idCounter = r.id;
-    }
-  }
-  newState.grid = grid;
-  newState.tileIdCounter = idCounter;
-  newState.reactionLog = [];
+  // After infusion, always enter the intermission forge
+  const rng = createRng(newState.rngSeed + 100);
+  const forgeOffers = generateForgeOffers(
+    newState.activeCatalysts, 3, rng.next.bind(rng), newState.unlockedCatalysts
+  );
+  newState.forgeOffers = forgeOffers;
+  newState.screen = 'forge';
 
   return newState;
 }
@@ -538,6 +516,52 @@ export function skipForge(state: GameState): GameState {
     consecutiveValidMoves: 0,
     momentumMultiplier: 1.0,
     stabilityCount: 0,
+  };
+}
+
+/**
+ * Advance the run into the next round.
+ * Called when the player acknowledges the round_complete screen.
+ * Increments roundNumber, picks the next template, scales targets,
+ * and resets phase state to begin phase 1 of the new round.
+ */
+export function advanceRound(state: GameState): GameState {
+  const nextRound = state.roundNumber + 1;
+  const protocolDef = PROTOCOL_DEFS[state.protocol];
+  const ascMod = ASCENSION_MODIFIER_DEFS[state.ascensionLevel];
+  const phases = getPhasesForRound(nextRound);
+  const firstPhase = phases[0];
+  const nextSteps = Math.max(1, firstPhase.steps - protocolDef.stepsReduction - ascMod.stepsReduction);
+
+  const rng = createRng(state.rngSeed + nextRound * 1000);
+  let grid = createEmptyGrid();
+  let idCounter = state.tileIdCounter;
+  for (let i = 0; i < protocolDef.startTiles; i++) {
+    const empty = getEmptyCells(grid);
+    if (empty.length > 0) {
+      const pos = rng.pick(empty);
+      const val = rng.next() < 0.9 ? 2 : 4;
+      const r = spawnTile(grid, val, pos, idCounter);
+      grid = r.grid;
+      idCounter = r.id;
+    }
+  }
+
+  return {
+    ...state,
+    screen: 'playing',
+    grid,
+    tileIdCounter: idCounter,
+    phaseIndex: 0,
+    stepsRemaining: nextSteps,
+    output: 0,
+    reactionLog: [],
+    consecutiveValidMoves: 0,
+    momentumMultiplier: 1.0,
+    stabilityCount: 0,
+    collapseFieldCounter: 0,
+    entropyBlockedCell: null,
+    roundNumber: nextRound,
   };
 }
 
