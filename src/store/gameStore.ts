@@ -8,6 +8,8 @@ import {
 
 interface GameStore extends GameState {
   initGame: (seed?: number, protocol?: ProtocolId) => void;
+  /** Atomically initialise a new run and transition to the playing screen. */
+  initAndStart: (seed?: number, protocol?: ProtocolId) => void;
   start: () => void;
   move: (dir: Direction) => void;
   chooseInfusion: (choice: InfusionChoice) => void;
@@ -23,6 +25,10 @@ export const useGameStore = create<GameStore>((set) => ({
 
   initGame: (seed?: number, protocol?: ProtocolId) => {
     set(createInitialState(seed ?? Date.now(), protocol));
+  },
+
+  initAndStart: (seed?: number, protocol?: ProtocolId) => {
+    set(startGame(createInitialState(seed ?? Date.now(), protocol)));
   },
 
   start: () => {

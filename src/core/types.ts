@@ -164,12 +164,24 @@ export interface AnomalyDef {
 }
 
 // ─── Phase ───────────────────────────────────────────────────────────────────
+
+/** Tier of challenge within a run. Boss phases carry a rule modifier. */
+export type ChallengeT = 'small' | 'big' | 'boss';
+
 export interface PhaseDef {
   phaseNumber: number;
   targetOutput: number;
   steps: number;
   anomaly?: AnomalyId;
   isForge?: boolean;
+  /** Average output a typical player achieves — benchmark lower bound. */
+  expectedOutput?: number;
+  /** Output a skilled player can consistently achieve — benchmark upper bound. */
+  highSkillOutput?: number;
+  /** Challenge tier: small / big / boss. Bosses carry a rule modifier. */
+  challengeTier?: ChallengeT;
+  /** Human-readable description of the active rule modifier (boss phases). */
+  modifier?: string;
 }
 
 // ─── Forge ───────────────────────────────────────────────────────────────────

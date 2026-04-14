@@ -60,6 +60,10 @@ const zhCN: TranslationMap = {
   'ui.how_it_works': '本局说明',
   'ui.protocol_in_effect': '当前协议：',
   'ui.help_btn': '? 帮助',
+  'ui.select_protocol': '选择协议',
+  'ui.difficulty_beginner': '初级',
+  'ui.difficulty_intermediate': '中级',
+  'ui.difficulty_advanced': '高级',
 
   // ─── UI: End Screen ────────────────────────────────────────────────────────
   'ui.victory_title': '🏆 本局完成！',
