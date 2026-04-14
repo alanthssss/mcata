@@ -117,11 +117,12 @@ export const App: React.FC = () => {
         globalMultiplier={state.globalMultiplier}
         protocol={state.protocol}
         momentumMultiplier={state.momentumMultiplier}
+        phaseTargetOutput={state.phaseTargetOutput}
       />
 
       <div className="game-layout">
         <div className="left-column">
-          <PhasePanel phaseIndex={state.phaseIndex} output={state.output} />
+          <PhasePanel phaseIndex={state.phaseIndex} output={state.output} phaseTargetOutput={state.phaseTargetOutput} />
           <ProtocolPanel protocol={state.protocol} />
           <MomentumBar
             momentumMultiplier={state.momentumMultiplier}

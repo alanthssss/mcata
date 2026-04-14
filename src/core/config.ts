@@ -3,7 +3,7 @@
 
 import type { RoundTemplate } from './types';
 
-export const BALANCE_VERSION = 'v5';
+export const BALANCE_VERSION = 'v6';
 
 // ─── Round template definitions ───────────────────────────────────────────────
 // Each template defines 6 phases for one round.  Templates rotate across rounds
@@ -208,9 +208,26 @@ export const PHASE_CONFIG: Array<{
 /** Per-round multiplier applied to every phase's targetOutput.
  *  Round 1 = no scaling.  Round 2 = +ROUND_TARGET_SCALE.  Etc.
  */
-export const ROUND_TARGET_SCALE = 0.12; // 12 % harder per round
+export const ROUND_TARGET_SCALE = 0.15; // 15 % harder per round (compound)
 
-/** Per-round scaling applied to economy (energy gain rate) to keep Forge relevant. */
+/** When true, round scaling compounds: Math.pow(1+ROUND_TARGET_SCALE, round-1).
+ *  When false, linear scaling: 1 + (round-1) * ROUND_TARGET_SCALE (old behaviour). */
+export const ROUND_SCALE_COMPOUND = true;
+
+/** Build-aware target scaling: phases become harder as the player's build grows.
+ *  The factor is computed from activeCatalysts.length and globalMultiplier,
+ *  directly countering the compounding power of a strong mid/late-game build.
+ */
+export const BUILD_AWARE_SCALING = {
+  /** Enable/disable the entire mechanic (false = pre-v6 behaviour). */
+  enabled: true,
+  /** Additional fraction of base target per active catalyst (0.12 = +12 % each). */
+  catalystWeight: 0.12,
+  /** Additional fraction per 1.0 of globalMultiplier above the baseline of 1.0. */
+  multiplierWeight: 0.30,
+  /** Hard cap on the build factor (prevents unreachable targets). */
+  maxFactor: 3.0,
+};
 export const ROUND_ECONOMY_SCALE = 0.08; // 8 % more energy per round
 
 // ─── Scoring config ───────────────────────────────────────────────────────────

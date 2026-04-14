@@ -15,6 +15,8 @@ interface HeaderProps {
   globalMultiplier: number;
   protocol: ProtocolId;
   momentumMultiplier: number;
+  /** Effective phase target including round scaling, ascension, and build-aware factor. */
+  phaseTargetOutput: number;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -26,6 +28,7 @@ export const Header: React.FC<HeaderProps> = ({
   globalMultiplier,
   protocol,
   momentumMultiplier,
+  phaseTargetOutput,
 }) => {
   const t = useT();
   const phase = PHASES[phaseIndex];
@@ -43,7 +46,7 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
         <div className="stat">
           <span className="stat-label">{t('ui.output')}</span>
-          <span className="stat-value">{formatScoreCompact(output)} / {formatScoreCompact(phase.targetOutput)}</span>
+          <span className="stat-value">{formatScoreCompact(output)} / {formatScoreCompact(phaseTargetOutput)}</span>
         </div>
         <div className="stat">
           <span className="stat-label">{t('ui.steps')}</span>

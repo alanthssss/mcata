@@ -341,4 +341,8 @@ export interface GameState {
   challengeId: import('./challenges').ChallengeId | null;
   // Daily run flag
   isDailyRun: boolean;
+  /** Effective phase target for the current phase — includes round scaling,
+   *  ascension modifier, and build-aware factor.  Used by both the engine
+   *  (success check) and the UI (progress display). */
+  phaseTargetOutput: number;
 }

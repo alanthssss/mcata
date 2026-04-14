@@ -1,5 +1,24 @@
 import { CatalystId } from '../core/types';
 
+// ─── Per-phase record ─────────────────────────────────────────────────────────
+/** Granular data captured for one completed (or failed) phase. */
+export interface PhaseRecord {
+  /** Round number this phase was in. */
+  round: number;
+  /** Phase index within the round (0–5). */
+  phaseIndex: number;
+  /** Number of moves spent in this phase. */
+  movesUsed: number;
+  /** Effective target output that was required (includes build-aware factor). */
+  targetOutput: number;
+  /** Actual output achieved. */
+  actualOutput: number;
+  /** Highest tile value present on the board when the phase ended. */
+  maxTile: number;
+  /** Whether the phase was cleared successfully. */
+  cleared: boolean;
+}
+
 // ─── Per-run metrics ──────────────────────────────────────────────────────────
 export interface RunMetrics {
   seed:                 number;
@@ -37,6 +56,8 @@ export interface RunMetrics {
   avgMovesPerPhase?:    number;
   /** Number of distinct catalyst ids acquired this run */
   uniqueCatalystsAcquired?: number;
+  /** Per-phase granular records for pacing and board-development analysis */
+  phaseHistory?:        PhaseRecord[];
 }
 
 // ─── Aggregate suite metrics ──────────────────────────────────────────────────
@@ -69,6 +90,12 @@ export interface SuiteMetrics {
   avgMovesPerPhase:    number;
   /** Average unique catalyst ids acquired per run — build diversity metric */
   avgUniqueCatalysts:  number;
+  /** Fraction of phases cleared in ≤3 moves across all runs (short-clear rate) */
+  shortClearRate:      number;
+  /** Short-clear rate restricted to phases in round 4+ (late-game pressure check) */
+  lateGameShortClearRate: number;
+  /** Average moves per phase broken down by round number */
+  avgMovesPerPhaseByRound: Record<number, number>;
 }
 
 // ─── Aggregate helpers ────────────────────────────────────────────────────────
@@ -123,6 +150,9 @@ export function buildSuiteMetrics(runs: RunMetrics[]): SuiteMetrics {
       avgBestStreak: 0,
       avgMovesPerPhase: 0,
       avgUniqueCatalysts: 0,
+      shortClearRate: 0,
+      lateGameShortClearRate: 0,
+      avgMovesPerPhaseByRound: {},
     };
   }
 
@@ -130,6 +160,30 @@ export function buildSuiteMetrics(runs: RunMetrics[]): SuiteMetrics {
   const v = variance(outputs);
   const maxTileDist: Record<number, number> = {};
   const phaseDist:   Record<number, number> = {};
+
+  // Flatten all phase history records
+  const allPhases: PhaseRecord[] = runs.flatMap(r => r.phaseHistory ?? []);
+  const clearedPhases = allPhases.filter(p => p.cleared);
+
+  // Short-clear rate: fraction of cleared phases finished in ≤3 moves
+  const shortClears      = clearedPhases.filter(p => p.movesUsed <= 3).length;
+  const shortClearRate   = clearedPhases.length > 0 ? shortClears / clearedPhases.length : 0;
+
+  // Late-game short-clear rate: same but only round 4+
+  const latePhases        = clearedPhases.filter(p => p.round >= 4);
+  const lateShortClears   = latePhases.filter(p => p.movesUsed <= 3).length;
+  const lateGameShortClearRate = latePhases.length > 0 ? lateShortClears / latePhases.length : 0;
+
+  // Avg moves per phase broken down by round
+  const movesByRound: Record<number, number[]> = {};
+  for (const p of clearedPhases) {
+    if (!movesByRound[p.round]) movesByRound[p.round] = [];
+    movesByRound[p.round].push(p.movesUsed);
+  }
+  const avgMovesPerPhaseByRound: Record<number, number> = {};
+  for (const [round, moves] of Object.entries(movesByRound)) {
+    avgMovesPerPhaseByRound[Number(round)] = mean(moves);
+  }
 
   for (const r of runs) {
     maxTileDist[r.maxTile] = (maxTileDist[r.maxTile] ?? 0) + 1;
@@ -158,6 +212,9 @@ export function buildSuiteMetrics(runs: RunMetrics[]): SuiteMetrics {
     avgBestStreak:       mean(runs.map(r => r.maxStreak ?? 0)),
     avgMovesPerPhase:    mean(runs.map(r => r.avgMovesPerPhase ?? 0)),
     avgUniqueCatalysts:  mean(runs.map(r => r.uniqueCatalystsAcquired ?? 0)),
+    shortClearRate,
+    lateGameShortClearRate,
+    avgMovesPerPhaseByRound,
   };
 }
 

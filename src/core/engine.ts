@@ -7,7 +7,7 @@ import {
   spawnTile, resetMergedFlags
 } from './board';
 import { applyEntropyTax, applyCollapseField } from './anomalies';
-import { getPhasesForRound, PHASES_PER_ROUND } from './phases';
+import { getPhasesForRound, PHASES_PER_ROUND, getBuildAwareTargetScale } from './phases';
 import { generateForgeOffers } from './forge';
 import { generateInfusionOptions } from './infusion';
 import { ReactionLogEntry } from './types';
@@ -65,6 +65,8 @@ export function createInitialState(
 
   const stepsForPhase = Math.max(1, phase.steps - protocolDef.stepsReduction - ascMod.stepsReduction);
   const startingEnergy = Math.floor(STARTING_ENERGY * ascMod.startingEnergyFactor);
+  // At run start there are no active catalysts and no multiplier yet — factor = 1.0
+  const initialPhaseTargetOutput = Math.ceil(phase.targetOutput * ascMod.targetOutputScale);
 
   return {
     screen: 'start',
@@ -107,6 +109,7 @@ export function createInitialState(
     jackpotTriggered: false,
     challengeId: null,
     isDailyRun: false,
+    phaseTargetOutput: initialPhaseTargetOutput,
   };
 }
 
@@ -389,7 +392,7 @@ export function processMoveAction(state: GameState, dir: Direction): GameState {
     jackpotTriggered,
   };
 
-  if (newOutput >= currentPhase.targetOutput || newSteps <= 0) {
+  if (newOutput >= state.phaseTargetOutput || newSteps <= 0) {
     newState = handlePhaseEnd(newState);
   }
 
@@ -465,8 +468,8 @@ function handlePhaseEnd(state: GameState): GameState {
     energy += (phases[state.phaseIndex].steps - state.stepsRemaining) * CATALYST_MULTIPLIERS.reserve_bank_energy_per_step;
   }
 
-  const effectiveTarget = Math.ceil(currentPhase.targetOutput * ascMod.targetOutputScale);
-  const succeeded = output >= effectiveTarget;
+  // Use the pre-computed effective target stored in state (includes build-aware factor)
+  const succeeded = output >= state.phaseTargetOutput;
 
   if (!succeeded) {
     return { ...state, screen: 'game_over', output, energy };
@@ -485,10 +488,17 @@ function handlePhaseEnd(state: GameState): GameState {
     };
   }
 
-  // Not the last phase — advance to next phase via infusion (intermission)
+  // Not the last phase — advance to next phase via infusion (intermission).
+  // Compute the build-aware effective target for the NEXT phase now, using the
+  // player's current build (catalysts + global multiplier after any bonus).
   const nextPhaseIndex = state.phaseIndex + 1;
   const nextPhase = phases[nextPhaseIndex];
   const nextSteps = Math.max(1, nextPhase.steps - protocolDef.stepsReduction - ascMod.stepsReduction);
+  const buildFactor = getBuildAwareTargetScale(
+    state.activeCatalysts.length,
+    state.globalMultiplier,
+  );
+  const nextPhaseTargetOutput = Math.ceil(nextPhase.targetOutput * ascMod.targetOutputScale * buildFactor);
 
   const rng = createRng(state.rngSeed + 200);
   const infusionOptions = generateInfusionOptions(
@@ -504,6 +514,7 @@ function handlePhaseEnd(state: GameState): GameState {
     infusionOptions,
     phaseIndex: nextPhaseIndex,
     stepsRemaining: nextSteps,
+    phaseTargetOutput: nextPhaseTargetOutput,
   };
 }
 
@@ -633,6 +644,13 @@ export function advanceRound(state: GameState): GameState {
   const phases = getPhasesForRound(nextRound);
   const firstPhase = phases[0];
   const nextSteps = Math.max(1, firstPhase.steps - protocolDef.stepsReduction - ascMod.stepsReduction);
+  // Build-aware target for the first phase of the new round, using the player's
+  // current build accumulated across previous rounds.
+  const buildFactor = getBuildAwareTargetScale(
+    state.activeCatalysts.length,
+    state.globalMultiplier,
+  );
+  const nextPhaseTargetOutput = Math.ceil(firstPhase.targetOutput * ascMod.targetOutputScale * buildFactor);
 
   const rng = createRng(state.rngSeed + nextRound * 1000);
   let grid = createEmptyGrid();
@@ -667,6 +685,7 @@ export function advanceRound(state: GameState): GameState {
     pendingMilestones: [],
     jackpotTriggered: false,
     streakCount: 0,
+    phaseTargetOutput: nextPhaseTargetOutput,
   };
 }
 

@@ -6,12 +6,14 @@ import { formatScoreCompact } from '../scoreDisplay';
 interface PhasePanelProps {
   phaseIndex: number;
   output: number;
+  /** Effective phase target including round scaling, ascension, and build-aware factor. */
+  phaseTargetOutput: number;
 }
 
-export const PhasePanel: React.FC<PhasePanelProps> = ({ phaseIndex, output }) => {
+export const PhasePanel: React.FC<PhasePanelProps> = ({ phaseIndex, output, phaseTargetOutput }) => {
   const t = useT();
   const phase = PHASES[phaseIndex];
-  const progress = Math.min((output / phase.targetOutput) * 100, 100);
+  const progress = Math.min((output / phaseTargetOutput) * 100, 100);
 
   return (
     <div className="panel phase-panel">
@@ -19,7 +21,7 @@ export const PhasePanel: React.FC<PhasePanelProps> = ({ phaseIndex, output }) =>
       <div className="progress-bar-container">
         <div className="progress-bar" style={{ width: `${progress}%` }} />
         <span className="progress-label">
-          {formatScoreCompact(output)} / {formatScoreCompact(phase.targetOutput)}
+          {formatScoreCompact(output)} / {formatScoreCompact(phaseTargetOutput)}
         </span>
       </div>
       {phase.anomaly && (
