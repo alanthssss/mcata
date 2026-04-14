@@ -597,17 +597,17 @@ All values remain centralised in `src/core/unlockConfig.ts` and `src/core/ascens
 
 ---
 
-## Balance v6 — Phase Pacing & Catalyst Pool
+## Balance v5 — Phase Pacing & Catalyst Pool
 
 ### Phase Pacing Overhaul
 
 Previous phase targets (v4) were too low, causing phases to end in 2–3 moves.
-v5/v6 targets are calibrated so a skilled player with no catalysts needs
+v5 targets are calibrated so a skilled player with no catalysts needs
 **6–12 moves** to clear any phase.
 
 #### Alpha Template (Standard Circuit)
 
-| Phase | v4 Target | v6 Target | v4 Steps | v6 Steps |
+| Phase | v4 Target | v5 Target | v4 Steps | v5 Steps |
 |-------|-----------|-----------|----------|----------|
 | 1 | 70 | 150 | 12 | 15 |
 | 2 | 80 | 180 | 12 | 15 |

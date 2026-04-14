@@ -337,11 +337,11 @@ The benchmark system tracks additional metrics for the new progression features.
 
 ---
 
-## Phase Pacing Benchmark (v6)
+## Phase Pacing Benchmark (v5)
 
 ### Pacing Report
 
-After the v6 rebalance, benchmark runs should show the following metrics per
+After the v5 rebalance, benchmark runs should show the following metrics per
 phase (Ascension 0, HeuristicAgent, 50 runs):
 
 | Metric | Expected Range |
