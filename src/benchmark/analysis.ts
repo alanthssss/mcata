@@ -149,7 +149,10 @@ export function analyseResults(results: SuiteResult[]): BalanceReport {
     recommendations.push('Consider increasing phase targetOutput or reducing step count.');
   }
 
-  if (avgLateGameClearTurns > 0 && avgLateGameClearTurns <= 3) {
+  if (avgLateGameClearTurns === 0) {
+    findings.push({ category: 'scoring', severity: 'info',
+      message: 'No late-game phase clear samples were observed (round 4+). Late-game pacing cannot be fully validated from this run.' });
+  } else if (avgLateGameClearTurns <= 3) {
     findings.push({ category: 'scoring', severity: 'warn',
       message: `Late-game phases still clear too quickly (${avgLateGameClearTurns.toFixed(2)} turns in round 4+).` });
     recommendations.push('Increase late-game growth curve pressure or reduce late-game burst multipliers.');

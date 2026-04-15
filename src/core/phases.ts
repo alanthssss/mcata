@@ -51,7 +51,7 @@ export function getSegmentedTargetScale(
 
   const cfg = SEGMENTED_GROWTH_SCALING;
   const phaseIndex = cfg.phaseIndexByPhaseNumber[phaseNumber]
-    ?? cfg.phaseIndexByPhaseNumber[6];
+    ?? cfg.defaultPhaseIndex;
 
   const base = cfg.baseMultiplier;
   const phaseFactor = 1 + Math.pow(phaseIndex, cfg.phaseExponent);

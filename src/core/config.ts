@@ -232,6 +232,8 @@ export const SEGMENTED_GROWTH_SCALING = {
     5: 0.7,
     6: 0.7,
   } as Record<number, number>,
+  // Safe fallback for non-standard phase numbers.
+  defaultPhaseIndex: 0.45,
 };
 
 /**
