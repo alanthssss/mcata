@@ -9,7 +9,7 @@
 import { describe, it, expect } from 'vitest';
 import { DEFAULT_PROFILE } from './profile';
 import { BASE_UNLOCKED_CATALYSTS, BASE_UNLOCKED_PROTOCOLS } from './unlockConfig';
-import { PHASE_CONFIG, ROUND_TEMPLATES, ROUND_TARGET_SCALE } from './config';
+import { PHASE_CONFIG, ROUND_TEMPLATES, SEGMENTED_GROWTH_SCALING } from './config';
 import type { PhaseDef, ChallengeTier } from './types';
 
 // ─── Profile defaults ──────────────────────────────────────────────────────────
@@ -94,7 +94,7 @@ describe('PHASE_CONFIG benchmark fields', () => {
 
 // ─── Round template system ───────────────────────────────────────────────────
 
-import { getPhasesForRound, PHASES_PER_ROUND } from './phases';
+import { getPhasesForRound, getSegmentedTargetScale, PHASES_PER_ROUND } from './phases';
 
 describe('Round template system', () => {
   it('has 3 round templates', () => {
@@ -113,16 +113,25 @@ describe('Round template system', () => {
     expect(unique.size).toBe(ROUND_TEMPLATES.length);
   });
 
-  it('round 1 uses unscaled targets', () => {
+  it('round 1 uses segmented composite scaling', () => {
     const phases = getPhasesForRound(1);
     const template = ROUND_TEMPLATES[0];
-    expect(phases[0].targetOutput).toBe(template.phases[0].targetOutput);
+    const rawRoundIndex = Math.max(0, 1 - SEGMENTED_GROWTH_SCALING.roundIndexOffset);
+    const scaledRoundIndex = rawRoundIndex * SEGMENTED_GROWTH_SCALING.roundIndexScale;
+    const expectedTarget = Math.ceil(
+      template.phases[0].targetOutput * getSegmentedTargetScale(template.phases[0].phaseNumber, scaledRoundIndex, rawRoundIndex),
+    );
+    expect(phases[0].targetOutput).toBe(expectedTarget);
   });
 
-  it('round 2 uses second template with scaled targets', () => {
+  it('round 2 uses second template with segmented composite scaled targets', () => {
     const phases = getPhasesForRound(2);
     const template = ROUND_TEMPLATES[1]; // beta
-    const expectedTarget = Math.ceil(template.phases[0].targetOutput * (1 + ROUND_TARGET_SCALE));
+    const rawRoundIndex = Math.max(0, 2 - SEGMENTED_GROWTH_SCALING.roundIndexOffset);
+    const scaledRoundIndex = rawRoundIndex * SEGMENTED_GROWTH_SCALING.roundIndexScale;
+    const expectedTarget = Math.ceil(
+      template.phases[0].targetOutput * getSegmentedTargetScale(template.phases[0].phaseNumber, scaledRoundIndex, rawRoundIndex),
+    );
     expect(phases[0].targetOutput).toBe(expectedTarget);
   });
 
@@ -141,6 +150,26 @@ describe('Round template system', () => {
     // Targets should be higher in later rounds (accounting for template differences)
     expect(r2[0].targetOutput).toBeGreaterThan(r1[0].targetOutput * 0.9);
     expect(r3[0].targetOutput).toBeGreaterThan(r1[0].targetOutput * 0.9);
+  });
+
+  it('uses configured segmented step ranges (early/mid/late)', () => {
+    for (const template of ROUND_TEMPLATES) {
+      const [p1, p2, p3, p4, p5, p6] = template.phases;
+      expect(p1.steps).toBeGreaterThanOrEqual(10);
+      expect(p1.steps).toBeLessThanOrEqual(16);
+      expect(p2.steps).toBeGreaterThanOrEqual(10);
+      expect(p2.steps).toBeLessThanOrEqual(16);
+
+      expect(p3.steps).toBeGreaterThanOrEqual(12);
+      expect(p3.steps).toBeLessThanOrEqual(20);
+      expect(p4.steps).toBeGreaterThanOrEqual(12);
+      expect(p4.steps).toBeLessThanOrEqual(20);
+
+      expect(p5.steps).toBeGreaterThanOrEqual(14);
+      expect(p5.steps).toBeLessThanOrEqual(24);
+      expect(p6.steps).toBeGreaterThanOrEqual(14);
+      expect(p6.steps).toBeLessThanOrEqual(24);
+    }
   });
 });
 

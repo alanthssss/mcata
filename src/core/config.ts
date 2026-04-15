@@ -43,7 +43,7 @@ export const ROUND_TEMPLATES: RoundTemplate[] = [
       {
         phaseNumber: 4,
         targetOutput: 90,
-        steps: 11,
+        steps: 12,
         anomaly: 'entropy_tax',
         expectedOutput: 120,
         highSkillOutput: 200,
@@ -53,7 +53,7 @@ export const ROUND_TEMPLATES: RoundTemplate[] = [
       {
         phaseNumber: 5,
         targetOutput: 200,
-        steps: 13,
+        steps: 14,
         expectedOutput: 260,
         highSkillOutput: 420,
         challengeTier: 'big',
@@ -61,7 +61,7 @@ export const ROUND_TEMPLATES: RoundTemplate[] = [
       {
         phaseNumber: 6,
         targetOutput: 130,
-        steps: 11,
+        steps: 14,
         anomaly: 'collapse_field',
         expectedOutput: 175,
         highSkillOutput: 290,
@@ -104,7 +104,7 @@ export const ROUND_TEMPLATES: RoundTemplate[] = [
       {
         phaseNumber: 4,
         targetOutput: 110,
-        steps: 11,
+        steps: 12,
         anomaly: 'collapse_field',
         expectedOutput: 150,
         highSkillOutput: 250,
@@ -114,7 +114,7 @@ export const ROUND_TEMPLATES: RoundTemplate[] = [
       {
         phaseNumber: 5,
         targetOutput: 190,
-        steps: 13,
+        steps: 14,
         expectedOutput: 255,
         highSkillOutput: 400,
         challengeTier: 'big',
@@ -122,7 +122,7 @@ export const ROUND_TEMPLATES: RoundTemplate[] = [
       {
         phaseNumber: 6,
         targetOutput: 160,
-        steps: 13,
+        steps: 14,
         expectedOutput: 210,
         highSkillOutput: 340,
         challengeTier: 'boss',
@@ -172,7 +172,7 @@ export const ROUND_TEMPLATES: RoundTemplate[] = [
       {
         phaseNumber: 5,
         targetOutput: 150,
-        steps: 13,
+        steps: 14,
         anomaly: 'collapse_field',
         expectedOutput: 200,
         highSkillOutput: 320,
@@ -205,13 +205,40 @@ export const PHASE_CONFIG: Array<{
 }> = ROUND_TEMPLATES[0].phases as typeof PHASE_CONFIG;
 
 // ─── Round scaling ────────────────────────────────────────────────────────────
-/** Per-round multiplier applied to every phase's targetOutput.
- *  Round 1 = no scaling.  Round 2 = +ROUND_TARGET_SCALE.  Etc.
+/**
+ * Segmented growth curve used to compute round-scaled phase targets:
+ *
+ * target = base * phaseFactor * roundFactor * smoothing
+ *
+ * phaseFactor = 1 + (phaseIndex ^ phaseExponent)
+ * roundFactor = 1 + (roundIndex ^ roundExponent)
+ * smoothing   = log(phaseIndex + roundIndex + smoothingOffset)
  */
-export const ROUND_TARGET_SCALE = 0.15; // 15 % harder per round (compound)
+export const SEGMENTED_GROWTH_SCALING = {
+  enabled: true,
+  baseMultiplier: 1,
+  phaseExponent: 1.3,
+  roundExponent: 2,
+  smoothingOffset: 2,
+  // Round index is derived from round number so round 1 starts at 0.
+  roundIndexOffset: 1,
+  roundIndexScale: 0.18,
+  // Segmented phase indices (early / mid / late) used by the composite curve.
+  phaseIndexByPhaseNumber: {
+    1: 0.2,
+    2: 0.2,
+    3: 0.45,
+    4: 0.45,
+    5: 0.7,
+    6: 0.7,
+  } as Record<number, number>,
+};
 
-/** When true, round scaling compounds: Math.pow(1+ROUND_TARGET_SCALE, round-1).
- *  When false, linear scaling: 1 + (round-1) * ROUND_TARGET_SCALE (old behaviour). */
+/**
+ * Legacy round-scaling knobs kept for compatibility and A/B references.
+ * New balancing uses SEGMENTED_GROWTH_SCALING when enabled.
+ */
+export const ROUND_TARGET_SCALE = 0.15;
 export const ROUND_SCALE_COMPOUND = true;
 
 /** Build-aware target scaling: phases become harder as the player's build grows.

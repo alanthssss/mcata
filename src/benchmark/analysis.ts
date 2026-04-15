@@ -136,6 +136,8 @@ export function analyseResults(results: SuiteResult[]): BalanceReport {
   // ─── Win rate check ──────────────────────────────────────────────────────
   const allMetrics = Object.values(agentSummary);
   const avgWinRate = allMetrics.reduce((s, m) => s + m.winRate, 0) / Math.max(allMetrics.length, 1);
+  const avgLateGameClearTurns = allMetrics.reduce((s, m) => s + m.lateGameClearTurns, 0) / Math.max(allMetrics.length, 1);
+  const avgMaxTile = allMetrics.reduce((s, m) => s + m.avgMaxTile, 0) / Math.max(allMetrics.length, 1);
 
   if (avgWinRate < 0.02) {
     findings.push({ category: 'scoring', severity: 'critical',
@@ -145,6 +147,18 @@ export function analyseResults(results: SuiteResult[]): BalanceReport {
     findings.push({ category: 'scoring', severity: 'warn',
       message: `Average win rate is high (${(avgWinRate * 100).toFixed(1)}%). Game may be undertuned.` });
     recommendations.push('Consider increasing phase targetOutput or reducing step count.');
+  }
+
+  if (avgLateGameClearTurns > 0 && avgLateGameClearTurns <= 3) {
+    findings.push({ category: 'scoring', severity: 'warn',
+      message: `Late-game phases still clear too quickly (${avgLateGameClearTurns.toFixed(2)} turns in round 4+).` });
+    recommendations.push('Increase late-game growth curve pressure or reduce late-game burst multipliers.');
+  }
+
+  if (avgMaxTile < 8) {
+    findings.push({ category: 'momentum', severity: 'warn',
+      message: `Average max tile is low (${avgMaxTile.toFixed(1)}). Players may not be reaching higher-tier merges often enough.` });
+    recommendations.push('Increase phase step budgets or smooth early/mid growth to allow deeper board development.');
   }
 
   // ─── Agent distinction ────────────────────────────────────────────────────

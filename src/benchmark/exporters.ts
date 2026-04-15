@@ -125,6 +125,15 @@ export function exportComparisonMd(results: SuiteResult[], report: BalanceReport
     lines.push(`| ${cs.id} | ${(cs.pickRate * 100).toFixed(1)}% | ${(cs.winRate * 100).toFixed(1)}% | ${cs.meanOutput.toFixed(0)} |`);
   }
 
+  lines.push('', '## Pacing Metrics', '');
+  lines.push('| Agent | Avg Moves / Phase | Avg Max Tile | Late-Game Clear Turns (R4+) |');
+  lines.push('|-------|-------------------:|-------------:|------------------------------:|');
+  for (const [agent, m] of Object.entries(report.agentSummary)) {
+    lines.push(
+      `| ${agent} | ${m.avgMovesPerPhase.toFixed(2)} | ${m.avgMaxTile.toFixed(2)} | ${m.lateGameClearTurns.toFixed(2)} |`,
+    );
+  }
+
   write(path.join(ARTIFACTS_DIR, 'comparison.md'), lines.join('\n'));
 }
 

@@ -1,5 +1,12 @@
 import { PhaseDef } from './types';
-import { PHASE_CONFIG, ROUND_TEMPLATES, ROUND_TARGET_SCALE, ROUND_SCALE_COMPOUND, BUILD_AWARE_SCALING } from './config';
+import {
+  PHASE_CONFIG,
+  ROUND_TEMPLATES,
+  ROUND_TARGET_SCALE,
+  ROUND_SCALE_COMPOUND,
+  BUILD_AWARE_SCALING,
+  SEGMENTED_GROWTH_SCALING,
+} from './config';
 
 export const PHASES: PhaseDef[] = PHASE_CONFIG;
 
@@ -16,16 +23,42 @@ export const PHASES_PER_ROUND = 6;
 export function getPhasesForRound(roundNumber: number): PhaseDef[] {
   const templateIndex = (roundNumber - 1) % ROUND_TEMPLATES.length;
   const template = ROUND_TEMPLATES[templateIndex];
-  const scaleFactor = ROUND_SCALE_COMPOUND
-    ? Math.pow(1 + ROUND_TARGET_SCALE, roundNumber - 1)
-    : 1 + (roundNumber - 1) * ROUND_TARGET_SCALE;
+  const rawRoundIndex = Math.max(0, roundNumber - SEGMENTED_GROWTH_SCALING.roundIndexOffset);
+  const roundIndex = rawRoundIndex * SEGMENTED_GROWTH_SCALING.roundIndexScale;
 
   return template.phases.map(phase => ({
     ...phase,
-    targetOutput:    Math.ceil(phase.targetOutput   * scaleFactor),
-    expectedOutput:  phase.expectedOutput  != null ? Math.ceil(phase.expectedOutput  * scaleFactor) : undefined,
-    highSkillOutput: phase.highSkillOutput != null ? Math.ceil(phase.highSkillOutput * scaleFactor) : undefined,
+    targetOutput:    Math.ceil(phase.targetOutput   * getSegmentedTargetScale(phase.phaseNumber, roundIndex, rawRoundIndex)),
+    expectedOutput:  phase.expectedOutput  != null
+      ? Math.ceil(phase.expectedOutput  * getSegmentedTargetScale(phase.phaseNumber, roundIndex, rawRoundIndex))
+      : undefined,
+    highSkillOutput: phase.highSkillOutput != null
+      ? Math.ceil(phase.highSkillOutput * getSegmentedTargetScale(phase.phaseNumber, roundIndex, rawRoundIndex))
+      : undefined,
   }));
+}
+
+export function getSegmentedTargetScale(
+  phaseNumber: number,
+  roundIndex: number,
+  rawRoundIndex = roundIndex,
+): number {
+  if (!SEGMENTED_GROWTH_SCALING.enabled) {
+    return ROUND_SCALE_COMPOUND
+      ? Math.pow(1 + ROUND_TARGET_SCALE, rawRoundIndex)
+      : 1 + rawRoundIndex * ROUND_TARGET_SCALE;
+  }
+
+  const cfg = SEGMENTED_GROWTH_SCALING;
+  const phaseIndex = cfg.phaseIndexByPhaseNumber[phaseNumber]
+    ?? cfg.phaseIndexByPhaseNumber[6];
+
+  const base = cfg.baseMultiplier;
+  const phaseFactor = 1 + Math.pow(phaseIndex, cfg.phaseExponent);
+  const roundFactor = 1 + Math.pow(roundIndex, cfg.roundExponent);
+  const smoothing = Math.log(phaseIndex + roundIndex + cfg.smoothingOffset);
+
+  return base * phaseFactor * roundFactor * smoothing;
 }
 
 /**

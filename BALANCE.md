@@ -670,19 +670,35 @@ targets of only 220 (150 × 1.48 linear).
 
 **Two complementary changes:**
 
-#### 1. Compound Round Scaling
-`ROUND_TARGET_SCALE` raised from `0.12` to `0.15`, and scaling switched from linear
-to compound (`Math.pow(1.15, round-1)` instead of `1 + (round-1) * 0.12`):
+#### 1. Segmented Composite Growth Curve
+Round target generation now uses a configurable composite formula:
 
-| Round | Linear (v5) | Compound (v6) |
-|-------|------------|--------------|
-| 1 | 1.00× | 1.00× |
-| 2 | 1.12× | 1.15× |
-| 3 | 1.24× | 1.32× |
-| 4 | 1.36× | 1.52× |
-| 5 | 1.48× | 1.75× |
-| 8 | 1.84× | 2.66× |
-| 10 | 2.08× | 3.52× |
+```
+target = base * phaseFactor * roundFactor * smoothing
+
+phaseFactor = 1 + (phaseIndex ^ 1.3)
+roundFactor = 1 + (roundIndex ^ 2)
+smoothing   = log(phaseIndex + roundIndex + 2)
+```
+
+All knobs are configurable in `SEGMENTED_GROWTH_SCALING` (`src/core/config.ts`):
+- `baseMultiplier`
+- `phaseExponent`
+- `roundExponent`
+- `smoothingOffset`
+- `roundIndexOffset`
+- `roundIndexScale`
+- `phaseIndexByPhaseNumber`
+
+Phase segmentation used by default:
+- Early (P1–P2): lower phase index to keep onboarding accessible
+- Mid (P3–P4): moderate index to raise development pressure
+- Late (P5–P6): higher index to prevent 2–3 turn clears
+
+Step budgets are aligned to the segmented pacing bands:
+- Early: **10–16**
+- Mid: **12–20**
+- Late: **14–24**
 
 #### 2. Build-Aware Target Scaling (`getBuildAwareTargetScale`)
 At every phase transition the effective target is multiplied by a build factor that
@@ -737,6 +753,8 @@ the current round.  They now read `state.phaseTargetOutput`.
 | Metric | v5 Target | v6 Target |
 |--------|-----------|-----------|
 | Avg moves per phase (all rounds) | 6–12 | 6–12 |
+| Avg max tile | — | higher than v5 baseline |
+| Late-game clear turns (round 4+) | — | > 3.0 |
 | Short-clear rate (≤ 3 moves) | < 20 % | < 10 % |
 | Late-game short-clear rate (round 4+) | — | < 5 % |
 | Phases ending on step limit | < 20 % | < 15 % |

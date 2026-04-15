@@ -690,8 +690,8 @@ describe('catalystPool (run-level unique-per-run enforcement)', () => {
 });
 
 // ─── Build-aware target scaling tests ────────────────────────────────────────
-import { getBuildAwareTargetScale, getPhasesForRound } from './phases';
-import { BUILD_AWARE_SCALING, ROUND_TARGET_SCALE, ROUND_SCALE_COMPOUND } from './config';
+import { getBuildAwareTargetScale, getPhasesForRound, getSegmentedTargetScale } from './phases';
+import { BUILD_AWARE_SCALING, SEGMENTED_GROWTH_SCALING } from './config';
 
 describe('getBuildAwareTargetScale', () => {
   it('returns 1.0 with no catalysts and base multiplier', () => {
@@ -724,7 +724,7 @@ describe('getBuildAwareTargetScale', () => {
   });
 });
 
-describe('getPhasesForRound compound scaling', () => {
+describe('getPhasesForRound segmented growth scaling', () => {
   it('round 1 uses base target', () => {
     const phases = getPhasesForRound(1);
     // scaleFactor = 1.0 for round 1 in both modes
@@ -738,13 +738,17 @@ describe('getPhasesForRound compound scaling', () => {
     expect(p4[0].targetOutput).toBeGreaterThan(p1[0].targetOutput);
   });
 
-  it('compound scaling grows faster than linear for later rounds', () => {
-    // Compare compound vs linear at round 5
-    const compoundFactor = Math.pow(1 + ROUND_TARGET_SCALE, 4);
-    const linearFactor   = 1 + 4 * ROUND_TARGET_SCALE;
-    if (ROUND_SCALE_COMPOUND) {
-      expect(compoundFactor).toBeGreaterThan(linearFactor);
-    }
+  it('composite scale grows with round index', () => {
+    const p = 6;
+    const r2 = getSegmentedTargetScale(
+      p,
+      Math.max(0, 2 - SEGMENTED_GROWTH_SCALING.roundIndexOffset) * SEGMENTED_GROWTH_SCALING.roundIndexScale,
+    );
+    const r6 = getSegmentedTargetScale(
+      p,
+      Math.max(0, 6 - SEGMENTED_GROWTH_SCALING.roundIndexOffset) * SEGMENTED_GROWTH_SCALING.roundIndexScale,
+    );
+    expect(r6).toBeGreaterThan(r2);
   });
 });
 
@@ -775,4 +779,3 @@ describe('phaseTargetOutput in GameState', () => {
     expect(nextPhaseAdvanced.phaseTargetOutput).toBeGreaterThan(baseState.phaseTargetOutput);
   });
 });
-

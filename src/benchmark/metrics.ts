@@ -90,6 +90,10 @@ export interface SuiteMetrics {
   avgMovesPerPhase:    number;
   /** Average unique catalyst ids acquired per run — build diversity metric */
   avgUniqueCatalysts:  number;
+  /** Average of each run's maxTile value */
+  avgMaxTile:          number;
+  /** Average turns (moves used) to clear phases in round 4+ */
+  lateGameClearTurns:  number;
   /** Fraction of phases cleared in ≤3 moves across all runs (short-clear rate) */
   shortClearRate:      number;
   /** Short-clear rate restricted to phases in round 4+ (late-game pressure check) */
@@ -150,6 +154,8 @@ export function buildSuiteMetrics(runs: RunMetrics[]): SuiteMetrics {
       avgBestStreak: 0,
       avgMovesPerPhase: 0,
       avgUniqueCatalysts: 0,
+      avgMaxTile: 0,
+      lateGameClearTurns: 0,
       shortClearRate: 0,
       lateGameShortClearRate: 0,
       avgMovesPerPhaseByRound: {},
@@ -173,6 +179,7 @@ export function buildSuiteMetrics(runs: RunMetrics[]): SuiteMetrics {
   const latePhases        = clearedPhases.filter(p => p.round >= 4);
   const lateShortClears   = latePhases.filter(p => p.movesUsed <= 3).length;
   const lateGameShortClearRate = latePhases.length > 0 ? lateShortClears / latePhases.length : 0;
+  const lateGameClearTurns = latePhases.length > 0 ? mean(latePhases.map(p => p.movesUsed)) : 0;
 
   // Avg moves per phase broken down by round
   const movesByRound: Record<number, number[]> = {};
@@ -212,6 +219,8 @@ export function buildSuiteMetrics(runs: RunMetrics[]): SuiteMetrics {
     avgBestStreak:       mean(runs.map(r => r.maxStreak ?? 0)),
     avgMovesPerPhase:    mean(runs.map(r => r.avgMovesPerPhase ?? 0)),
     avgUniqueCatalysts:  mean(runs.map(r => r.uniqueCatalystsAcquired ?? 0)),
+    avgMaxTile:          mean(runs.map(r => r.maxTile)),
+    lateGameClearTurns,
     shortClearRate,
     lateGameShortClearRate,
     avgMovesPerPhaseByRound,
