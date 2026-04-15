@@ -60,6 +60,20 @@ function getChoiceDescKey(choice: InfusionChoice): string {
   }
 }
 
+function getChoiceLabel(choice: InfusionChoice, t: ReturnType<typeof useT>): string {
+  const labelKey = getChoiceLabelKey(choice);
+  switch (choice.type) {
+    case 'catalyst':
+      return t(labelKey, { name: t(`catalyst.${choice.catalyst.id}.name`) });
+    case 'signal':
+      return t(labelKey, { name: t(`signal.${choice.signal}.name`) });
+    case 'pattern':
+      return t(labelKey, { name: t(`pattern.${choice.pattern}.name`) });
+    default:
+      return t(labelKey);
+  }
+}
+
 export const InfusionModal: React.FC<InfusionModalProps> = ({ options, onChoose }) => {
   const t = useT();
 
@@ -70,14 +84,7 @@ export const InfusionModal: React.FC<InfusionModalProps> = ({ options, onChoose 
         {options.map((choice, i) => {
           const icon = INFUSION_ICONS[choice.type] ?? '';
           const tagKey = INFUSION_TAG_KEY[choice.type] ?? '';
-          const labelKey = getChoiceLabelKey(choice);
-          const label = choice.type === 'catalyst'
-            ? t(labelKey, { name: t(`catalyst.${choice.catalyst.id}.name`) })
-            : choice.type === 'signal'
-              ? t(labelKey, { name: t(`signal.${choice.signal}.name`) })
-              : choice.type === 'pattern'
-                ? t(labelKey, { name: t(`pattern.${choice.pattern}.name`) })
-                : t(labelKey);
+          const label = getChoiceLabel(choice, t);
           return (
             <button key={i} className="infusion-option" onClick={() => onChoose(choice)}>
               <div className="infusion-header">

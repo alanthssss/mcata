@@ -30,12 +30,12 @@ import {
   INFUSION_MULTIPLIER_BONUS,
   INFUSION_STEPS_BONUS,
   PATTERN_BONUS_BY_LEVEL,
+  PATTERN_EMPTY_SPACE_CAP,
 } from './config';
 import { checkMilestones, MILESTONE_DEFS, MilestoneId } from './milestones';
 import { CATALYST_DEFS } from './catalysts';
 
 const MAX_LOG = 10;
-const PATTERN_EMPTY_SPACE_CAP = 1.6;
 
 function makeInitialGrid(rngSeed: number, startTiles: number): { grid: Grid; idCounter: number } {
   const rng = createRng(rngSeed);
@@ -664,7 +664,10 @@ export function buyFromForge(state: GameState, catalyst: CatalystDef, replaceInd
   if (newCatalysts.length < MAX_CATALYSTS) {
     newCatalysts.push(catalyst.id);
   } else if (replaceIndex !== undefined && replaceIndex >= 0 && replaceIndex < newCatalysts.length) {
-    if (newCatalysts.includes(catalyst.id)) return state;
+    // No-op replacement (same catalyst in same slot) should be blocked without spending energy.
+    if (newCatalysts[replaceIndex] === catalyst.id) return state;
+    // Prevent introducing duplicate ownership when the catalyst exists in another slot.
+    if (newCatalysts.some((id, idx) => id === catalyst.id && idx !== replaceIndex)) return state;
     newCatalysts[replaceIndex] = catalyst.id;
   } else {
     return state;

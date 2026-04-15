@@ -1,6 +1,7 @@
 import { InfusionChoice, CatalystId, PatternId } from './types';
 import { SIGNAL_DEFS } from './signals';
 import { generateForgeOffers } from './forge';
+import { getInfusionCatalystOfferChance } from './config';
 
 /**
  * Generate the list of Infusion reward choices for the player.
@@ -48,7 +49,7 @@ export function generateInfusionOptions(
   }
 
   // Direct catalyst from Infusion: rare and explicit.
-  const catalystOfferChance = roundNumber <= 2 ? 0.06 : roundNumber <= 4 ? 0.1 : 0.14;
+  const catalystOfferChance = getInfusionCatalystOfferChance(roundNumber);
   if (rngFn() < catalystOfferChance) {
     const [catalystChoice] = generateForgeOffers(
       activeCatalysts,

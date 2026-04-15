@@ -333,6 +333,11 @@ export const GRID_CLEAN_COUNT   = 2;   // number of lowest tiles removed by grid
 export const INFUSION_ENERGY_BONUS     = 3;
 export const INFUSION_STEPS_BONUS      = 2;
 export const INFUSION_MULTIPLIER_BONUS = 0.1;
+export function getInfusionCatalystOfferChance(roundNumber: number): number {
+  if (roundNumber <= 2) return 0.06;
+  if (roundNumber <= 4) return 0.10;
+  return 0.14;
+}
 
 // ─── Forge ────────────────────────────────────────────────────────────────────
 export const FORGE_REROLL_COST = 1;
@@ -392,6 +397,7 @@ export const PATTERN_BONUS_BY_LEVEL: Record<PatternId, number> = {
   economy: 1,
   survival: 0.12,
 };
+export const PATTERN_EMPTY_SPACE_CAP = 1.6;
 
 // ─── Anomaly intensity ───────────────────────────────────────────────────────
 export const COLLAPSE_FIELD_PERIOD = 4; // every N scoring moves triggers collapse
