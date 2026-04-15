@@ -10,6 +10,7 @@ import {
   queueSignal,
   grantSignal,
   advanceRound,
+  sellCatalyst,
 } from './engine';
 import { createEmptyGrid, spawnTile } from './board';
 import type { GameState, Grid, CatalystTag, CatalystId } from './types';
@@ -289,6 +290,23 @@ describe('processMoveAction', () => {
       expect(result.reactionLog[0].signalUsed).toBe('grid_clean');
       expect(result.reactionLog[0].signalEffect).toMatch(/Grid Clean/i);
     });
+
+    it('queued signal is consumed after use and feedback is recorded', () => {
+      const grid = makeGrid([
+        [2, 2, 0, 0],
+        [0, 0, 0, 0],
+        [0, 0, 0, 0],
+        [0, 0, 0, 0],
+      ]);
+      let state = withGrid(playingState(), grid);
+      state = grantSignal(state, 'pulse_boost');
+      state = queueSignal(state, 'pulse_boost');
+      const result = processMoveAction(state, 'left');
+      expect(result.pendingSignal).toBeNull();
+      expect(result.signals).not.toContain('pulse_boost');
+      expect(result.reactionLog[0].signalUsed).toBe('pulse_boost');
+      expect(result.reactionLog[0].signalEffect).toMatch(/Pulse Boost/i);
+    });
   });
 });
 
@@ -329,6 +347,13 @@ describe('selectInfusion', () => {
     const before = state.globalMultiplier;
     const result = selectInfusion(state, { type: 'multiplier' });
     expect(result.globalMultiplier).toBeCloseTo(before + 0.1, 5);
+  });
+
+  it('pattern reward persists run-level archetype growth', () => {
+    const state = infusionState();
+    const result = selectInfusion(state, { type: 'pattern', pattern: 'chain' });
+    expect(result.activePattern).toBe('chain');
+    expect(result.patternLevels.chain).toBe(1);
   });
 
   it('resets output to 0 on new phase', () => {
@@ -425,6 +450,36 @@ describe('buyFromForge', () => {
     const result = buyFromForge(state, frozenDef);
     expect(result.frozenCell).not.toBeNull();
   });
+
+  it('cannot buy same forge offer twice', () => {
+    const state = {
+      ...playingState(),
+      screen: 'forge' as const,
+      energy: 10,
+      activeCatalysts: [],
+      forgeOffers: [catalystDef],
+    };
+    const once = buyFromForge(state, catalystDef);
+    const twice = buyFromForge(once, catalystDef);
+    expect(once.activeCatalysts).toEqual(['lucky_seed']);
+    expect(once.forgeOffers).toHaveLength(0);
+    expect(twice).toBe(once);
+  });
+
+  it('duplicate forge purchase does not consume energy', () => {
+    const state = { ...playingState(), energy: 10, activeCatalysts: ['lucky_seed'] as const };
+    const result = buyFromForge(state as unknown as GameState, catalystDef);
+    expect(result).toBe(state);
+    expect(result.energy).toBe(10);
+  });
+
+  it('duplicate catalyst ownership does not stack', () => {
+    const state = { ...playingState(), energy: 20, activeCatalysts: [] };
+    const once = buyFromForge(state, catalystDef);
+    const twice = buyFromForge(once, catalystDef);
+    expect(once.activeCatalysts.filter(id => id === 'lucky_seed')).toHaveLength(1);
+    expect(twice.activeCatalysts.filter(id => id === 'lucky_seed')).toHaveLength(1);
+  });
 });
 
 // ─── rerollForge ─────────────────────────────────────────────────────────────
@@ -445,6 +500,21 @@ describe('rerollForge', () => {
   it('returns unchanged state when energy is 0', () => {
     const state = { ...playingState(), screen: 'forge' as const, energy: 0 };
     expect(rerollForge(state)).toBe(state);
+  });
+});
+
+describe('sellCatalyst', () => {
+  it('removes catalyst and refunds energy', () => {
+    const state = { ...playingState(), energy: 5, activeCatalysts: ['twin_burst'] as const };
+    const result = sellCatalyst(state as unknown as GameState, 0);
+    expect(result.activeCatalysts).toEqual([]);
+    expect(result.energy).toBeGreaterThan(5);
+  });
+
+  it('does nothing for invalid index', () => {
+    const state = { ...playingState(), energy: 5, activeCatalysts: ['twin_burst'] as const };
+    const result = sellCatalyst(state as unknown as GameState, 2);
+    expect(result).toBe(state);
   });
 });
 
@@ -544,18 +614,20 @@ describe('6-slot catalyst system', () => {
     expect(state.activeCatalysts).toHaveLength(6);
   });
 
-  it('does not add 7th catalyst via infusion when 6 are active', () => {
+  it('full-slot infusion catalyst converts deterministically and never fails silently', () => {
     let state = playingState();
     const catalysts = [
       'corner_crown', 'twin_burst', 'high_tribute', 'lucky_seed', 'bankers_edge', 'reserve'
     ] as const;
-    state = { ...state, activeCatalysts: [...catalysts] };
+    state = { ...state, energy: 5, activeCatalysts: [...catalysts] };
     const result = selectInfusion({ ...state, screen: 'infusion', infusionOptions: [] }, {
       type: 'catalyst',
       catalyst: { id: 'combo_wire', name: 'Combo Wire', description: '', rarity: 'common', cost: 3, category: 'legacy', trigger: 'on_merge', effectParams: {}, tags: ['combo' as CatalystTag], unlockCondition: '' },
     });
     expect(result.activeCatalysts).toHaveLength(6);
     expect(result.activeCatalysts).not.toContain('combo_wire');
+    expect(result.energy).toBe(8);
+    expect(result.lastIntermissionMessage).toContain('converted');
   });
 
   it('replaces catalyst at replaceIndex when 6 slots are full via forge', () => {

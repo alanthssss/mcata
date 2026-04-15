@@ -5,7 +5,7 @@ import { getDailySeed } from '../core/dailyRun';
 import {
   createInitialState, startGame, processMoveAction,
   selectInfusion, buyFromForge, rerollForge, skipForge,
-  queueSignal, grantSignal, advanceRound,
+  queueSignal, grantSignal, advanceRound, sellCatalyst,
 } from '../core/engine';
 import { useProfileStore } from './profileStore';
 
@@ -17,6 +17,7 @@ interface GameStore extends GameState {
   move: (dir: Direction) => void;
   chooseInfusion: (choice: InfusionChoice) => void;
   purchaseCatalyst: (catalyst: CatalystDef, replaceIndex?: number) => void;
+  sellCatalystAt: (index: number) => void;
   reroll: () => void;
   skipForgePhase: () => void;
   activateSignal: (signalId: SignalId) => void;
@@ -60,10 +61,17 @@ export const useGameStore = create<GameStore>((set) => ({
   },
 
   purchaseCatalyst: (catalyst: CatalystDef, replaceIndex?: number) => {
-    set(state => buyFromForge(state, catalyst, replaceIndex));
-    // Unlock persistence: mark the catalyst as unlocked in the profile
-    // immediately when it is acquired via the Forge.
-    useProfileStore.getState().unlockCatalysts([catalyst.id]);
+    let shouldUnlock = false;
+    set(state => {
+      const next = buyFromForge(state, catalyst, replaceIndex);
+      shouldUnlock = next !== state && next.activeCatalysts.includes(catalyst.id);
+      return next;
+    });
+    if (shouldUnlock) useProfileStore.getState().unlockCatalysts([catalyst.id]);
+  },
+
+  sellCatalystAt: (index: number) => {
+    set(state => sellCatalyst(state, index));
   },
 
   reroll: () => {

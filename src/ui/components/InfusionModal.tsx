@@ -13,6 +13,11 @@ const INFUSION_ICONS: Record<string, string> = {
   energy:     '⚡',
   steps:      '👣',
   multiplier: '×',
+  signal:     '🔮',
+  catalyst_upgrade: '⬆',
+  pool_reroll: '🎲',
+  pool_convert: '🔁',
+  pattern: '🧭',
 };
 
 const INFUSION_TAG_KEY: Record<string, string> = {
@@ -20,6 +25,11 @@ const INFUSION_TAG_KEY: Record<string, string> = {
   energy:     'tag.energy',
   steps:      'tag.control',
   multiplier: 'tag.amplification',
+  signal: 'tag.control',
+  catalyst_upgrade: 'tag.amplification',
+  pool_reroll: 'tag.control',
+  pool_convert: 'tag.energy',
+  pattern: 'tag.scoring',
 };
 
 function getChoiceLabelKey(choice: InfusionChoice): string {
@@ -28,6 +38,11 @@ function getChoiceLabelKey(choice: InfusionChoice): string {
     case 'energy':   return 'ui.infusion_gain_energy';
     case 'steps':    return 'ui.infusion_gain_steps';
     case 'multiplier': return 'ui.infusion_gain_multiplier';
+    case 'signal': return 'ui.infusion_gain_signal';
+    case 'catalyst_upgrade': return 'ui.infusion_gain_catalyst_upgrade';
+    case 'pool_reroll': return 'ui.infusion_gain_pool_reroll';
+    case 'pool_convert': return 'ui.infusion_gain_pool_convert';
+    case 'pattern': return 'ui.infusion_gain_pattern';
   }
 }
 
@@ -37,6 +52,11 @@ function getChoiceDescKey(choice: InfusionChoice): string {
     case 'energy':   return 'ui.infusion_desc_energy';
     case 'steps':    return 'ui.infusion_desc_steps';
     case 'multiplier': return 'ui.infusion_desc_multiplier';
+    case 'signal': return `signal.${choice.signal}.description`;
+    case 'catalyst_upgrade': return 'ui.infusion_desc_catalyst_upgrade';
+    case 'pool_reroll': return 'ui.infusion_desc_pool_reroll';
+    case 'pool_convert': return 'ui.infusion_desc_pool_convert';
+    case 'pattern': return `pattern.${choice.pattern}.description`;
   }
 }
 
@@ -53,7 +73,11 @@ export const InfusionModal: React.FC<InfusionModalProps> = ({ options, onChoose 
           const labelKey = getChoiceLabelKey(choice);
           const label = choice.type === 'catalyst'
             ? t(labelKey, { name: t(`catalyst.${choice.catalyst.id}.name`) })
-            : t(labelKey);
+            : choice.type === 'signal'
+              ? t(labelKey, { name: t(`signal.${choice.signal}.name`) })
+              : choice.type === 'pattern'
+                ? t(labelKey, { name: t(`pattern.${choice.pattern}.name`) })
+                : t(labelKey);
           return (
             <button key={i} className="infusion-option" onClick={() => onChoose(choice)}>
               <div className="infusion-header">

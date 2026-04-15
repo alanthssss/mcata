@@ -1,4 +1,4 @@
-import { GameState, Direction, CatalystDef, InfusionChoice, CatalystId, Grid, Position, SignalId, ProtocolId, AscensionLevel } from './types';
+import { GameState, Direction, CatalystDef, InfusionChoice, CatalystId, Grid, Position, SignalId, ProtocolId, AscensionLevel, PatternId } from './types';
 import { applyMove } from './move';
 import { computeScore } from './score';
 import { createRng } from './rng';
@@ -25,10 +25,17 @@ import {
   STREAK_MIN_OUTPUT, STREAK_BONUS_THRESHOLD, STREAK_ENERGY_BONUS,
   JACKPOT_PROBABILITY, JACKPOT_MIN_OUTPUT, JACKPOT_OUTPUT_BONUS, JACKPOT_ENERGY_BONUS,
   ROUND_COMPLETE_ENERGY_BONUS, ROUND_COMPLETE_MULTIPLIER_BONUS,
+  CATALYST_SELL_REFUND_BY_RARITY,
+  INFUSION_ENERGY_BONUS,
+  INFUSION_MULTIPLIER_BONUS,
+  INFUSION_STEPS_BONUS,
+  PATTERN_BONUS_BY_LEVEL,
 } from './config';
 import { checkMilestones, MILESTONE_DEFS, MilestoneId } from './milestones';
+import { CATALYST_DEFS } from './catalysts';
 
 const MAX_LOG = 10;
+const PATTERN_EMPTY_SPACE_CAP = 1.6;
 
 function makeInitialGrid(rngSeed: number, startTiles: number): { grid: Grid; idCounter: number } {
   const rng = createRng(rngSeed);
@@ -89,6 +96,16 @@ export function createInitialState(
     rngSeed,
     signals: [],
     pendingSignal: null,
+    activePattern: null,
+    patternLevels: {
+      corner: 0,
+      chain: 0,
+      empty_space: 0,
+      high_tier: 0,
+      economy: 0,
+      survival: 0,
+    },
+    lastIntermissionMessage: null,
     protocol,
     consecutiveValidMoves: 0,
     momentumMultiplier: 1.0,
@@ -111,6 +128,32 @@ export function createInitialState(
     isDailyRun: false,
     phaseTargetOutput: initialPhaseTargetOutput,
   };
+}
+
+function getPatternMultiplier(
+  state: GameState,
+  pattern: PatternId | null,
+  merges: ReturnType<typeof applyMove>['merges'],
+  emptyCells: number
+): number {
+  if (!pattern) return 1;
+  const level = state.patternLevels[pattern];
+  if (level <= 0) return 1;
+  const perLevel = PATTERN_BONUS_BY_LEVEL[pattern];
+  switch (pattern) {
+    case 'corner':
+      return merges.some(m => m.isCorner) ? 1 + perLevel * level : 1;
+    case 'chain':
+      return merges.length >= 2 ? 1 + perLevel * level : 1;
+    case 'empty_space':
+      return Math.min(1 + perLevel * level * emptyCells, PATTERN_EMPTY_SPACE_CAP);
+    case 'high_tier':
+      return merges.some(m => m.value >= 64) ? 1 + perLevel * level : 1;
+    case 'survival':
+      return state.stepsRemaining <= 3 ? 1 + perLevel * level : 1;
+    case 'economy':
+      return 1;
+  }
 }
 
 export function startGame(state: GameState): GameState {
@@ -245,6 +288,10 @@ export function processMoveAction(state: GameState, dir: Direction): GameState {
     finalOutputAdjusted = Math.floor(scoreResult.finalOutput * 2.0);
     signalEffect = `Pulse Boost ×2 → ${finalOutputAdjusted}`;
   }
+  const patternMultiplier = getPatternMultiplier(state, state.activePattern, moveResult.merges, emptyCells);
+  if (patternMultiplier > 1) {
+    finalOutputAdjusted = Math.floor(finalOutputAdjusted * patternMultiplier);
+  }
 
   let newComboCount = state.comboWireCount;
   if (state.activeCatalysts.includes('combo_wire')) {
@@ -262,6 +309,9 @@ export function processMoveAction(state: GameState, dir: Direction): GameState {
   }
   if (state.activeCatalysts.includes('energy_loop') && finalOutputAdjusted > 0) {
     energyGain += Math.floor(finalOutputAdjusted * CATALYST_MULTIPLIERS.energy_loop_fraction);
+  }
+  if (state.activePattern === 'economy' && state.patternLevels.economy > 0 && moveResult.merges.length > 0) {
+    energyGain += state.patternLevels.economy * PATTERN_BONUS_BY_LEVEL.economy;
   }
 
   // ── Spawn logic ───────────────────────────────────────────────────────────
@@ -342,6 +392,11 @@ export function processMoveAction(state: GameState, dir: Direction): GameState {
   const newOutput = state.output + finalOutputWithBonuses;
   const newTotalOutput = state.totalOutput + finalOutputWithBonuses;
 
+  const multipliers = [...scoreResult.multipliers];
+  if (patternMultiplier > 1 && state.activePattern) {
+    multipliers.push({ name: `Pattern (${state.activePattern})`, value: Number(patternMultiplier.toFixed(2)) });
+  }
+
   const logEntry: ReactionLogEntry = {
     step: phases[state.phaseIndex].steps - newSteps,
     action: dir,
@@ -351,7 +406,7 @@ export function processMoveAction(state: GameState, dir: Direction): GameState {
     spawn: spawnPos,
     anomalyEffect: anomalyEffectPost || null,
     base: scoreResult.base,
-    multipliers: scoreResult.multipliers,
+    multipliers,
     finalOutput: finalOutputWithBonuses,
     triggeredCatalysts: scoreResult.triggeredCatalysts,
     synergyMultiplier: scoreResult.synergyMultiplier,
@@ -503,7 +558,7 @@ function handlePhaseEnd(state: GameState): GameState {
   const rng = createRng(state.rngSeed + 200);
   const infusionOptions = generateInfusionOptions(
     state.activeCatalysts, rng.next.bind(rng),
-    state.catalystPool, ascMod.infusionChoiceCount
+    state.catalystPool, ascMod.infusionChoiceCount, state.roundNumber
   );
 
   return {
@@ -515,15 +570,18 @@ function handlePhaseEnd(state: GameState): GameState {
     phaseIndex: nextPhaseIndex,
     stepsRemaining: nextSteps,
     phaseTargetOutput: nextPhaseTargetOutput,
+    lastIntermissionMessage: null,
   };
 }
 
 export function selectInfusion(state: GameState, choice: InfusionChoice): GameState {
-  let newState = { ...state };
+  let newState: GameState = { ...state, lastIntermissionMessage: null };
 
   switch (choice.type) {
     case 'catalyst':
-      if (newState.activeCatalysts.length < MAX_CATALYSTS) {
+      if (newState.activeCatalysts.includes(choice.catalyst.id)) {
+        newState.lastIntermissionMessage = `Infusion blocked: ${choice.catalyst.name} already owned`;
+      } else if (newState.activeCatalysts.length < MAX_CATALYSTS) {
         newState.activeCatalysts = [...newState.activeCatalysts, choice.catalyst.id];
         // Remove the acquired catalyst from the run-level pool so it cannot be
         // offered again later in the same run.
@@ -533,16 +591,47 @@ export function selectInfusion(state: GameState, choice: InfusionChoice): GameSt
         if (choice.catalyst.id === 'frozen_cell' && !newState.frozenCell) {
           newState.frozenCell = { row: 1, col: 1 };
         }
+      } else {
+        // Deterministic full-slot handling for direct catalyst infusions.
+        newState.energy += INFUSION_ENERGY_BONUS;
+        newState.lastIntermissionMessage = `Catalyst slot full: converted ${choice.catalyst.name} into +${INFUSION_ENERGY_BONUS} Energy`;
       }
       break;
     case 'energy':
-      newState.energy += 3;
+      newState.energy += INFUSION_ENERGY_BONUS;
       break;
     case 'steps':
-      newState.stepsRemaining += 2;
+      newState.stepsRemaining += INFUSION_STEPS_BONUS;
       break;
     case 'multiplier':
-      newState.globalMultiplier = Math.round((newState.globalMultiplier + 0.1) * 100) / 100;
+      newState.globalMultiplier = Math.round((newState.globalMultiplier + INFUSION_MULTIPLIER_BONUS) * 100) / 100;
+      break;
+    case 'signal':
+      if (!newState.signals.includes(choice.signal) && newState.signals.length < SIGNAL_CAPACITY) {
+        newState.signals = [...newState.signals, choice.signal];
+      }
+      newState.lastIntermissionMessage = `Infusion granted signal: ${choice.signal}`;
+      break;
+    case 'catalyst_upgrade':
+      newState.globalMultiplier = Math.round((newState.globalMultiplier + 0.05) * 100) / 100;
+      newState.lastIntermissionMessage = 'Catalyst upgrade: +5% Global Multiplier';
+      break;
+    case 'pool_reroll': {
+      newState.rngSeed += 17;
+      newState.lastIntermissionMessage = 'Infusion rerolled the Forge pool';
+      break;
+    }
+    case 'pool_convert':
+      newState.energy += 2;
+      newState.lastIntermissionMessage = 'Infusion converted reward into +2 Energy';
+      break;
+    case 'pattern':
+      newState.activePattern = choice.pattern;
+      newState.patternLevels = {
+        ...newState.patternLevels,
+        [choice.pattern]: newState.patternLevels[choice.pattern] + 1,
+      };
+      newState.lastIntermissionMessage = `Pattern growth: ${choice.pattern} Lv.${newState.patternLevels[choice.pattern]}`;
       break;
   }
 
@@ -555,7 +644,7 @@ export function selectInfusion(state: GameState, choice: InfusionChoice): GameSt
   // After infusion, always enter the intermission forge
   const rng = createRng(newState.rngSeed + 100);
   const forgeOffers = generateForgeOffers(
-    newState.activeCatalysts, 3, rng.next.bind(rng), newState.catalystPool
+    newState.activeCatalysts, 3, rng.next.bind(rng), newState.catalystPool, newState.roundNumber
   );
   newState.forgeOffers = forgeOffers;
   newState.screen = 'forge';
@@ -566,6 +655,7 @@ export function selectInfusion(state: GameState, choice: InfusionChoice): GameSt
 export function buyFromForge(state: GameState, catalyst: CatalystDef, replaceIndex?: number): GameState {
   const ascMod = ASCENSION_MODIFIER_DEFS[state.ascensionLevel];
   const effectiveCost = catalyst.cost + ascMod.forgeCostBonus;
+  if (state.activeCatalysts.includes(catalyst.id)) return state;
   if (state.energy < effectiveCost) return state;
 
   const newCatalysts: CatalystId[] = [...state.activeCatalysts];
@@ -574,6 +664,7 @@ export function buyFromForge(state: GameState, catalyst: CatalystDef, replaceInd
   if (newCatalysts.length < MAX_CATALYSTS) {
     newCatalysts.push(catalyst.id);
   } else if (replaceIndex !== undefined && replaceIndex >= 0 && replaceIndex < newCatalysts.length) {
+    if (newCatalysts.includes(catalyst.id)) return state;
     newCatalysts[replaceIndex] = catalyst.id;
   } else {
     return state;
@@ -590,16 +681,40 @@ export function buyFromForge(state: GameState, catalyst: CatalystDef, replaceInd
     ? state.catalystPool.filter(id => id !== catalyst.id)
     : undefined;
 
-  return { ...state, activeCatalysts: newCatalysts, energy, frozenCell, catalystPool };
+  return {
+    ...state,
+    activeCatalysts: newCatalysts,
+    energy,
+    frozenCell,
+    catalystPool,
+    forgeOffers: state.forgeOffers.filter(c => c.id !== catalyst.id),
+  };
 }
 
 export function rerollForge(state: GameState): GameState {
   if (state.energy < 1) return state;
   const rng = createRng(state.rngSeed + state.forgeOffers.length + 500);
   const forgeOffers = generateForgeOffers(
-    state.activeCatalysts, 3, rng.next.bind(rng), state.catalystPool
+    state.activeCatalysts, 3, rng.next.bind(rng), state.catalystPool, state.roundNumber
   );
   return { ...state, energy: state.energy - 1, forgeOffers };
+}
+
+export function sellCatalyst(state: GameState, index: number): GameState {
+  if (index < 0 || index >= state.activeCatalysts.length) return state;
+  const id = state.activeCatalysts[index];
+  const def = CATALYST_DEFS[id];
+  if (!def) return state;
+  const refundRate = CATALYST_SELL_REFUND_BY_RARITY[def.rarity];
+  const refund = Math.max(1, Math.floor(def.cost * refundRate));
+  const next = [...state.activeCatalysts];
+  next.splice(index, 1);
+  return {
+    ...state,
+    activeCatalysts: next,
+    energy: state.energy + refund,
+    lastIntermissionMessage: `Sold ${def.name} for +${refund} Energy`,
+  };
 }
 
 export function skipForge(state: GameState): GameState {
@@ -628,6 +743,7 @@ export function skipForge(state: GameState): GameState {
     consecutiveValidMoves: 0,
     momentumMultiplier: 1.0,
     stabilityCount: 0,
+    lastIntermissionMessage: null,
   };
 }
 
@@ -686,6 +802,7 @@ export function advanceRound(state: GameState): GameState {
     jackpotTriggered: false,
     streakCount: 0,
     phaseTargetOutput: nextPhaseTargetOutput,
+    lastIntermissionMessage: null,
   };
 }
 

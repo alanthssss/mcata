@@ -105,6 +105,9 @@ export const App: React.FC = () => {
 
   const lastEntry = state.reactionLog[0] ?? null;
   const lastTriggeredSynergies = lastEntry?.triggeredSynergies ?? [];
+  const signalToast = lastEntry?.signalUsed
+    ? `${t(`signal.${lastEntry.signalUsed}.name`)} → ${lastEntry.signalEffect ?? t('ui.signal_consumed')}`
+    : null;
 
   return (
     <div className="app">
@@ -169,7 +172,9 @@ export const App: React.FC = () => {
           offers={state.forgeOffers}
           activeCatalysts={state.activeCatalysts}
           energy={state.energy}
+          lastIntermissionMessage={state.lastIntermissionMessage}
           onBuy={state.purchaseCatalyst}
+          onSell={state.sellCatalystAt}
           onReroll={state.reroll}
           onSkip={state.skipForgePhase}
         />
@@ -198,7 +203,9 @@ export const App: React.FC = () => {
       {state.jackpotTriggered && (
         <JackpotBanner onDismiss={state.dismissJackpot} />
       )}
+      {signalToast && (
+        <div className="signal-pending">{signalToast}</div>
+      )}
     </div>
   );
 };
-

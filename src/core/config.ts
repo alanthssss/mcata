@@ -2,6 +2,7 @@
 // All balance-sensitive values live here so tuning changes are one-line edits.
 
 import type { RoundTemplate } from './types';
+import type { CatalystRarity, PatternId } from './types';
 
 export const BALANCE_VERSION = 'v6';
 
@@ -336,6 +337,61 @@ export const INFUSION_MULTIPLIER_BONUS = 0.1;
 // ─── Forge ────────────────────────────────────────────────────────────────────
 export const FORGE_REROLL_COST = 1;
 export const MAX_CATALYSTS     = 6;
+export const CATALYST_SELL_REFUND_BY_RARITY: Record<CatalystRarity, number> = {
+  common: 0.6,
+  rare: 0.5,
+  epic: 0.4,
+};
+
+export interface RarityRule {
+  offerWeight: number;
+  minRound: number;
+  perRunCap?: number;
+}
+
+export const CATALYST_RARITY_RULES_BY_ROUND: Array<{
+  maxRound: number;
+  rules: Record<CatalystRarity, RarityRule>;
+}> = [
+  {
+    maxRound: 2,
+    rules: {
+      common: { offerWeight: 10, minRound: 1 },
+      rare: { offerWeight: 2, minRound: 2, perRunCap: 4 },
+      epic: { offerWeight: 0, minRound: 4, perRunCap: 1 },
+    },
+  },
+  {
+    maxRound: 4,
+    rules: {
+      common: { offerWeight: 8, minRound: 1 },
+      rare: { offerWeight: 4, minRound: 2, perRunCap: 4 },
+      epic: { offerWeight: 0.8, minRound: 4, perRunCap: 1 },
+    },
+  },
+  {
+    maxRound: Number.POSITIVE_INFINITY,
+    rules: {
+      common: { offerWeight: 6, minRound: 1 },
+      rare: { offerWeight: 5, minRound: 2, perRunCap: 4 },
+      epic: { offerWeight: 1.2, minRound: 4, perRunCap: 2 },
+    },
+  },
+];
+
+export function getRarityRulesForRound(roundNumber: number): Record<CatalystRarity, RarityRule> {
+  return CATALYST_RARITY_RULES_BY_ROUND.find(b => roundNumber <= b.maxRound)?.rules
+    ?? CATALYST_RARITY_RULES_BY_ROUND[CATALYST_RARITY_RULES_BY_ROUND.length - 1].rules;
+}
+
+export const PATTERN_BONUS_BY_LEVEL: Record<PatternId, number> = {
+  corner: 0.1,
+  chain: 0.1,
+  empty_space: 0.025,
+  high_tier: 0.12,
+  economy: 1,
+  survival: 0.12,
+};
 
 // ─── Anomaly intensity ───────────────────────────────────────────────────────
 export const COLLAPSE_FIELD_PERIOD = 4; // every N scoring moves triggers collapse

@@ -1,5 +1,6 @@
-import { InfusionChoice, CatalystId } from './types';
-import { ALL_CATALYSTS } from './catalysts';
+import { InfusionChoice, CatalystId, PatternId } from './types';
+import { SIGNAL_DEFS } from './signals';
+import { generateForgeOffers } from './forge';
 
 /**
  * Generate the list of Infusion reward choices for the player.
@@ -15,28 +16,55 @@ export function generateInfusionOptions(
   activeCatalysts: CatalystId[],
   rngFn: () => number,
   catalystPool?: CatalystId[],
-  maxChoices?: number
+  maxChoices?: number,
+  roundNumber = 1
 ): InfusionChoice[] {
-  const basePool = catalystPool !== undefined
-    ? ALL_CATALYSTS.filter(c => catalystPool.includes(c.id))
-    : ALL_CATALYSTS;
-  // Always offer energy, steps, multiplier
-  // Plus a random catalyst
-  const available = basePool.filter(c => !activeCatalysts.includes(c.id));
-  const shuffled = [...available].sort(() => rngFn() - 0.5);
-  const catalystChoice = shuffled[0];
-
   const options: InfusionChoice[] = [
     { type: 'energy' },
     { type: 'steps' },
     { type: 'multiplier' },
   ];
 
-  if (catalystChoice) {
-    options.unshift({ type: 'catalyst', catalyst: catalystChoice });
+  // Signals are tactical one-shots and should appear regularly in Infusion.
+  if (rngFn() < 0.6) {
+    const signalIds = Object.keys(SIGNAL_DEFS) as Array<keyof typeof SIGNAL_DEFS>;
+    const signal = signalIds[Math.floor(rngFn() * signalIds.length)];
+    options.push({ type: 'signal', signal });
+  }
+
+  // Pattern = run-long archetype growth layer.
+  if (rngFn() < 0.45) {
+    const patterns: PatternId[] = ['corner', 'chain', 'empty_space', 'high_tier', 'economy', 'survival'];
+    const pattern = patterns[Math.floor(rngFn() * patterns.length)];
+    options.push({ type: 'pattern', pattern });
+  }
+
+  // Additional non-catalyst infusions.
+  if (activeCatalysts.length > 0 && rngFn() < 0.35) {
+    options.push({ type: 'catalyst_upgrade' });
+  }
+  if (rngFn() < 0.3) {
+    options.push(rngFn() < 0.5 ? { type: 'pool_reroll' } : { type: 'pool_convert' });
+  }
+
+  // Direct catalyst from Infusion: rare and explicit.
+  const catalystOfferChance = roundNumber <= 2 ? 0.06 : roundNumber <= 4 ? 0.1 : 0.14;
+  if (rngFn() < catalystOfferChance) {
+    const [catalystChoice] = generateForgeOffers(
+      activeCatalysts,
+      1,
+      rngFn,
+      catalystPool,
+      roundNumber,
+    );
+    if (catalystChoice) {
+      options.push({ type: 'catalyst', catalyst: catalystChoice });
+    }
   }
 
   // Apply maxChoices limit (for ascension difficulty)
   const limit = maxChoices ?? options.length;
-  return options.slice(0, limit);
+  return options
+    .sort(() => rngFn() - 0.5)
+    .slice(0, limit);
 }

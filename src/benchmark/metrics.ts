@@ -63,6 +63,12 @@ export interface RunMetrics {
   uniqueCatalystsAcquired?: number;
   /** Per-phase granular records for pacing and board-development analysis */
   phaseHistory?:        PhaseRecord[];
+  // Rarity pacing metrics
+  forgeOfferRarityCounts?: Record<'common' | 'rare' | 'epic', number>;
+  acquiredRarityCounts?: Record<'common' | 'rare' | 'epic', number>;
+  firstRareRound?: number;
+  firstEpicRound?: number;
+  selectedPattern?: string | null;
 }
 
 // ─── Aggregate suite metrics ──────────────────────────────────────────────────
@@ -119,6 +125,11 @@ export interface SuiteMetrics {
   avgJackpots:         number;
   /** Average best streak per run */
   avgBestStreak:       number;
+  offerDistributionByRarity: Record<'common' | 'rare' | 'epic', number>;
+  acquisitionDistributionByRarity: Record<'common' | 'rare' | 'epic', number>;
+  avgFirstRareRound: number;
+  avgFirstEpicRound: number;
+  patternOutcomeByPattern: Record<string, { runs: number; avgRoundsCleared: number }>;
 }
 
 // ─── Aggregate helpers ────────────────────────────────────────────────────────
@@ -183,6 +194,11 @@ export function buildSuiteMetrics(runs: RunMetrics[]): SuiteMetrics {
       shortClearRate: 0,
       lateGameShortClearRate: 0,
       avgMovesPerPhaseByRound: {},
+      offerDistributionByRarity: { common: 0, rare: 0, epic: 0 },
+      acquisitionDistributionByRarity: { common: 0, rare: 0, epic: 0 },
+      avgFirstRareRound: 0,
+      avgFirstEpicRound: 0,
+      patternOutcomeByPattern: {},
     };
   }
 
@@ -251,6 +267,25 @@ export function buildSuiteMetrics(runs: RunMetrics[]): SuiteMetrics {
 
   const roundsClearedArr = runs.map(r => r.roundsCleared ?? 0);
   const highestRoundArr  = runs.map(r => r.highestRound ?? 1);
+  const offerDistributionByRarity: Record<'common' | 'rare' | 'epic', number> = { common: 0, rare: 0, epic: 0 };
+  const acquisitionDistributionByRarity: Record<'common' | 'rare' | 'epic', number> = { common: 0, rare: 0, epic: 0 };
+  const firstRareRounds = runs.map(r => r.firstRareRound).filter((n): n is number => n !== undefined);
+  const firstEpicRounds = runs.map(r => r.firstEpicRound).filter((n): n is number => n !== undefined);
+  const patternRuns: Record<string, number[]> = {};
+  for (const r of runs) {
+    for (const rarity of ['common', 'rare', 'epic'] as const) {
+      offerDistributionByRarity[rarity] += r.forgeOfferRarityCounts?.[rarity] ?? 0;
+      acquisitionDistributionByRarity[rarity] += r.acquiredRarityCounts?.[rarity] ?? 0;
+    }
+    if (r.selectedPattern) {
+      if (!patternRuns[r.selectedPattern]) patternRuns[r.selectedPattern] = [];
+      patternRuns[r.selectedPattern].push(r.roundsCleared ?? 0);
+    }
+  }
+  const patternOutcomeByPattern: Record<string, { runs: number; avgRoundsCleared: number }> = {};
+  for (const [pattern, values] of Object.entries(patternRuns)) {
+    patternOutcomeByPattern[pattern] = { runs: values.length, avgRoundsCleared: mean(values) };
+  }
 
   return {
     agentName:           runs[0].agentName,
@@ -284,6 +319,11 @@ export function buildSuiteMetrics(runs: RunMetrics[]): SuiteMetrics {
     shortClearRate,
     lateGameShortClearRate,
     avgMovesPerPhaseByRound,
+    offerDistributionByRarity,
+    acquisitionDistributionByRarity,
+    avgFirstRareRound: firstRareRounds.length ? mean(firstRareRounds) : 0,
+    avgFirstEpicRound: firstEpicRounds.length ? mean(firstEpicRounds) : 0,
+    patternOutcomeByPattern,
   };
 }
 
