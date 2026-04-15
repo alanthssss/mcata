@@ -38,7 +38,7 @@ function barChart(
     return `
     <rect x="${x}" y="${y}" width="${barW}" height="${h}" fill="${color}" rx="3"/>
     <text x="${x + barW / 2}" y="${H - PAD + 16}" text-anchor="middle" font-size="11" fill="#333">${label}</text>
-    <text x="${x + barW / 2}" y="${y - 4}" text-anchor="middle" font-size="10" fill="#555">${values[i].toFixed(0)}</text>`;
+    <text x="${x + barW / 2}" y="${y - 4}" text-anchor="middle" font-size="10" fill="#555">${values[i].toFixed(1)}</text>`;
   }).join('');
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">
@@ -51,11 +51,11 @@ function barChart(
 </svg>`;
 }
 
-// ─── Win rate chart ───────────────────────────────────────────────────────────
-export function generateWinRateChart(metrics: Record<string, SuiteMetrics>): void {
+// ─── Rounds cleared chart (replaces win rate chart) ───────────────────────────
+export function generateRoundsClearedChart(metrics: Record<string, SuiteMetrics>): void {
   const labels = Object.keys(metrics);
-  const values = labels.map(k => metrics[k].winRate * 100);
-  write('win_rate.svg', barChart('Win Rate by Agent (%)', labels, values, 'Win Rate (%)'));
+  const values = labels.map(k => metrics[k].avgRoundsCleared);
+  write('rounds_cleared.svg', barChart('Avg Rounds Cleared by Agent', labels, values, 'Avg Rounds'));
 }
 
 // ─── Mean output chart ────────────────────────────────────────────────────────
@@ -89,10 +89,49 @@ export function generateMaxTileChart(metrics: Record<string, SuiteMetrics>): voi
   write('max_tile.svg', barChart('Avg Max Tile by Agent', labels, values, 'Avg Max Tile'));
 }
 
+// ─── Output growth by round chart ────────────────────────────────────────────
+/**
+ * Generates a line-style (bar-per-round) chart showing mean output growth
+ * across rounds for the first agent in the metrics map. Useful for checking
+ * whether score-chasing progression accelerates appropriately.
+ */
+export function generateOutputGrowthChart(metrics: Record<string, SuiteMetrics>): void {
+  const firstAgent = Object.keys(metrics)[0];
+  if (!firstAgent) return;
+  const growth = metrics[firstAgent].outputGrowthByRound;
+  const rounds = Object.keys(growth).map(Number).sort((a, b) => a - b);
+  if (rounds.length === 0) return;
+  const labels = rounds.map(r => `R${r}`);
+  const values = rounds.map(r => growth[r]);
+  write('output_growth.svg', barChart(`Output Growth by Round (${firstAgent})`, labels, values, 'Mean Output'));
+}
+
+// ─── Failure distribution chart ───────────────────────────────────────────────
+/**
+ * Shows how many runs ended in each round for each agent — highlights where
+ * the difficulty wall is in the endless progression.
+ */
+export function generateFailureDistChart(metrics: Record<string, SuiteMetrics>): void {
+  // Aggregate failure counts across all agents
+  const combined: Record<number, number> = {};
+  for (const m of Object.values(metrics)) {
+    for (const [round, count] of Object.entries(m.failureDistributionByRound)) {
+      combined[Number(round)] = (combined[Number(round)] ?? 0) + count;
+    }
+  }
+  const rounds = Object.keys(combined).map(Number).sort((a, b) => a - b);
+  if (rounds.length === 0) return;
+  const labels = rounds.map(r => `R${r}`);
+  const values = rounds.map(r => combined[r]);
+  write('failure_distribution.svg', barChart('Failure Distribution by Round (all agents)', labels, values, 'Run Count'));
+}
+
 // ─── Generate all charts ──────────────────────────────────────────────────────
 export function generateAllCharts(metrics: Record<string, SuiteMetrics>): void {
-  generateWinRateChart(metrics);
+  generateRoundsClearedChart(metrics);
   generateOutputDistChart(metrics);
   generatePhaseClearChart(metrics);
   generateMaxTileChart(metrics);
+  generateOutputGrowthChart(metrics);
+  generateFailureDistChart(metrics);
 }

@@ -260,8 +260,11 @@ export function runSingle(opts: RunOptions): RunMetrics {
     }
   }
 
-  const won = state.screen === 'round_complete' || state.screen === 'run_complete';
-  const phasesCleared = state.phaseIndex + (won ? 1 : 0);
+  // Derive phasesCleared from phaseHistory (count of cleared phases across all rounds)
+  const phasesCleared = phaseHistory.filter(p => p.cleared).length;
+  // Failure tracking: only set when the run ended with game_over (not benchmark truncation)
+  const failureRound      = state.screen === 'game_over' ? state.roundNumber : undefined;
+  const failurePhaseIndex = state.screen === 'game_over' ? state.phaseIndex  : undefined;
   const finalOutput  = state.totalOutput;
   const maxTile      = getHighestTileValue(state.grid);
   const avgOutputPerMove = totalSteps > 0 ? finalOutput / totalSteps : 0;
@@ -279,7 +282,6 @@ export function runSingle(opts: RunOptions): RunMetrics {
     agentName:            agent.name,
     finalOutput,
     phasesCleared,
-    won,
     maxTile,
     totalSteps,
     totalCatalysts,
@@ -296,6 +298,8 @@ export function runSingle(opts: RunOptions): RunMetrics {
     coreShards:           reward.metaCurrencyEarned,
     roundsCleared,
     highestRound,
+    failureRound,
+    failurePhaseIndex,
     avgMovesPerPhase,
     uniqueCatalystsAcquired,
     phaseHistory,

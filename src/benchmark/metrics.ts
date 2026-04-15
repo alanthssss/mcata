@@ -24,8 +24,8 @@ export interface RunMetrics {
   seed:                 number;
   agentName:            string;
   finalOutput:          number;
+  /** Total phases successfully cleared across all rounds. */
   phasesCleared:        number;
-  won:                  boolean;
   maxTile:              number;
   totalSteps:           number;
   totalCatalysts:       number;
@@ -44,7 +44,12 @@ export interface RunMetrics {
   coreShards?:          number;  // meta currency earned this run
   // Endless round tracking
   roundsCleared?:       number;  // total complete rounds finished
-  highestRound?:        number;  // highest round number reached
+  highestRound?:        number;  // highest round number reached (= roundsCleared + 1 if failed mid-round)
+  // Failure tracking (for endless-mode depth analysis)
+  /** Round number in which the run ended (game_over). undefined if run was truncated at maxRounds. */
+  failureRound?:        number;
+  /** Phase index within the failure round (0–5). undefined if not failed. */
+  failurePhaseIndex?:   number;
   // New progression metrics
   milestoneCount?:      number;  // total milestones triggered
   jackpotCount?:        number;  // total jackpots triggered
@@ -67,7 +72,6 @@ export interface SuiteMetrics {
   meanOutput:          number;
   medianOutput:        number;
   p90Output:           number;
-  winRate:             number;
   maxTileDistribution: Record<number, number>;
   phaseClearDist:      Record<number, number>;
   avgStepsSurvived:    number;
@@ -76,16 +80,24 @@ export interface SuiteMetrics {
   anomalySuccessRate:  number;
   scoreVariance:       number;
   scoreStdDev:         number;
-  /** Average complete rounds cleared per run */
+  // ── Endless-round depth metrics (primary) ──
+  /** Mean complete rounds cleared per run */
   avgRoundsCleared:    number;
+  /** Median complete rounds cleared per run */
+  medianRoundsCleared: number;
+  /** 90th-percentile complete rounds cleared */
+  p90RoundsCleared:    number;
+  /** Mean highest round number reached */
+  meanHighestRound:    number;
   /** Highest round number reached across all runs */
   maxRoundReached:     number;
-  /** Average milestones per run */
-  avgMilestones:       number;
-  /** Average jackpots per run */
-  avgJackpots:         number;
-  /** Average best streak per run */
-  avgBestStreak:       number;
+  /** Output growth by round: avg finalOutput of runs that reached each round */
+  outputGrowthByRound: Record<number, number>;
+  /** Failure count grouped by round number — where runs most commonly ended */
+  failureDistributionByRound: Record<number, number>;
+  /** Failure count grouped by phase index (0–5) within the failure round */
+  failureDistributionByPhaseIndex: Record<number, number>;
+  // ── Pacing metrics ──
   /** Average moves (steps) per completed phase — pacing metric */
   avgMovesPerPhase:    number;
   /** Average unique catalyst ids acquired per run — build diversity metric */
@@ -100,6 +112,13 @@ export interface SuiteMetrics {
   lateGameShortClearRate: number;
   /** Average moves per phase broken down by round number */
   avgMovesPerPhaseByRound: Record<number, number>;
+  // ── Legacy progression metrics ──
+  /** Average milestones per run */
+  avgMilestones:       number;
+  /** Average jackpots per run */
+  avgJackpots:         number;
+  /** Average best streak per run */
+  avgBestStreak:       number;
 }
 
 // ─── Aggregate helpers ────────────────────────────────────────────────────────
@@ -138,7 +157,6 @@ export function buildSuiteMetrics(runs: RunMetrics[]): SuiteMetrics {
       meanOutput: 0,
       medianOutput: 0,
       p90Output: 0,
-      winRate: 0,
       maxTileDistribution: {},
       phaseClearDist: {},
       avgStepsSurvived: 0,
@@ -148,7 +166,13 @@ export function buildSuiteMetrics(runs: RunMetrics[]): SuiteMetrics {
       scoreVariance: 0,
       scoreStdDev: 0,
       avgRoundsCleared: 0,
+      medianRoundsCleared: 0,
+      p90RoundsCleared: 0,
+      meanHighestRound: 0,
       maxRoundReached: 0,
+      outputGrowthByRound: {},
+      failureDistributionByRound: {},
+      failureDistributionByPhaseIndex: {},
       avgMilestones: 0,
       avgJackpots:   0,
       avgBestStreak: 0,
@@ -192,10 +216,41 @@ export function buildSuiteMetrics(runs: RunMetrics[]): SuiteMetrics {
     avgMovesPerPhaseByRound[Number(round)] = mean(moves);
   }
 
+  // Output growth by round: avg finalOutput of runs that reached each round
+  const outputsByRound: Record<number, number[]> = {};
+  for (const r of runs) {
+    const reached = r.highestRound ?? 1;
+    for (let round = 1; round <= reached; round++) {
+      if (!outputsByRound[round]) outputsByRound[round] = [];
+      outputsByRound[round].push(r.finalOutput);
+    }
+  }
+  const outputGrowthByRound: Record<number, number> = {};
+  for (const [round, outs] of Object.entries(outputsByRound)) {
+    outputGrowthByRound[Number(round)] = mean(outs);
+  }
+
+  // Failure distribution by round and phase index
+  const failureDistributionByRound: Record<number, number> = {};
+  const failureDistributionByPhaseIndex: Record<number, number> = {};
+  for (const r of runs) {
+    if (r.failureRound !== undefined) {
+      failureDistributionByRound[r.failureRound] =
+        (failureDistributionByRound[r.failureRound] ?? 0) + 1;
+    }
+    if (r.failurePhaseIndex !== undefined) {
+      failureDistributionByPhaseIndex[r.failurePhaseIndex] =
+        (failureDistributionByPhaseIndex[r.failurePhaseIndex] ?? 0) + 1;
+    }
+  }
+
   for (const r of runs) {
     maxTileDist[r.maxTile] = (maxTileDist[r.maxTile] ?? 0) + 1;
     phaseDist[r.phasesCleared] = (phaseDist[r.phasesCleared] ?? 0) + 1;
   }
+
+  const roundsClearedArr = runs.map(r => r.roundsCleared ?? 0);
+  const highestRoundArr  = runs.map(r => r.highestRound ?? 1);
 
   return {
     agentName:           runs[0].agentName,
@@ -203,7 +258,6 @@ export function buildSuiteMetrics(runs: RunMetrics[]): SuiteMetrics {
     meanOutput:          mean(outputs),
     medianOutput:        median(outputs),
     p90Output:           percentile(outputs, 90),
-    winRate:             runs.filter(r => r.won).length / runs.length,
     maxTileDistribution: maxTileDist,
     phaseClearDist:      phaseDist,
     avgStepsSurvived:    mean(runs.map(r => r.totalSteps)),
@@ -212,8 +266,14 @@ export function buildSuiteMetrics(runs: RunMetrics[]): SuiteMetrics {
     anomalySuccessRate:  mean(runs.map(r => r.anomalySurvivalRate)),
     scoreVariance:       v,
     scoreStdDev:         Math.sqrt(v),
-    avgRoundsCleared:    mean(runs.map(r => r.roundsCleared ?? 0)),
-    maxRoundReached:     Math.max(...runs.map(r => r.highestRound ?? 1)),
+    avgRoundsCleared:    mean(roundsClearedArr),
+    medianRoundsCleared: median(roundsClearedArr),
+    p90RoundsCleared:    percentile(roundsClearedArr, 90),
+    meanHighestRound:    mean(highestRoundArr),
+    maxRoundReached:     Math.max(...highestRoundArr),
+    outputGrowthByRound,
+    failureDistributionByRound,
+    failureDistributionByPhaseIndex,
     avgMilestones:       mean(runs.map(r => r.milestoneCount ?? 0)),
     avgJackpots:         mean(runs.map(r => r.jackpotCount ?? 0)),
     avgBestStreak:       mean(runs.map(r => r.maxStreak ?? 0)),

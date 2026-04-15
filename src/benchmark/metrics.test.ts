@@ -7,7 +7,6 @@ function makeRun(overrides: Partial<RunMetrics>): RunMetrics {
     agentName: 'TestAgent',
     finalOutput: 100,
     phasesCleared: 3,
-    won: false,
     maxTile: 16,
     totalSteps: 20,
     totalCatalysts: 2,
@@ -50,5 +49,57 @@ describe('buildSuiteMetrics pacing metrics', () => {
     expect(metrics.avgMaxTile).toBe(96);
     expect(metrics.lateGameClearTurns).toBe(5);
     expect(metrics.avgMovesPerPhase).toBe(6);
+  });
+});
+
+describe('buildSuiteMetrics endless-round metrics', () => {
+  it('computes medianRoundsCleared, p90RoundsCleared, and meanHighestRound', () => {
+    const runs: RunMetrics[] = [
+      makeRun({ roundsCleared: 1, highestRound: 2 }),
+      makeRun({ seed: 2, roundsCleared: 3, highestRound: 4 }),
+      makeRun({ seed: 3, roundsCleared: 2, highestRound: 3 }),
+      makeRun({ seed: 4, roundsCleared: 4, highestRound: 5 }),
+      makeRun({ seed: 5, roundsCleared: 2, highestRound: 3 }),
+    ];
+
+    const metrics = buildSuiteMetrics(runs);
+
+    expect(metrics.avgRoundsCleared).toBeCloseTo((1 + 3 + 2 + 4 + 2) / 5);
+    expect(metrics.medianRoundsCleared).toBe(2);
+    expect(metrics.meanHighestRound).toBeCloseTo((2 + 4 + 3 + 5 + 3) / 5);
+    expect(metrics.maxRoundReached).toBe(5);
+  });
+
+  it('computes failureDistributionByRound and failureDistributionByPhaseIndex', () => {
+    const runs: RunMetrics[] = [
+      makeRun({ failureRound: 1, failurePhaseIndex: 2 }),
+      makeRun({ seed: 2, failureRound: 1, failurePhaseIndex: 4 }),
+      makeRun({ seed: 3, failureRound: 2, failurePhaseIndex: 2 }),
+      makeRun({ seed: 4 }), // no failure (truncated at maxRounds)
+    ];
+
+    const metrics = buildSuiteMetrics(runs);
+
+    expect(metrics.failureDistributionByRound[1]).toBe(2);
+    expect(metrics.failureDistributionByRound[2]).toBe(1);
+    expect(metrics.failureDistributionByPhaseIndex[2]).toBe(2);
+    expect(metrics.failureDistributionByPhaseIndex[4]).toBe(1);
+    // Run with no failure should not appear
+    expect(metrics.failureDistributionByRound[undefined as unknown as number]).toBeUndefined();
+  });
+
+  it('computes outputGrowthByRound', () => {
+    const runs: RunMetrics[] = [
+      makeRun({ finalOutput: 200, highestRound: 2 }),
+      makeRun({ seed: 2, finalOutput: 400, highestRound: 3 }),
+    ];
+
+    const metrics = buildSuiteMetrics(runs);
+
+    // both runs reached rounds 1 and 2 → mean output of both = (200 + 400) / 2 = 300
+    expect(metrics.outputGrowthByRound[1]).toBeCloseTo(300);
+    // Only 2nd run reached round 2 and 3
+    expect(metrics.outputGrowthByRound[2]).toBeCloseTo(300); // both reached round 2
+    expect(metrics.outputGrowthByRound[3]).toBeCloseTo(400); // only 2nd run reached round 3
   });
 });

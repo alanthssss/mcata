@@ -48,7 +48,7 @@ generateAllCharts(result.suiteMetrics);
 console.log('\n=== Summary ===');
 for (const [agent, m] of Object.entries(result.suiteMetrics)) {
   console.log(
-    `  ${agent.padEnd(20)} win=${(m.winRate * 100).toFixed(1).padStart(5)}%  mean=${m.meanOutput.toFixed(0).padStart(7)}  p90=${m.p90Output.toFixed(0).padStart(7)}`
+    `  ${agent.padEnd(20)} rounds=${m.avgRoundsCleared.toFixed(2).padStart(5)}  mean=${m.meanOutput.toFixed(0).padStart(7)}  p90=${m.p90Output.toFixed(0).padStart(7)}`
   );
 }
 console.log('\nArtifacts written to artifacts/benchmark/latest/');

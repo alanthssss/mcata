@@ -61,7 +61,8 @@ export function exportAnomalyStats(results: SuiteResult[]): void {
 
 export function exportRunsCSV(results: SuiteResult[]): void {
   const header = [
-    'suite', 'agent', 'seed', 'finalOutput', 'phasesCleared', 'won',
+    'suite', 'agent', 'seed', 'finalOutput', 'phasesCleared',
+    'roundsCleared', 'highestRound', 'failureRound', 'failurePhaseIndex',
     'maxTile', 'totalSteps', 'avgOutputPerMove', 'anomalySurvivalRate',
     'activeCatalysts',
   ].join(',');
@@ -72,7 +73,9 @@ export function exportRunsCSV(results: SuiteResult[]): void {
       for (const run of runs) {
         rows.push([
           r.suiteName, agent, run.seed, run.finalOutput, run.phasesCleared,
-          run.won ? 1 : 0, run.maxTile, run.totalSteps,
+          run.roundsCleared ?? 0, run.highestRound ?? 1,
+          run.failureRound  ?? '', run.failurePhaseIndex ?? '',
+          run.maxTile, run.totalSteps,
           run.avgOutputPerMove.toFixed(2), run.anomalySurvivalRate.toFixed(2),
           `"${run.activeCatalysts.join(';')}"`,
         ].join(','));
@@ -93,13 +96,13 @@ export function exportComparisonMd(results: SuiteResult[], report: BalanceReport
     '',
     '## Agent Performance Summary',
     '',
-    '| Agent | Mean Output | Median | P90 | Win Rate | Avg Steps | Anomaly Survival |',
-    '|-------|-------------|--------|-----|----------|-----------|-----------------|',
+    '| Agent | Mean Output | Median | P90 | Avg Rounds | Median Rounds | P90 Rounds | Avg Steps | Anomaly Survival |',
+    '|-------|-------------|--------|-----|-----------|---------------|------------|-----------|-----------------|',
   ];
 
   for (const [agent, m] of Object.entries(report.agentSummary)) {
     lines.push(
-      `| ${agent} | ${m.meanOutput.toFixed(0)} | ${m.medianOutput.toFixed(0)} | ${m.p90Output.toFixed(0)} | ${(m.winRate * 100).toFixed(1)}% | ${m.avgStepsSurvived.toFixed(1)} | ${(m.anomalySuccessRate * 100).toFixed(1)}% |`
+      `| ${agent} | ${m.meanOutput.toFixed(0)} | ${m.medianOutput.toFixed(0)} | ${m.p90Output.toFixed(0)} | ${m.avgRoundsCleared.toFixed(1)} | ${m.medianRoundsCleared.toFixed(1)} | ${m.p90RoundsCleared.toFixed(1)} | ${m.avgStepsSurvived.toFixed(1)} | ${(m.anomalySuccessRate * 100).toFixed(1)}% |`
     );
   }
 
@@ -119,10 +122,10 @@ export function exportComparisonMd(results: SuiteResult[], report: BalanceReport
   }
 
   lines.push('', '## Catalyst Stats', '');
-  lines.push('| Catalyst | Pick Rate | Win Rate | Mean Output |');
-  lines.push('|----------|-----------|----------|-------------|');
+  lines.push('| Catalyst | Pick Rate | Avg Rounds Cleared | Mean Output |');
+  lines.push('|----------|-----------|--------------------|-------------|');
   for (const cs of report.catalystStats) {
-    lines.push(`| ${cs.id} | ${(cs.pickRate * 100).toFixed(1)}% | ${(cs.winRate * 100).toFixed(1)}% | ${cs.meanOutput.toFixed(0)} |`);
+    lines.push(`| ${cs.id} | ${(cs.pickRate * 100).toFixed(1)}% | ${cs.avgRoundsCleared.toFixed(2)} | ${cs.meanOutput.toFixed(0)} |`);
   }
 
   lines.push('', '## Pacing Metrics', '');
@@ -132,6 +135,24 @@ export function exportComparisonMd(results: SuiteResult[], report: BalanceReport
     lines.push(
       `| ${agent} | ${m.avgMovesPerPhase.toFixed(2)} | ${m.avgMaxTile.toFixed(2)} | ${m.lateGameClearTurns.toFixed(2)} |`,
     );
+  }
+
+  lines.push('', '## Failure Distribution', '');
+  lines.push('Failure count by round number (where runs most commonly ended):');
+  lines.push('');
+  for (const [agent, m] of Object.entries(report.agentSummary)) {
+    lines.push(`**${agent}**`);
+    const dist = m.failureDistributionByRound;
+    if (Object.keys(dist).length === 0) {
+      lines.push('_No failure data (all runs reached maxRounds)_');
+    } else {
+      lines.push('| Round | Failures |');
+      lines.push('|-------|---------|');
+      for (const round of Object.keys(dist).map(Number).sort((a, b) => a - b)) {
+        lines.push(`| ${round} | ${dist[round]} |`);
+      }
+    }
+    lines.push('');
   }
 
   write(path.join(ARTIFACTS_DIR, 'comparison.md'), lines.join('\n'));
@@ -185,10 +206,10 @@ export function exportBalanceReport(report: BalanceReport): void {
   }
 
   lines.push('', '## Catalyst Analysis', '');
-  lines.push('| Catalyst | Pick Rate | Win Rate | Mean Output |');
-  lines.push('|----------|-----------|----------|-------------|');
+  lines.push('| Catalyst | Pick Rate | Avg Rounds Cleared | Mean Output |');
+  lines.push('|----------|-----------|--------------------|-------------|');
   for (const cs of report.catalystStats) {
-    lines.push(`| \`${cs.id}\` | ${(cs.pickRate * 100).toFixed(1)}% | ${(cs.winRate * 100).toFixed(1)}% | ${cs.meanOutput.toFixed(0)} |`);
+    lines.push(`| \`${cs.id}\` | ${(cs.pickRate * 100).toFixed(1)}% | ${cs.avgRoundsCleared.toFixed(2)} | ${cs.meanOutput.toFixed(0)} |`);
   }
 
   write(path.join(ARTIFACTS_DIR, 'balance_report.md'), lines.join('\n'));

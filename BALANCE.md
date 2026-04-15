@@ -7,7 +7,7 @@
 3. Catalysts should each offer a meaningful choice — especially with 6 active slots
 4. Anomaly phases should be challenging but survivable with good play
 5. Better agents should clearly outperform weaker ones (strategic depth)
-6. Win rate for round 1 (best agent) should be in the 20%–60% range; later rounds naturally lower
+6. Best agent averages 2–5 rounds cleared per run; later agents clear fewer rounds (strategic depth)
 
 ---
 
@@ -37,12 +37,12 @@ Round assignment: `templateIndex = (roundNumber - 1) % 3`
 
 ### Expected Run Length (Heuristic agent, ascension 0)
 
-| Round | Expected Win% (approx) |
+| Round | Expected Survival% (approx) |
 |-------|------------------------|
-| 1 | 25–45% |
-| 2 | 15–30% |
-| 3 | 5–15% |
-| 4+ | < 10% |
+| 1 | 55–75% survive to Round 2 |
+| 2 | 30–55% survive to Round 3 |
+| 3 | 10–25% survive to Round 4 |
+| 4+ | < 15% survive to Round 5 |
 
 These are rough targets, not guarantees. Use benchmark data to calibrate.
 
@@ -57,7 +57,7 @@ The active catalyst capacity was expanded from **3** to **6** slots.
 | Risk | Mitigation |
 |------|-----------|
 | Runaway synergy stacking | Synergies cap at one bonus per pair — adding more catalysts doesn't stack the same synergy twice |
-| Build identity too easy to achieve | 6 slots means players can hold an entire economy _and_ scoring build simultaneously — watch win rates |
+| Build identity too easy to achieve | 6 slots means players can hold an entire economy _and_ scoring build simultaneously — watch avgRoundsCleared across catalyst counts |
 | Forge economy flooding | Forge now appears every phase; consider adjusting `STARTING_ENERGY` if agents accumulate too much energy |
 
 ### Economy Review
@@ -179,7 +179,7 @@ SYNERGY_MULTIPLIERS = {
 **Expected ranges**:
 - Individual synergy bonus: 1.1 – 1.5×
 - Combined synergy stack (2 synergies): up to ~1.8×
-- Flag as overpowered if synergy win rate > 2× global win rate
+- Flag as overpowered if synergy avgRoundsCleared > 2× global
 
 ### Momentum Config
 
@@ -210,7 +210,7 @@ GRID_CLEAN_COUNT   = 2         // tiles removed by grid_clean
 - `chain_trigger`: Situational; valuable when chain length is high
 - `freeze_step`: Defensive; prevents bad spawns
 
-If `pulse_boost` win rate > 3× global, reduce `PULSE_BOOST_MULT` to 1.7.
+If `pulse_boost` avgRoundsCleared > 3× global, reduce `PULSE_BOOST_MULT` to 1.7.
 
 ### Protocol Modifiers
 
@@ -272,8 +272,8 @@ The analysis flags:
 | Win rate < 2% (all agents) | Reduce Phase 5–6 `targetOutput` by 10–15% |
 | Win rate > 50% (best agent) | Increase Phase 4+ targets or reduce steps |
 | Catalyst pick rate < 5% | Reduce cost or increase multiplier |
-| Catalyst win rate > 2× global | Reduce multiplier by 0.1–0.2 |
-| Synergy win rate > 2× global | Reduce synergy multiplier by 0.05–0.1 |
+| Catalyst avgRoundsCleared > 2× global | Reduce multiplier by 0.1–0.2 |
+| Synergy avgRoundsCleared > 2× global | Reduce synergy multiplier by 0.05–0.1 |
 | Anomaly survival < 30% | Increase `COLLAPSE_FIELD_PERIOD` or reduce spawn block frequency |
 | Agent similarity (< 10% output gap) | Increase phase complexity or heuristic weight on synergy |
 | Average momentum > 1.6× | Reduce `MOMENTUM_CONFIG.growthRate` |
@@ -284,7 +284,7 @@ The analysis flags:
 
 `artifacts/benchmark/latest/build_stats.json` shows the top 10 most common catalyst combinations. Use this to identify:
 
-- **Dominant builds**: High frequency + high win rate → may need nerf
+- **Dominant builds**: High frequency + high avgRoundsCleared → may need nerf
 - **Underused builds**: Low frequency despite low cost → may need buff
 - **Synergy-enabled builds**: Look for combinations matching synergy pairs
 
@@ -325,7 +325,7 @@ The analysis flags:
 1. **Run `npm run benchmark`** after each tuning change to the config
 2. **Compare `comparison.md`** before and after
 3. **Check `catalyst_stats.json`** — pick rates should be roughly comparable across catalysts
-4. **Check `synergy_stats.json`** — no synergy should have > 2× global win rate
+4. **Check `synergy_stats.json`** — no synergy should have > 2× global avgRoundsCleared
 5. **Check `build_stats.json`** — no single 3-catalyst build should dominate > 30% of wins
 6. **Check `anomaly_stats.json`** — survival rates should be >30% for best agents
 7. **Iterate**: adjust config, re-run, compare
@@ -334,12 +334,12 @@ The analysis flags:
 
 | Metric | Target |
 |--------|--------|
-| HeuristicAgent win rate | 5%–30% |
+| HeuristicAgent avgRoundsCleared | 2.0–5.0 |
 | RandomAgent vs Heuristic output gap | > 20% |
 | Anomaly survival (Heuristic) | 40%–70% |
 | Catalyst pick rate (any catalyst) | > 10% |
-| No single catalyst with > 2× global win rate | |
-| No single synergy with > 2× global win rate | |
+| No single catalyst with > 2× global avgRoundsCleared | |
+| No single synergy with > 2× global avgRoundsCleared | |
 | Average momentum at end of phase 6 | 1.2–1.5× |
 
 ---
@@ -426,7 +426,7 @@ The analysis flags:
 | Win rate < 2% (all agents) | Reduce Phase 5–6 `targetOutput` by 10–15% |
 | Win rate > 50% (best agent) | Increase Phase 4+ targets or reduce steps |
 | Catalyst pick rate < 5% | Reduce cost or increase multiplier |
-| Catalyst win rate > 2× global | Reduce multiplier by 0.1–0.2 |
+| Catalyst avgRoundsCleared > 2× global | Reduce multiplier by 0.1–0.2 |
 | Anomaly survival < 30% | Increase `COLLAPSE_FIELD_PERIOD` or reduce spawn block frequency |
 | Agent similarity (< 10% output gap) | Increase phase complexity or heuristic weight on synergy |
 
@@ -453,7 +453,7 @@ Based on early benchmark runs:
 
 ### Corner Crown & Twin Burst
 - Both have high multipliers (2.0 and 1.5) — likely dominant once Forge is reachable
-- Monitor pick rate and win rate once phase difficulty is adjusted
+- Monitor pick rate and avgRoundsCleared once phase difficulty is adjusted
 
 ### Reserve
 - "+20 per unused step" is strong with a step-conservative strategy
@@ -467,7 +467,7 @@ Based on early benchmark runs:
 
 ### Problem Summary (v1)
 
-All tested agents had near-0% win rates in v1 because phase targets were too high relative to what the tile merging system can produce in the given step budget.
+All tested agents cleared 0 rounds in v1 because phase targets were too high relative to what the tile merging system can produce in the given step budget.
 
 ### Phase Target Changes
 
@@ -507,11 +507,11 @@ All tested agents had near-0% win rates in v1 because phase targets were too hig
 
 | Metric | Target |
 |--------|--------|
-| HeuristicAgent win rate | 5%–30% |
+| HeuristicAgent avgRoundsCleared | 2.0–5.0 |
 | RandomAgent vs Heuristic output gap | > 20% |
 | Anomaly survival (Heuristic) | 40%–70% |
 | Catalyst pick rate (any catalyst) | > 10% |
-| No single catalyst with > 2× global win rate |  |
+| No single catalyst with > 2× global avgRoundsCleared |  |
 
 ---
 
@@ -535,7 +535,7 @@ All tested agents had near-0% win rates in v1 because phase targets were too hig
 
 ### Difficulty Curve Expectations
 
-| Ascension | Expected Best-Agent Win Rate |
+| Ascension | Expected Best-Agent AvgRoundsCleared |
 |-----------|------------------------------|
 | 0 | 10–40% |
 | 1 | 5–20% |
@@ -544,7 +544,7 @@ All tested agents had near-0% win rates in v1 because phase targets were too hig
 | 6–7 | <2% |
 | 8 | <1% |
 
-These are guidelines, not hard targets. If Ascension 1 win rate collapses to 0% in benchmarks, consider:
+These are guidelines, not hard targets. If Ascension 1 avgRoundsCleared drops to < 0.5 in benchmarks, consider:
 - Increasing starting energy at A0 (buffer before A1 penalty kicks in)
 - Reducing the step penalty from -1 to -0.5 (averaged across phases)
 
@@ -563,8 +563,8 @@ If unlocks feel too cheap (trivial to obtain), increase `UNLOCK_COSTS` in the sa
 
 ### Meta Progression Impact on Balance
 
-- **Base pool (only legacy catalysts)**: ~30–40% win rate for HeuristicAgent (restricted diversity).
-- **Full pool (all catalysts)**: ~50–60% win rate for HeuristicAgent (more synergy options).
+- **Base pool (only legacy catalysts)**: ~1.5–3.0 avgRoundsCleared for HeuristicAgent (restricted diversity).
+- **Full pool (all catalysts)**: ~3.0–5.0 avgRoundsCleared for HeuristicAgent (more synergy options).
 
 This ~20 percentage point gap is intentional and meaningful — it validates that unlocking content provides real power while the game remains playable from the start.
 
