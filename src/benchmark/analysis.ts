@@ -10,7 +10,7 @@ import { ALL_SYNERGIES, getActiveSynergies } from '../core/synergies';
 export interface CatalystStat {
   id:       CatalystId;
   pickRate: number;
-  winRate:  number;
+  avgRoundsCleared: number;
   meanOutput: number;
   avgOutputContribution: number;
 }
@@ -18,14 +18,14 @@ export interface CatalystStat {
 export interface SynergyStat {
   id:           SynergyId;
   triggerRate:  number;
-  winRate:      number;
+  avgRoundsCleared: number;
   meanOutput:   number;
 }
 
 export interface BuildStat {
   catalysts:    CatalystId[];
   frequency:    number;
-  winRate:      number;
+  avgRoundsCleared: number;
   meanOutput:   number;
 }
 
@@ -52,8 +52,8 @@ function computeCatalystStats(runs: RunMetrics[]): CatalystStat[] {
     const id = def.id;
     const withCat  = runs.filter(r => r.activeCatalysts.includes(id));
     const pickRate = withCat.length / Math.max(runs.length, 1);
-    const winRate  = withCat.length > 0
-      ? withCat.filter(r => r.won).length / withCat.length
+    const avgRoundsCleared = withCat.length > 0
+      ? withCat.reduce((s, r) => s + (r.roundsCleared ?? 0), 0) / withCat.length
       : 0;
     const meanOutput = withCat.length > 0
       ? withCat.reduce((s, r) => s + r.finalOutput, 0) / withCat.length
@@ -61,7 +61,7 @@ function computeCatalystStats(runs: RunMetrics[]): CatalystStat[] {
     const avgOutputContribution = withCat.length > 0
       ? withCat.reduce((s, r) => s + r.avgOutputPerMove, 0) / withCat.length
       : 0;
-    return { id, pickRate, winRate, meanOutput, avgOutputContribution };
+    return { id, pickRate, avgRoundsCleared, meanOutput, avgOutputContribution };
   });
 }
 
@@ -72,13 +72,13 @@ function computeSynergyStats(runs: RunMetrics[]): SynergyStat[] {
       getActiveSynergies(r.activeCatalysts).includes(synDef.id)
     );
     const triggerRate = withSyn.length / Math.max(runs.length, 1);
-    const winRate = withSyn.length > 0
-      ? withSyn.filter(r => r.won).length / withSyn.length
+    const avgRoundsCleared = withSyn.length > 0
+      ? withSyn.reduce((s, r) => s + (r.roundsCleared ?? 0), 0) / withSyn.length
       : 0;
     const meanOutput = withSyn.length > 0
       ? withSyn.reduce((s, r) => s + r.finalOutput, 0) / withSyn.length
       : 0;
-    return { id: synDef.id, triggerRate, winRate, meanOutput };
+    return { id: synDef.id, triggerRate, avgRoundsCleared, meanOutput };
   });
 }
 
@@ -98,7 +98,7 @@ function computeBuildStats(runs: RunMetrics[]): BuildStat[] {
     builds.push({
       catalysts: key.split('+') as CatalystId[],
       frequency: arr.length / Math.max(runs.length, 1),
-      winRate: arr.filter(r => r.won).length / arr.length,
+      avgRoundsCleared: arr.reduce((s, r) => s + (r.roundsCleared ?? 0), 0) / arr.length,
       meanOutput: arr.reduce((s, r) => s + r.finalOutput, 0) / arr.length,
     });
   }
@@ -133,18 +133,35 @@ export function analyseResults(results: SuiteResult[]): BalanceReport {
   const synergyStats  = computeSynergyStats(allRuns);
   const buildStats    = computeBuildStats(allRuns);
 
-  // ─── Win rate check ──────────────────────────────────────────────────────
+  // ─── Rounds-cleared depth check ──────────────────────────────────────────
   const allMetrics = Object.values(agentSummary);
-  const avgWinRate = allMetrics.reduce((s, m) => s + m.winRate, 0) / Math.max(allMetrics.length, 1);
+  const avgRoundsCleared = allMetrics.reduce((s, m) => s + m.avgRoundsCleared, 0) / Math.max(allMetrics.length, 1);
+  const avgLateGameClearTurns = allMetrics.reduce((s, m) => s + m.lateGameClearTurns, 0) / Math.max(allMetrics.length, 1);
+  const avgMaxTile = allMetrics.reduce((s, m) => s + m.avgMaxTile, 0) / Math.max(allMetrics.length, 1);
 
-  if (avgWinRate < 0.02) {
+  if (avgRoundsCleared < 1) {
     findings.push({ category: 'scoring', severity: 'critical',
-      message: `Average win rate is very low (${(avgWinRate * 100).toFixed(1)}%). Game may be overtuned.` });
+      message: `Agents clear fewer than 1 round on average (${avgRoundsCleared.toFixed(2)}). Game may be overtuned.` });
     recommendations.push('Consider reducing phase targetOutput for Phases 5–6.');
-  } else if (avgWinRate > 0.5) {
+  } else if (avgRoundsCleared > 8) {
     findings.push({ category: 'scoring', severity: 'warn',
-      message: `Average win rate is high (${(avgWinRate * 100).toFixed(1)}%). Game may be undertuned.` });
+      message: `Agents average ${avgRoundsCleared.toFixed(1)} rounds cleared. Game may be undertuned for endless progression.` });
     recommendations.push('Consider increasing phase targetOutput or reducing step count.');
+  }
+
+  if (avgLateGameClearTurns === 0) {
+    findings.push({ category: 'scoring', severity: 'info',
+      message: 'No late-game phase clear samples were observed (round 4+). Late-game pacing cannot be fully validated from this run.' });
+  } else if (avgLateGameClearTurns <= 3) {
+    findings.push({ category: 'scoring', severity: 'warn',
+      message: `Late-game phases still clear too quickly (${avgLateGameClearTurns.toFixed(2)} turns in round 4+).` });
+    recommendations.push('Increase late-game growth curve pressure or reduce late-game burst multipliers.');
+  }
+
+  if (avgMaxTile < 8) {
+    findings.push({ category: 'momentum', severity: 'warn',
+      message: `Average max tile is low (${avgMaxTile.toFixed(1)}). Players may not be reaching higher-tier merges often enough.` });
+    recommendations.push('Increase phase step budgets or smooth early/mid growth to allow deeper board development.');
   }
 
   // ─── Agent distinction ────────────────────────────────────────────────────
@@ -158,8 +175,8 @@ export function analyseResults(results: SuiteResult[]): BalanceReport {
   }
 
   // ─── Catalyst analysis ────────────────────────────────────────────────────
-  const globalWinRate = allRuns.length > 0
-    ? allRuns.filter(r => r.won).length / allRuns.length
+  const globalAvgRounds = allRuns.length > 0
+    ? allRuns.reduce((s, r) => s + (r.roundsCleared ?? 0), 0) / allRuns.length
     : 0;
 
   for (const cs of catalystStats) {
@@ -167,17 +184,17 @@ export function analyseResults(results: SuiteResult[]): BalanceReport {
       findings.push({ category: 'catalyst', severity: 'warn',
         message: `${cs.id}: rarely picked (${(cs.pickRate * 100).toFixed(1)}%) — may be weak or too expensive.` });
     }
-    if (cs.winRate > globalWinRate * 1.5 && cs.pickRate > 0.1) {
+    if (globalAvgRounds > 0 && cs.avgRoundsCleared > globalAvgRounds * 1.5 && cs.pickRate > 0.1) {
       findings.push({ category: 'catalyst', severity: 'warn',
-        message: `${cs.id}: unusually high win rate when held (${(cs.winRate * 100).toFixed(1)}% vs ${(globalWinRate * 100).toFixed(1)}% global). Potentially overpowered.` });
+        message: `${cs.id}: unusually high avg rounds when held (${cs.avgRoundsCleared.toFixed(1)} vs ${globalAvgRounds.toFixed(1)} global). Potentially overpowered.` });
     }
   }
 
   // ─── Synergy analysis ─────────────────────────────────────────────────────
   for (const ss of synergyStats) {
-    if (ss.winRate > globalWinRate * 2.0 && ss.triggerRate > 0.05) {
+    if (globalAvgRounds > 0 && ss.avgRoundsCleared > globalAvgRounds * 2.0 && ss.triggerRate > 0.05) {
       findings.push({ category: 'synergy', severity: 'warn',
-        message: `${ss.id}: synergy win rate ${(ss.winRate * 100).toFixed(1)}% vs ${(globalWinRate * 100).toFixed(1)}% global — may be overpowered.` });
+        message: `${ss.id}: synergy avg rounds ${ss.avgRoundsCleared.toFixed(1)} vs ${globalAvgRounds.toFixed(1)} global — may be overpowered.` });
     }
   }
 

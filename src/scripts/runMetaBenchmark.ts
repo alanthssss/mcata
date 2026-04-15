@@ -17,7 +17,7 @@ import { ALL_ASCENSION_LEVELS, ASCENSION_MODIFIER_DEFS } from '../core/ascension
 import { DEFAULT_PROFILE } from '../core/profile';
 import { applyRunReward, calculateRunReward } from '../core/profile';
 import { createRunState, finalizeRun } from '../core/runAdapter';
-import { processMoveAction, selectInfusion, buyFromForge, skipForge } from '../core/engine';
+import { processMoveAction, selectInfusion, buyFromForge, skipForge, advanceRound } from '../core/engine';
 import { ProfileState } from '../core/types';
 import { PHASES } from '../core/phases';
 
@@ -39,15 +39,15 @@ function runAscensionAnalysis() {
     },
   );
 
-  console.log('\n  Level | Description                                    | WinRate (Heuristic) | WinRate (MCTS)');
-  console.log('  ------|------------------------------------------------|---------------------|---------------');
+  console.log('\n  Level | Description                                    | AvgRounds (Heuristic) | AvgRounds (MCTS)');
+  console.log('  ------|------------------------------------------------|-----------------------|------------------');
 
   for (const level of ALL_ASCENSION_LEVELS) {
-    const desc = ASCENSION_MODIFIER_DEFS[level].description.padEnd(46);
-    const hWin  = result.metricsByLevel[level]['HeuristicAgent']?.winRate ?? 0;
-    const mWin  = result.metricsByLevel[level]['MCTSAgent']?.winRate ?? 0;
+    const desc  = ASCENSION_MODIFIER_DEFS[level].description.padEnd(46);
+    const hRnds = result.metricsByLevel[level]['HeuristicAgent']?.avgRoundsCleared ?? 0;
+    const mRnds = result.metricsByLevel[level]['MCTSAgent']?.avgRoundsCleared ?? 0;
     console.log(
-      `  A${level}    | ${desc} | ${(hWin * 100).toFixed(1).padStart(19)}% | ${(mWin * 100).toFixed(1).padStart(13)}%`
+      `  A${level}    | ${desc} | ${hRnds.toFixed(2).padStart(21)} | ${mRnds.toFixed(2).padStart(16)}`
     );
   }
 }
@@ -64,13 +64,13 @@ function runUnlockAnalysis() {
     },
   );
 
-  console.log('\n  Pool | Agent          | Win%   | Mean Output');
-  console.log('  -----|----------------|--------|------------');
+  console.log('\n  Pool | Agent          | AvgRounds | Mean Output');
+  console.log('  -----|----------------|-----------|------------');
   for (const agentName of Object.keys(result.baseMetrics)) {
     const b = result.baseMetrics[agentName];
     const f = result.fullMetrics[agentName];
-    console.log(`  base | ${agentName.padEnd(14)} | ${(b.winRate * 100).toFixed(1).padStart(5)}% | ${b.meanOutput.toFixed(0)}`);
-    console.log(`  full | ${agentName.padEnd(14)} | ${(f.winRate * 100).toFixed(1).padStart(5)}% | ${f.meanOutput.toFixed(0)}`);
+    console.log(`  base | ${agentName.padEnd(14)} | ${b.avgRoundsCleared.toFixed(2).padStart(9)} | ${b.meanOutput.toFixed(0)}`);
+    console.log(`  full | ${agentName.padEnd(14)} | ${f.avgRoundsCleared.toFixed(2).padStart(9)} | ${f.meanOutput.toFixed(0)}`);
   }
 }
 
@@ -81,8 +81,8 @@ function simulateProgression() {
   const agent = new HeuristicAgent();
   let profile: ProfileState = { ...DEFAULT_PROFILE };
 
-  console.log('\n  Run | Shards | Total | Phases | Won');
-  console.log('  ----|--------|-------|--------|----');
+  console.log('\n  Run | Shards | Total | Phases | Rounds');
+  console.log('  ----|--------|-------|--------|-------');
 
   for (let i = 0; i < 20; i++) {
     // Use the adapter so the run respects profile unlock restrictions
@@ -90,6 +90,7 @@ function simulateProgression() {
     let steps = 0;
     let anomalyPhaseCount = 0;
     let anomalyPhasesSurvived = 0;
+    let roundsCleared = 0;
 
     while (state.screen !== 'game_over' && state.screen !== 'run_complete' && steps < 2000) {
       if (state.screen === 'playing') {
@@ -111,6 +112,9 @@ function simulateProgression() {
         const affordable = state.forgeOffers.filter(c => state.energy >= c.cost).sort((a,b) => a.cost - b.cost);
         if (affordable.length) state = buyFromForge(state, affordable[0]);
         state = skipForge(state);
+      } else if (state.screen === 'round_complete') {
+        roundsCleared++;
+        state = advanceRound(state); // advance into next round
       } else break;
     }
 
@@ -119,8 +123,7 @@ function simulateProgression() {
       if (ph.anomaly) {
         anomalyPhaseCount++;
         const phIdx = PHASES.indexOf(ph);
-        // Survived if we cleared past this phase index or won the entire run
-        if (state.phaseIndex > phIdx || state.screen === 'run_complete') {
+        if (state.phaseIndex > phIdx || state.screen === 'round_complete') {
           anomalyPhasesSurvived++;
         }
       }
@@ -129,14 +132,13 @@ function simulateProgression() {
       ? anomalyPhasesSurvived / anomalyPhaseCount
       : 0;
 
-    const won = state.screen === 'run_complete';
-    const phasesCleared = state.phaseIndex + (won ? 1 : 0);
+    const phasesCleared = state.phaseIndex + (state.screen === 'round_complete' ? 1 : 0);
 
     const { reward, updatedProfile } = finalizeRun(profile, state, anomalySurvivalRate);
     profile = updatedProfile;
 
     console.log(
-      `  ${String(i + 1).padStart(3)} | ${String(reward.metaCurrencyEarned).padStart(6)} | ${String(profile.metaCurrency).padStart(5)} | ${String(phasesCleared).padStart(6)} | ${won ? 'Y' : 'N'}`
+      `  ${String(i + 1).padStart(3)} | ${String(reward.metaCurrencyEarned).padStart(6)} | ${String(profile.metaCurrency).padStart(5)} | ${String(phasesCleared).padStart(6)} | ${String(roundsCleared).padStart(6)}`
     );
   }
 

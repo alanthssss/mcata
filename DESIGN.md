@@ -492,7 +492,7 @@ src/
 ## Balancing Philosophy
 
 - **Centralized config**: all tuning knobs live in `src/core/config.ts`
-- **Benchmark-driven tuning**: run `npm run balance` to check win rates and catalyst stats
+- **Benchmark-driven tuning**: run `npm run balance` to check rounds cleared, catalyst stats, and pacing metrics
 - **Agent distinction**: if HeuristicAgent and RandomAgent score similarly, the game lacks depth
 - **Phase ramp**: each phase should feel meaningfully harder, not just step-limited
 - See [BALANCE.md](BALANCE.md) for the full tuning guide
@@ -853,7 +853,7 @@ Agents only depend on `src/core/` and `src/ai/`. They import no browser code.
 ## Balancing Philosophy
 
 - **Centralized config**: all tuning knobs live in `src/core/config.ts`
-- **Benchmark-driven tuning**: run `npm run balance` to check win rates and catalyst stats
+- **Benchmark-driven tuning**: run `npm run balance` to check rounds cleared, catalyst stats, and pacing metrics
 - **Agent distinction**: if HeuristicAgent and RandomAgent score similarly, the game lacks depth
 - **Phase ramp**: each phase should feel meaningfully harder, not just step-limited
 - See [BALANCE.md](BALANCE.md) for the full tuning guide
@@ -1280,17 +1280,24 @@ exponential build power (catalyst stacks, global multiplier, synergies).
 
 **Two-layer scaling** applied at every phase transition:
 
-#### Layer 1: Compound Round Scaling
+#### Layer 1: Segmented Composite Curve
 
 ```ts
-scaleFactor = Math.pow(1 + ROUND_TARGET_SCALE, roundNumber - 1)
-// replaces: 1 + (roundNumber - 1) * ROUND_TARGET_SCALE
+target = base * phaseFactor * roundFactor * smoothing
+
+phaseFactor = 1 + (phaseIndex ^ 1.3)
+roundFactor = 1 + (roundIndex ^ 2)
+smoothing = log(phaseIndex + roundIndex + 2)
 ```
 
-This makes targets grow exponentially to better match the exponential power
-curve of a strong build.  Controlled by:
-- `ROUND_TARGET_SCALE = 0.15` (rate per round)
-- `ROUND_SCALE_COMPOUND = true` (toggle; `false` restores legacy linear behaviour)
+Implemented in `getPhasesForRound` using `SEGMENTED_GROWTH_SCALING` from
+`src/core/config.ts`. The phase index is segmented by phase bucket:
+- early (P1–P2)
+- mid (P3–P4)
+- late (P5–P6)
+
+The default round index is scaled (`roundIndexScale`) so early rounds remain
+accessible while late rounds ramp sharply.
 
 #### Layer 2: Build-Aware Factor
 
@@ -1335,8 +1342,14 @@ display both read this field, ensuring they are always consistent.
 
 ### Design Constraints
 
-- Early game (round 1, no catalysts): build factor = 1.0 → same as before
-- Phase pacing target: **6–12 moves** for a median player in any round
-- Expert players with full builds will clear faster (4–6 moves) — this is intentional
-- `ROUND_SCALE_COMPOUND = false` and `BUILD_AWARE_SCALING.enabled = false` fully
-  restore the pre-v6 behaviour for A/B testing
+- Early game remains close to prior difficulty (segmented curve keeps round-1
+  early-phase scaling low)
+- Late-game targets scale meaningfully to avoid trivial 2–3 turn clears
+- Segmented steps:
+  - early: **10–16**
+  - mid: **12–20**
+  - late: **14–24**
+- Benchmark validation tracks:
+  - `avgMovesPerPhase`
+  - `avgMaxTile`
+  - `lateGameClearTurns`
