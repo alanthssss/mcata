@@ -94,6 +94,11 @@ Pattern rewards are primarily sourced from Infusion and strengthen one archetype
 for the rest of the run (`corner`, `chain`, `empty_space`, `high_tier`,
 `economy`, `survival`).
 
+Player-facing flow:
+- Acquisition: choose a Pattern reward in Infusion (`Grow Pattern: {name}`)
+- Active display: Pattern panel in the run HUD shows active pattern + level
+- Effect visibility: move logs/output panel include Pattern multiplier entries
+
 ---
 
 ## 3. Phase System

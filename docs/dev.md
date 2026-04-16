@@ -209,9 +209,19 @@ npm run dev            # start Vite dev server
 npm run build          # TypeScript + Vite production build
 npm test               # run all unit tests (vitest)
 npm run benchmark      # run baseline benchmark suite
-npm run balance        # run balance probe + generate report
+npm run balance        # run balance + pacing + round-stress suites, generate report
 npm run docs:assets    # generate Mermaid diagram SVGs
 ```
+
+### Balance Workflow
+
+`npm run balance` is self-contained and writes outputs to `artifacts/benchmark/latest/`.
+
+Typical loop:
+1. Tune constants in `src/core/config.ts`
+2. Run `npm run balance`
+3. Review `artifacts/benchmark/latest/balance_report.md` and charts
+4. Compare with previous benchmark artifacts before committing tuning changes
 
 ---
 

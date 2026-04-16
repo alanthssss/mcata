@@ -288,7 +288,8 @@ describe('processMoveAction', () => {
       const result = processMoveAction(state, 'down');
       // grid_clean removes 2 lowest tiles after the move
       expect(result.reactionLog[0].signalUsed).toBe('grid_clean');
-      expect(result.reactionLog[0].signalEffect).toMatch(/Grid Clean/i);
+      expect(result.reactionLog[0].signalEffect?.key).toBe('ui.signal_effect_grid_clean');
+      expect(result.reactionLog[0].signalEffect?.params?.count).toBeTypeOf('number');
     });
 
     it('queued signal is consumed after use and feedback is recorded', () => {
@@ -305,7 +306,7 @@ describe('processMoveAction', () => {
       expect(result.pendingSignal).toBeNull();
       expect(result.signals).not.toContain('pulse_boost');
       expect(result.reactionLog[0].signalUsed).toBe('pulse_boost');
-      expect(result.reactionLog[0].signalEffect).toMatch(/Pulse Boost/i);
+      expect(result.reactionLog[0].signalEffect?.key).toBe('ui.signal_effect_pulse_boost');
     });
   });
 });
@@ -627,7 +628,7 @@ describe('6-slot catalyst system', () => {
     expect(result.activeCatalysts).toHaveLength(6);
     expect(result.activeCatalysts).not.toContain('combo_wire');
     expect(result.energy).toBe(8);
-    expect(result.lastIntermissionMessage).toContain('converted');
+    expect(result.lastIntermissionMessage?.key).toBe('ui.infusion_catalyst_slot_full');
   });
 
   it('replaces catalyst at replaceIndex when 6 slots are full via forge', () => {

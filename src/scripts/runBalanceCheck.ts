@@ -6,7 +6,7 @@
  *   npm run balance
  */
 
-import { SUITE_BALANCE, SUITE_PHASE_STRESS } from '../benchmark/presets';
+import { SUITE_BALANCE, SUITE_PACING, SUITE_ROUND_STRESS } from '../benchmark/presets';
 import { runSuite } from '../benchmark/suites';
 import { analyseResults } from '../benchmark/analysis';
 import { exportAll, exportBalanceReport } from '../benchmark/exporters';
@@ -21,18 +21,25 @@ const balanceResult = runSuite(SUITE_BALANCE, (agent, done, total) => {
   if (done === total) process.stdout.write(`    ${agent}: ${done}/${total}\n`);
 });
 
-console.log(`Running suite: ${SUITE_PHASE_STRESS.name}...`);
-const stressResult = runSuite(SUITE_PHASE_STRESS, (agent, done, total) => {
-  if (done === total) process.stdout.write(`    ${agent}: ${done}/${total}\n`);
+const stressSuites = [SUITE_PACING, SUITE_ROUND_STRESS];
+const stressResults = stressSuites.map((suite) => {
+  if (!suite) {
+    throw new Error('Balance stress suite is missing. Check src/benchmark/presets.ts exports.');
+  }
+  console.log(`Running suite: ${suite.name}...`);
+  return runSuite(suite, (agent, done, total) => {
+    if (done === total) process.stdout.write(`    ${agent}: ${done}/${total}\n`);
+  });
 });
 
 const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
 console.log(`\nCompleted in ${elapsed}s`);
 
-const report = analyseResults([balanceResult, stressResult]);
-exportAll([balanceResult, stressResult], report);
+const results = [balanceResult, ...stressResults];
+const report = analyseResults(results);
+exportAll(results, report);
 exportBalanceReport(report);
-generateAllCharts({ ...balanceResult.suiteMetrics, ...stressResult.suiteMetrics });
+generateAllCharts(results.reduce((acc, result) => ({ ...acc, ...result.suiteMetrics }), {}));
 
 console.log('\n=== Balance Findings ===');
 for (const f of report.findings) {

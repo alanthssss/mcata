@@ -266,7 +266,7 @@ flowchart TD
 ```bash
 npm run benchmark             # baseline suite (100 runs/agent)
 npm run benchmark:long        # long suite (500 runs/agent)
-npm run balance               # balance + pacing suites
+npm run balance               # balance + pacing + round_stress suites
 npx tsx src/scripts/runBenchmark.ts --suite smoke
 npx tsx src/scripts/runBenchmark.ts --suite round_stress
 ```

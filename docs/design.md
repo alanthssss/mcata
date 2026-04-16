@@ -515,7 +515,7 @@ src/
 - **Benchmark-driven tuning**: run `npm run balance` to check rounds cleared, catalyst stats, and pacing metrics
 - **Agent distinction**: if HeuristicAgent and RandomAgent score similarly, the game lacks depth
 - **Phase ramp**: each phase should feel meaningfully harder, not just step-limited
-- See [BALANCE.md](BALANCE.md) for the full tuning guide
+- See [balance.md](balance.md) for the full tuning guide
 
 ---
 
@@ -876,7 +876,7 @@ Agents only depend on `src/core/` and `src/ai/`. They import no browser code.
 - **Benchmark-driven tuning**: run `npm run balance` to check rounds cleared, catalyst stats, and pacing metrics
 - **Agent distinction**: if HeuristicAgent and RandomAgent score similarly, the game lacks depth
 - **Phase ramp**: each phase should feel meaningfully harder, not just step-limited
-- See [BALANCE.md](BALANCE.md) for the full tuning guide
+- See [balance.md](balance.md) for the full tuning guide
 
 ---
 

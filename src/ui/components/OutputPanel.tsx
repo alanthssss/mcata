@@ -1,5 +1,5 @@
 import React from 'react';
-import { ReactionLogEntry } from '../../core/types';
+import { PatternId, ReactionLogEntry, SignalId } from '../../core/types';
 import { useT } from '../../i18n';
 import { formatScore } from '../scoreDisplay';
 
@@ -10,6 +10,7 @@ interface OutputPanelProps {
 /** Map internal multiplier names to translation keys */
 function multLabelKey(name: string): string {
   const lc = name.toLowerCase();
+  if (lc.includes('pattern'))   return 'ui.pattern_bonus';
   if (lc.includes('chain'))     return 'ui.chain';
   if (lc.includes('corner') || lc.includes('highest') || lc.includes('condition')) return 'ui.condition';
   if (lc.includes('catalyst'))  return 'ui.catalyst_bonus';
@@ -20,6 +21,21 @@ function multLabelKey(name: string): string {
 
 export const OutputPanel: React.FC<OutputPanelProps> = ({ lastEntry }) => {
   const t = useT();
+  const resolveLocalized = (key: string, params?: Record<string, string | number>) => {
+    if (!params) return t(key);
+    const resolved = { ...params };
+    if (typeof resolved.name === 'string') {
+      const name = resolved.name;
+      if (['pulse_boost', 'grid_clean', 'chain_trigger', 'freeze_step'].includes(name)) {
+        resolved.name = t(`signal.${name as SignalId}.name`);
+      } else if (['corner', 'chain', 'empty_space', 'high_tier', 'economy', 'survival'].includes(name)) {
+        resolved.name = t(`pattern.${name as PatternId}.name`);
+      } else {
+        resolved.name = t(`catalyst.${name}.name`);
+      }
+    }
+    return t(key, resolved);
+  };
 
   if (!lastEntry || lastEntry.base === 0) {
     return (
@@ -75,7 +91,12 @@ export const OutputPanel: React.FC<OutputPanelProps> = ({ lastEntry }) => {
       {lastEntry.signalUsed && (
         <div className="output-signal">
           🔮 {t(`signal.${lastEntry.signalUsed}.name`)}
-          {lastEntry.signalEffect && <span className="output-signal-effect"> — {lastEntry.signalEffect}</span>}
+          {lastEntry.signalEffect && (
+            <span className="output-signal-effect">
+              {' — '}
+              {resolveLocalized(lastEntry.signalEffect.key, lastEntry.signalEffect.params)}
+            </span>
+          )}
         </div>
       )}
     </div>
