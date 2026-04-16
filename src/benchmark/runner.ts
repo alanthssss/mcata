@@ -22,6 +22,7 @@ import { DEFAULT_PROTOCOL } from '../core/protocols';
 import { calculateRunReward } from '../core/profile';
 import { generateForgeOffers } from '../core/forge';
 import { createRng } from '../core/rng';
+import { CATALYST_DEFS } from '../core/catalysts';
 
 // ─── Auto-pilot helpers for non-playing screens ───────────────────────────────
 function autoInfusion(state: GameState): GameState {
@@ -30,7 +31,7 @@ function autoInfusion(state: GameState): GameState {
     // (this mirrors the path selectInfusion() takes)
     const rng = createRng(state.rngSeed + 100);
     const forgeOffers = generateForgeOffers(
-      state.activeCatalysts, 3, rng.next.bind(rng), state.catalystPool
+      state.activeCatalysts, 3, rng.next.bind(rng), state.catalystPool, state.roundNumber
     );
     return { ...state, screen: 'forge', forgeOffers };
   }
@@ -110,6 +111,10 @@ export function runSingle(opts: RunOptions): RunMetrics {
   let phasesTracked        = 0;  // number of phases where we measured steps
   let phaseStepStart       = 0;  // step count at the start of the current phase
   const phaseHistory: PhaseRecord[] = [];
+  const forgeOfferRarityCounts: Record<'common' | 'rare' | 'epic', number> = { common: 0, rare: 0, epic: 0 };
+  const acquiredRarityCounts: Record<'common' | 'rare' | 'epic', number> = { common: 0, rare: 0, epic: 0 };
+  let firstRareRound: number | undefined;
+  let firstEpicRound: number | undefined;
   // Snapshot of state at the start of each phase for PhaseRecord
   let phaseStartRound      = state.roundNumber;
   let phaseStartIndex      = state.phaseIndex;
@@ -178,7 +183,19 @@ export function runSingle(opts: RunOptions): RunMetrics {
         phaseStartIndex  = state.phaseIndex;
         phaseStartTarget = state.phaseTargetOutput;
       } else if (state.screen === 'forge') {
+        for (const offer of state.forgeOffers) {
+          forgeOfferRarityCounts[offer.rarity]++;
+        }
+        const beforeIds = new Set(state.activeCatalysts);
         state = autoForge(state);
+        for (const id of state.activeCatalysts) {
+          if (!beforeIds.has(id)) {
+            const rarity = CATALYST_DEFS[id].rarity;
+            acquiredRarityCounts[rarity]++;
+            if (rarity === 'rare' && firstRareRound === undefined) firstRareRound = state.roundNumber;
+            if (rarity === 'epic' && firstEpicRound === undefined) firstEpicRound = state.roundNumber;
+          }
+        }
       } else if (state.screen === 'round_complete') {
         // Last phase of the round cleared — record it before advancing
         const movesUsed = totalSteps - phaseStepStart;
@@ -303,6 +320,11 @@ export function runSingle(opts: RunOptions): RunMetrics {
     avgMovesPerPhase,
     uniqueCatalystsAcquired,
     phaseHistory,
+    forgeOfferRarityCounts,
+    acquiredRarityCounts,
+    firstRareRound,
+    firstEpicRound,
+    selectedPattern: state.activePattern,
   };
 }
 

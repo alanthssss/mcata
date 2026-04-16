@@ -4,7 +4,7 @@ import { ALL_CATALYSTS } from './catalysts';
 import { createRng } from './rng';
 
 describe('generateInfusionOptions', () => {
-  it('always includes energy, steps and multiplier options', () => {
+  it('always includes core non-catalyst rewards', () => {
     const rng = createRng(1);
     const options = generateInfusionOptions([], rng.next.bind(rng));
     const types = options.map(o => o.type);
@@ -13,29 +13,38 @@ describe('generateInfusionOptions', () => {
     expect(types).toContain('multiplier');
   });
 
-  it('includes a catalyst option when the pool is non-empty', () => {
-    const rng = createRng(1);
-    const options = generateInfusionOptions([], rng.next.bind(rng));
-    expect(options.some(o => o.type === 'catalyst')).toBe(true);
+  it('direct catalyst rewards are rare and explicit', () => {
+    let catalystCount = 0;
+    for (let seed = 1; seed <= 100; seed++) {
+      const rng = createRng(seed);
+      const options = generateInfusionOptions([], rng.next.bind(rng), undefined, 6, 1);
+      if (options.some(o => o.type === 'catalyst')) catalystCount++;
+    }
+    expect(catalystCount).toBeLessThan(30);
   });
 
-  it('does not offer catalysts already active', () => {
-    const rng = createRng(1);
-    const active = ALL_CATALYSTS.map(c => c.id); // everything active
-    const options = generateInfusionOptions(active, rng.next.bind(rng));
-    expect(options.some(o => o.type === 'catalyst')).toBe(false);
-  });
+  it('respects rarity gates for direct catalyst rewards', () => {
+    let sawEpicEarly = false;
+    let sawEpicLate = false;
+    for (let seed = 1; seed <= 200; seed++) {
+      const rngEarly = createRng(seed);
+      const early = generateInfusionOptions([], rngEarly.next.bind(rngEarly), undefined, 6, 1);
+      const earlyCat = early.find(o => o.type === 'catalyst');
+      if (earlyCat?.catalyst.rarity === 'epic') sawEpicEarly = true;
 
-  it('respects the maxChoices limit', () => {
-    const rng = createRng(1);
-    const options = generateInfusionOptions([], rng.next.bind(rng), undefined, 2);
-    expect(options).toHaveLength(2);
+      const rngLate = createRng(seed + 500);
+      const late = generateInfusionOptions([], rngLate.next.bind(rngLate), undefined, 6, 6);
+      const lateCat = late.find(o => o.type === 'catalyst');
+      if (lateCat?.catalyst.rarity === 'epic') sawEpicLate = true;
+    }
+    expect(sawEpicEarly).toBe(false);
+    expect(sawEpicLate).toBe(true);
   });
 
   it('restricts catalyst choices to the unlocked pool', () => {
     const allowed = ALL_CATALYSTS.slice(0, 3).map(c => c.id);
     const rng = createRng(1);
-    const options = generateInfusionOptions([], rng.next.bind(rng), allowed);
+    const options = generateInfusionOptions([], rng.next.bind(rng), allowed, 6, 5);
     for (const opt of options) {
       if (opt.type === 'catalyst') {
         expect(allowed).toContain(opt.catalyst.id);
@@ -43,9 +52,9 @@ describe('generateInfusionOptions', () => {
     }
   });
 
-  it('returns up to 4 choices by default', () => {
+  it('respects maxChoices limit', () => {
     const rng = createRng(1);
-    const options = generateInfusionOptions([], rng.next.bind(rng));
-    expect(options.length).toBeLessThanOrEqual(4);
+    const options = generateInfusionOptions([], rng.next.bind(rng), undefined, 2, 3);
+    expect(options).toHaveLength(2);
   });
 });

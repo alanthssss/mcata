@@ -113,6 +113,11 @@ Each cleared or failed phase is recorded as a `PhaseRecord`:
 | `totalCatalysts` | How many catalysts were held at the end |
 | `catalystReplacements` | How many times a catalyst was replaced |
 | `totalEnergyEarned` | Proxy for energy economy |
+| `forgeOfferRarityCounts` | Per-run Forge offer distribution by rarity |
+| `acquiredRarityCounts` | Per-run Catalyst acquisition distribution by rarity |
+| `firstRareRound` | Round of first Rare acquisition (if any) |
+| `firstEpicRound` | Round of first Epic acquisition (if any) |
+| `selectedPattern` | Pattern archetype active at run end |
 
 ---
 
@@ -163,6 +168,11 @@ Each cleared or failed phase is recorded as a `PhaseRecord`:
 | `maxTileDistribution` | Histogram of max tile values |
 | `phaseClearDist` | Histogram of total phases cleared |
 | `avgUniqueCatalysts` | Mean distinct catalyst IDs acquired per run |
+| `offerDistributionByRarity` | Suite-level Forge rarity distribution |
+| `acquisitionDistributionByRarity` | Suite-level acquisition rarity distribution |
+| `avgFirstRareRound` | Mean round of first Rare acquisition |
+| `avgFirstEpicRound` | Mean round of first Epic acquisition |
+| `patternOutcomeByPattern` | Runs + avgRoundsCleared by pattern archetype |
 
 ---
 

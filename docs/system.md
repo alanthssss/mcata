@@ -49,9 +49,9 @@ GameState.protocol = protocol
 
 ## 2. Catalyst System
 
-Catalysts are **passive build modifiers** equipped during a run.  Up to 3 may
-be active simultaneously.  They are purchased at the Forge (after Phase 3) and
-chosen via Infusion rewards after each phase clear.
+Catalysts are **passive build modifiers** equipped during a run. Up to 6 can be
+active simultaneously. Forge is the primary permanent Catalyst acquisition path.
+Infusion direct Catalyst rewards are rare and explicit.
 
 ### Catalyst Schema (`CatalystDef`)
 
@@ -84,6 +84,15 @@ chosen via Infusion rewards after each phase clear.
 3. Implement the effect in `src/core/score.ts` and/or `src/core/engine.ts`.
 4. Add i18n entries to `src/i18n/en.ts` and `src/i18n/zh-CN.ts`.
 5. Update unlock costs in `src/core/unlockConfig.ts` if needed.
+
+---
+
+## 2.1 Pattern System (Run Archetype Growth)
+
+Patterns are a separate run-level progression layer from Catalysts and Signals.
+Pattern rewards are primarily sourced from Infusion and strengthen one archetype
+for the rest of the run (`corner`, `chain`, `empty_space`, `high_tier`,
+`economy`, `survival`).
 
 ---
 
@@ -136,6 +145,11 @@ Synergy multipliers are tuned in `src/core/config.ts` → `SYNERGY_MULTIPLIERS`.
 
 Signals are **one-use tactical abilities** held between moves (max 2).  They
 are defined in `src/core/signals.ts` and queued via `queueSignal()`.
+
+UI behavior:
+- queued signal shows an armed state
+- trigger shows immediate feedback (log + toast text)
+- consumed state is visible after use
 
 ---
 

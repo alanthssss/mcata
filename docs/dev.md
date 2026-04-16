@@ -58,11 +58,13 @@ Key fields:
 | `energy` | Spendable energy |
 | `output` | Accumulated output for current phase |
 | `totalOutput` | Accumulated across all phases |
-| `activeCatalysts` | IDs of currently equipped catalysts (max 3) |
+| `activeCatalysts` | IDs of currently equipped catalysts (max 6) |
 | `unlockedCatalysts` | Available catalyst pool for this run (`undefined` = full pool) |
 | `globalMultiplier` | Base multiplier accumulator (Infusion rewards) |
 | `momentumMultiplier` | Current momentum bonus |
 | `protocol` | Active protocol for this run |
+| `activePattern` / `patternLevels` | Run-long archetype progression layer |
+| `lastIntermissionMessage` | Player-facing feedback text for Infusion/Forge outcomes |
 
 ### ProfileState
 
@@ -145,10 +147,19 @@ Phase Clear (output >= targetOutput) OR Steps Exhausted
   ├── Steps remain: infusion screen → selectInfusion()
   └── Steps exhausted: game_over
   │
-Phase 3 Clear → Forge Screen (buyFromForge / rerollForge / skipForge)
+Any Phase Clear → Infusion → Forge Screen (buyFromForge / sellCatalyst / rerollForge / skipForge)
   │
 Phase 6 Clear → run_complete
 ```
+
+---
+
+## Acquisition & Duplicate Guards
+
+- Forge purchases are blocked if the Catalyst is already owned.
+- Duplicate purchase attempts must not consume Energy or mutate run state.
+- `buyFromForge` keeps a hard engine guard even if UI checks fail.
+- Full-slot direct Catalyst Infusion resolves deterministically (explicit conversion path) and records feedback.
 
 ---
 

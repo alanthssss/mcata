@@ -8,6 +8,39 @@
 4. Anomaly phases should be challenging but survivable with good play
 5. Better agents should clearly outperform weaker ones (strategic depth)
 6. Best agent averages 2–5 rounds cleared per run; later agents clear fewer rounds (strategic depth)
+7. Catalyst rarity must be gameplay-significant in probability, pacing, and cost
+
+---
+
+## Catalyst Rarity as a Hard Rule
+
+Rarity is config-driven (`src/core/config.ts`) with:
+- offer weight
+- minimum round gate
+- per-run cap (optional)
+- economy cost (from catalyst defs)
+
+Forge offer generation uses weighted rarity selection; early rounds strongly favor Common, mid rounds increase Rare share, and Epic is late + scarce.
+Infusion direct Catalyst rewards (rare by design) also use the same rarity gate/weights.
+
+---
+
+## Forge / Infusion Separation
+
+- **Forge** = permanent Catalyst acquisition and Catalyst sell/pivot loop.
+- **Infusion** = mostly tactical/economy rewards; direct Catalyst gain is uncommon.
+- Full-slot direct Catalyst infusion is deterministic and explicit: conversion to Energy (no silent no-op).
+
+---
+
+## Catalyst Sell Economy
+
+Catalyst selling refunds a rarity-based percentage of cost:
+- Common: 60%
+- Rare: 50%
+- Epic: 40%
+
+This enables build pivots while preserving long-term economy pressure.
 
 ---
 

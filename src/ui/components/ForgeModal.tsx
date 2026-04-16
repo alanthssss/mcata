@@ -8,7 +8,9 @@ interface ForgeModalProps {
   offers: CatalystDef[];
   activeCatalysts: CatalystId[];
   energy: number;
+  lastIntermissionMessage: string | null;
   onBuy: (catalyst: CatalystDef, replaceIndex?: number) => void;
+  onSell: (index: number) => void;
   onReroll: () => void;
   onSkip: () => void;
 }
@@ -32,7 +34,7 @@ function getSynergyHint(catalystId: CatalystId, activeCatalysts: CatalystId[]): 
 }
 
 export const ForgeModal: React.FC<ForgeModalProps> = ({
-  offers, activeCatalysts, energy, onBuy, onReroll, onSkip
+  offers, activeCatalysts, energy, lastIntermissionMessage, onBuy, onSell, onReroll, onSkip
 }) => {
   const t = useT();
   const [pendingCatalyst, setPendingCatalyst] = useState<CatalystDef | null>(null);
@@ -58,6 +60,8 @@ export const ForgeModal: React.FC<ForgeModalProps> = ({
       <div className="forge-offers">
         {offers.map((cat, i) => {
           const synergyPartnerId = getSynergyHint(cat.id, activeCatalysts);
+          const alreadyOwned = activeCatalysts.includes(cat.id);
+          const blocked = alreadyOwned || energy < cat.cost;
           const tName = t(`catalyst.${cat.id}.name`);
           const tDesc = t(`catalyst.${cat.id}.description`);
           const tagKey = `tag.${cat.category}`;
@@ -79,15 +83,18 @@ export const ForgeModal: React.FC<ForgeModalProps> = ({
               <div className="offer-cost">⚡ {cat.cost} Energy</div>
               <button
                 className="offer-btn"
-                disabled={energy < cat.cost}
+                disabled={blocked}
                 onClick={() => handleBuyClick(cat)}
               >
-                {energy < cat.cost ? t('ui.forge_not_enough') : t('ui.forge_equip')}
+                {alreadyOwned ? t('ui.forge_owned') : energy < cat.cost ? t('ui.forge_not_enough') : t('ui.forge_equip')}
               </button>
             </div>
           );
         })}
       </div>
+      {lastIntermissionMessage && (
+        <div className="signal-pending">{lastIntermissionMessage}</div>
+      )}
 
       {pendingCatalyst && (
         <div className="replace-prompt">
@@ -119,10 +126,21 @@ export const ForgeModal: React.FC<ForgeModalProps> = ({
         {activeCatalysts.length === 0
           ? <span className="empty-state">{t('ui.forge_none')}</span>
           : activeCatalysts.map(id => (
-            <span key={id} className="catalyst-tag">{t(`catalyst.${id}.name`)}</span>
+            <span key={id} className="catalyst-tag">
+              {t(`catalyst.${id}.name`)}
+            </span>
           ))
         }
       </div>
+      {activeCatalysts.length > 0 && (
+        <div className="forge-actions">
+          {activeCatalysts.map((id, idx) => (
+            <button key={`${id}-${idx}`} className="action-btn" onClick={() => onSell(idx)}>
+              {t('ui.forge_sell', { name: t(`catalyst.${id}.name`) })}
+            </button>
+          ))}
+        </div>
+      )}
     </Modal>
   );
 };

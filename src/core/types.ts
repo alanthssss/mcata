@@ -214,11 +214,24 @@ export interface ForgeOffer {
 }
 
 // ─── Infusion ────────────────────────────────────────────────────────────────
+export type PatternId =
+  | 'corner'
+  | 'chain'
+  | 'empty_space'
+  | 'high_tier'
+  | 'economy'
+  | 'survival';
+
 export type InfusionChoice =
   | { type: 'catalyst'; catalyst: CatalystDef }
   | { type: 'energy' }
   | { type: 'steps' }
-  | { type: 'multiplier' };
+  | { type: 'multiplier' }
+  | { type: 'signal'; signal: SignalId }
+  | { type: 'catalyst_upgrade' }
+  | { type: 'pool_reroll' }
+  | { type: 'pool_convert' }
+  | { type: 'pattern'; pattern: PatternId };
 
 // ─── Merge Info ──────────────────────────────────────────────────────────────
 export interface MergeInfo {
@@ -309,6 +322,11 @@ export interface GameState {
   // Signal system
   signals: SignalId[];          // active signals (max SIGNAL_CAPACITY)
   pendingSignal: SignalId | null; // signal queued for this move
+  // Run-long archetype progression layer
+  activePattern: PatternId | null;
+  patternLevels: Record<PatternId, number>;
+  // Intermission feedback
+  lastIntermissionMessage: string | null;
   // Protocol system
   protocol: ProtocolId;
   // Momentum system

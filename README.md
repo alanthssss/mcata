@@ -22,13 +22,15 @@ npm run preview
 - Merge tiles on a 4×4 grid using arrow keys
 - Each **Phase** has a target **Output** you must reach within a step limit
 - After every phase:
-  1. Choose an **Infusion** reward (catalyst / energy / steps / global multiplier)
-  2. Optionally shop at the **Forge** to buy Catalysts with Energy
+  1. Choose an **Infusion** reward (primarily non-Catalyst: energy / steps / multiplier / signal / pattern / pool tools)
+  2. Optionally shop at the **Forge** (primary permanent Catalyst acquisition path)
 - Every **6 phases** complete a **Round** — then the next round starts automatically
 - Rounds grow harder each round (targets scale 12% per round)
 - The run ends only when you **fail a phase** (output too low when steps run out)
 - Survive **Anomaly** phases with special modifiers (Entropy Tax, Collapse Field)
 - Build a team of up to **6 Catalysts** for deep synergies and identity
+- Grow one **Pattern** archetype (Corner / Chain / Empty-space / High-tier / Economy / Survival) for run-long scaling
+- Sell Catalysts in Forge to recover partial Energy and pivot builds safely
 
 ## Protocols
 
@@ -61,7 +63,13 @@ Three templates rotate across rounds:
 
 ## Catalysts
 
-Up to **6 Catalysts** can be active at once.  Acquire them via Infusion rewards or by buying at the Forge (available after every phase).
+Up to **6 Catalysts** can be active at once. The Forge is the default permanent acquisition path; direct Catalyst Infusion rewards are intentionally rare and rarity-gated.
+
+### Forge Duplicate Guard
+
+- If a Catalyst is already owned, buying it is blocked in UI and engine.
+- Blocked duplicate purchases do **not** consume Energy and do **not** change run state.
+- Purchased Forge offers are removed immediately to prevent repeat-buy bugs.
 
 | Name | Rarity | Effect |
 |------|--------|--------|
@@ -332,4 +340,3 @@ Available challenges:
 - Each milestone grants a bonus (energy or global multiplier)
 - **Jackpot**: 2% chance on high-output moves for a big bonus (+output + energy)
 - **Streaks**: consecutive high-output moves grant energy bonuses every 5 moves
-

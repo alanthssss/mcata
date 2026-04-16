@@ -104,7 +104,7 @@ Each template specifies per-phase: `targetOutput`, `steps`, optional `anomaly`, 
 ### Intermission (Post-Phase Flow)
 
 After every phase clear:
-1. **Infusion** screen — choose one of 2–3 rewards (catalyst / energy / steps / multiplier).
+1. **Infusion** screen — choose from mostly non-Catalyst rewards (energy / steps / multiplier / signal / pattern / pool tools; direct catalyst is rare).
 2. **Forge** screen — optionally buy a catalyst.  "Skip Forge" proceeds immediately.
 3. **Playing** — next phase begins with a fresh grid.
 
@@ -114,6 +114,26 @@ Phase End (pass)
   → Forge (buy or skip)
   → Playing (next phase)
 ```
+
+### Acquisition Layer Roles (Current Target)
+
+- **Forge**: primary permanent Catalyst acquisition + Catalyst selling.
+- **Infusion**: primarily non-Catalyst tactical/economy rewards (Energy/Steps/Multiplier/Signal/Pattern/pool tools).
+- **Direct Catalyst via Infusion**: rare, explicit, and still rarity-gated.
+- **Full-slot Catalyst Infusion handling**: deterministic conversion to Energy with clear intermission feedback (never silent failure).
+
+### Pattern Layer (run-long archetype growth)
+
+Patterns are a separate progression layer from Catalysts and Signals.  
+Choosing a Pattern infusion increases one archetype level for the rest of the run and sets the active Pattern.
+
+Archetypes:
+- `corner`
+- `chain`
+- `empty_space`
+- `high_tier`
+- `economy`
+- `survival`
 
 ---
 
@@ -720,7 +740,7 @@ Starts at 1.0. Increased by +0.1 for each Infusion multiplier choice taken.
 
 ---
 
-## Catalysts (8 total, max 3 active)
+## Catalysts (catalogue-scale, max 6 active)
 
 | ID | Name | Rarity | Cost | Effect |
 |----|------|--------|------|--------|
