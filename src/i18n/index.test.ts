@@ -11,4 +11,12 @@ describe('createT', () => {
     expect(warn).not.toHaveBeenCalled();
     warn.mockRestore();
   });
+
+  it('uses keyboard + swipe control help text', () => {
+    const en = createT('en');
+    const zh = createT('zh-CN');
+    expect(en('ui.controls_desc')).toContain('Swipe');
+    expect(en('ui.controls_desc')).not.toContain('On-screen buttons');
+    expect(zh('ui.controls_desc')).toContain('滑动');
+  });
 });

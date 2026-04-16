@@ -51,7 +51,7 @@ Key fields:
 
 | Field | Description |
 |---|---|
-| `screen` | Current screen: `start`, `playing`, `forge`, `infusion`, `game_over`, `run_complete` |
+| `screen` | Current screen: `start`, `playing`, `forge`, `game_over`, `round_complete`, `run_complete` |
 | `protocol` | Active `ProtocolId` for this run |
 | `phaseIndex` | 0-based index into `PHASES` |
 | `stepsRemaining` | Steps left in current phase |
@@ -60,11 +60,11 @@ Key fields:
 | `totalOutput` | Accumulated across all phases |
 | `activeCatalysts` | IDs of currently equipped catalysts (max 6) |
 | `unlockedCatalysts` | Available catalyst pool for this run (`undefined` = full pool) |
-| `globalMultiplier` | Base multiplier accumulator (Infusion rewards) |
+| `globalMultiplier` | Base multiplier accumulator (Forge utility and build effects) |
 | `momentumMultiplier` | Current momentum bonus |
 | `protocol` | Active protocol for this run |
 | `activePattern` / `patternLevels` | Run-long archetype progression layer |
-| `lastIntermissionMessage` | Player-facing feedback text for Infusion/Forge outcomes |
+| `lastIntermissionMessage` | Player-facing feedback text for Forge outcomes |
 
 ### ProfileState
 
@@ -144,10 +144,10 @@ Playing Screen
   ▼
 Phase Clear (output >= targetOutput) OR Steps Exhausted
   │
-  ├── Steps remain: infusion screen → selectInfusion()
+  ├── Steps remain: forge screen
   └── Steps exhausted: game_over
   │
-Any Phase Clear → Infusion → Forge Screen (buyFromForge / sellCatalyst / rerollForge / skipForge)
+Any Phase Clear → Forge Screen (buyForgeItem / sellCatalyst / sellPattern / sellSignal / rerollForge / skipForge)
   │
 Phase 6 Clear → run_complete
 ```
@@ -159,7 +159,7 @@ Phase 6 Clear → run_complete
 - Forge purchases are blocked if the Catalyst is already owned.
 - Duplicate purchase attempts must not consume Energy or mutate run state.
 - `buyFromForge` keeps a hard engine guard even if UI checks fail.
-- Full-slot direct Catalyst Infusion resolves deterministically (explicit conversion path) and records feedback.
+- Full-slot Catalyst acquisition requires explicit replacement and records feedback.
 
 ---
 

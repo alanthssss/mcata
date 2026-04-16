@@ -1,199 +1,11 @@
 // Centralized tuning configuration for Merge Catalyst.
 // All balance-sensitive values live here so tuning changes are one-line edits.
 
-import type { RoundTemplate } from './types';
 import type { CatalystRarity, PatternId } from './types';
 
-export const BALANCE_VERSION = 'v6';
+export const BALANCE_VERSION = 'v7';
 
-// ─── Round template definitions ───────────────────────────────────────────────
-// Each template defines 6 phases for one round.  Templates rotate across rounds
-// so every 3 rounds the cycle restarts (and targets are scaled by ROUND_TARGET_SCALE).
-
-export const ROUND_TEMPLATES: RoundTemplate[] = [
-  {
-    id: 'alpha',
-    name: 'Standard Circuit',
-    description: 'A balanced ramp from opener through two anomaly climaxes.',
-    phases: [
-      {
-        phaseNumber: 1,
-        targetOutput: 150,
-        steps: 15,
-        expectedOutput: 200,
-        highSkillOutput: 300,
-        challengeTier: 'small',
-      },
-      {
-        phaseNumber: 2,
-        targetOutput: 180,
-        steps: 15,
-        expectedOutput: 240,
-        highSkillOutput: 380,
-        challengeTier: 'big',
-      },
-      {
-        phaseNumber: 3,
-        targetOutput: 160,
-        steps: 13,
-        expectedOutput: 220,
-        highSkillOutput: 340,
-        challengeTier: 'boss',
-        modifier: 'Corner bonus disabled — chain merges are your only edge',
-      },
-      {
-        phaseNumber: 4,
-        targetOutput: 90,
-        steps: 12,
-        anomaly: 'entropy_tax',
-        expectedOutput: 120,
-        highSkillOutput: 200,
-        challengeTier: 'small',
-        modifier: 'Entropy Tax: one cell blocked each move',
-      },
-      {
-        phaseNumber: 5,
-        targetOutput: 200,
-        steps: 14,
-        expectedOutput: 260,
-        highSkillOutput: 420,
-        challengeTier: 'big',
-      },
-      {
-        phaseNumber: 6,
-        targetOutput: 130,
-        steps: 14,
-        anomaly: 'collapse_field',
-        expectedOutput: 175,
-        highSkillOutput: 290,
-        challengeTier: 'boss',
-        modifier: 'Collapse Field: every 4 scoring moves removes the lowest tile',
-      },
-    ],
-  },
-  {
-    id: 'beta',
-    name: 'Pressure Gauntlet',
-    description: 'Anomalies arrive early and often — build fast or fail.',
-    phases: [
-      {
-        phaseNumber: 1,
-        targetOutput: 130,
-        steps: 13,
-        expectedOutput: 175,
-        highSkillOutput: 280,
-        challengeTier: 'small',
-      },
-      {
-        phaseNumber: 2,
-        targetOutput: 100,
-        steps: 11,
-        anomaly: 'entropy_tax',
-        expectedOutput: 135,
-        highSkillOutput: 220,
-        challengeTier: 'small',
-        modifier: 'Entropy Tax: one cell blocked each move',
-      },
-      {
-        phaseNumber: 3,
-        targetOutput: 200,
-        steps: 15,
-        expectedOutput: 265,
-        highSkillOutput: 420,
-        challengeTier: 'big',
-      },
-      {
-        phaseNumber: 4,
-        targetOutput: 110,
-        steps: 12,
-        anomaly: 'collapse_field',
-        expectedOutput: 150,
-        highSkillOutput: 250,
-        challengeTier: 'boss',
-        modifier: 'Collapse Field: every 4 scoring moves removes the lowest tile',
-      },
-      {
-        phaseNumber: 5,
-        targetOutput: 190,
-        steps: 14,
-        expectedOutput: 255,
-        highSkillOutput: 400,
-        challengeTier: 'big',
-      },
-      {
-        phaseNumber: 6,
-        targetOutput: 160,
-        steps: 14,
-        expectedOutput: 210,
-        highSkillOutput: 340,
-        challengeTier: 'boss',
-        modifier: 'Corner bonus disabled — chain merges are your only edge',
-      },
-    ],
-  },
-  {
-    id: 'gamma',
-    name: 'Economic Surge',
-    description: 'Longer phases reward patient economy and deep catalyst builds.',
-    phases: [
-      {
-        phaseNumber: 1,
-        targetOutput: 170,
-        steps: 16,
-        expectedOutput: 230,
-        highSkillOutput: 360,
-        challengeTier: 'small',
-      },
-      {
-        phaseNumber: 2,
-        targetOutput: 220,
-        steps: 16,
-        expectedOutput: 300,
-        highSkillOutput: 470,
-        challengeTier: 'big',
-      },
-      {
-        phaseNumber: 3,
-        targetOutput: 135,
-        steps: 13,
-        anomaly: 'entropy_tax',
-        expectedOutput: 180,
-        highSkillOutput: 290,
-        challengeTier: 'small',
-        modifier: 'Entropy Tax: one cell blocked each move',
-      },
-      {
-        phaseNumber: 4,
-        targetOutput: 240,
-        steps: 16,
-        expectedOutput: 320,
-        highSkillOutput: 510,
-        challengeTier: 'big',
-      },
-      {
-        phaseNumber: 5,
-        targetOutput: 150,
-        steps: 14,
-        anomaly: 'collapse_field',
-        expectedOutput: 200,
-        highSkillOutput: 320,
-        challengeTier: 'boss',
-        modifier: 'Collapse Field: every 4 scoring moves removes the lowest tile',
-      },
-      {
-        phaseNumber: 6,
-        targetOutput: 260,
-        steps: 16,
-        expectedOutput: 345,
-        highSkillOutput: 550,
-        challengeTier: 'boss',
-        modifier: 'Corner bonus disabled — chain merges are your only edge',
-      },
-    ],
-  },
-];
-
-// Convenience alias: first template used as the baseline phase config.
+// ─── Core phase pacing baseline ───────────────────────────────────────────────
 export const PHASE_CONFIG: Array<{
   phaseNumber: number;
   targetOutput: number;
@@ -203,46 +15,76 @@ export const PHASE_CONFIG: Array<{
   highSkillOutput: number;
   challengeTier: 'small' | 'big' | 'boss';
   modifier?: string;
-}> = ROUND_TEMPLATES[0].phases as typeof PHASE_CONFIG;
+}> = [
+  {
+    phaseNumber: 1,
+    targetOutput: 170,
+    steps: 20,
+    expectedOutput: 225,
+    highSkillOutput: 320,
+    challengeTier: 'small',
+  },
+  {
+    phaseNumber: 2,
+    targetOutput: 205,
+    steps: 20,
+    expectedOutput: 280,
+    highSkillOutput: 410,
+    challengeTier: 'big',
+  },
+  {
+    phaseNumber: 3,
+    targetOutput: 190,
+    steps: 18,
+    expectedOutput: 255,
+    highSkillOutput: 380,
+    challengeTier: 'boss',
+    modifier: 'Corner bonus disabled — chain merges are your only edge',
+  },
+  {
+    phaseNumber: 4,
+    targetOutput: 165,
+    steps: 17,
+    anomaly: 'entropy_tax',
+    expectedOutput: 220,
+    highSkillOutput: 320,
+    challengeTier: 'small',
+    modifier: 'Entropy Tax: one cell blocked each move',
+  },
+  {
+    phaseNumber: 5,
+    targetOutput: 235,
+    steps: 19,
+    expectedOutput: 320,
+    highSkillOutput: 470,
+    challengeTier: 'big',
+  },
+  {
+    phaseNumber: 6,
+    targetOutput: 220,
+    steps: 19,
+    anomaly: 'collapse_field',
+    expectedOutput: 295,
+    highSkillOutput: 430,
+    challengeTier: 'boss',
+    modifier: 'Collapse Field: every 4 scoring moves removes the lowest tile',
+  },
+];
 
-// ─── Round scaling ────────────────────────────────────────────────────────────
-/**
- * Segmented growth curve used to compute round-scaled phase targets:
- *
- * target = base * phaseFactor * roundFactor * smoothing
- *
- * phaseFactor = 1 + (phaseIndex ^ phaseExponent)
- * roundFactor = 1 + (roundIndex ^ roundExponent)
- * smoothing   = log(phaseIndex + roundIndex + smoothingOffset)
- */
-export const SEGMENTED_GROWTH_SCALING = {
-  enabled: true,
-  baseMultiplier: 1,
-  phaseExponent: 1.3,
-  roundExponent: 2,
-  smoothingOffset: 2,
-  // Round index is derived from round number so round 1 starts at 0.
-  roundIndexOffset: 1,
-  roundIndexScale: 0.18,
-  // Segmented phase indices (early / mid / late) used by the composite curve.
-  phaseIndexByPhaseNumber: {
-    1: 0.2,
-    2: 0.2,
-    3: 0.45,
-    4: 0.45,
-    5: 0.7,
-    6: 0.7,
-  } as Record<number, number>,
-  // Safe fallback for non-standard phase numbers.
-  defaultPhaseIndex: 0.45,
+// Pacing formulas:
+//   steps  = baseSteps  + phaseIndex * stepPhaseScale  + roundIndex * stepRoundScale
+//   target = baseTarget + phaseIndex * targetPhaseScale + roundIndex * targetRoundScale
+export const PROGRESSION_SCALING = {
+  stepPhaseScale: 1,
+  stepRoundScale: 1,
+  targetPhaseScale: 12,
+  targetRoundScale: 20,
 };
 
-/**
- * Legacy round-scaling knobs kept for compatibility and A/B references.
- * New balancing uses SEGMENTED_GROWTH_SCALING when enabled.
- */
-export const ROUND_TARGET_SCALE = 0.15;
-export const ROUND_SCALE_COMPOUND = true;
+// Legacy compatibility exports (no longer used by progression logic).
+export const SEGMENTED_GROWTH_SCALING = { roundIndexOffset: 1, roundIndexScale: 1 };
+export const ROUND_TARGET_SCALE = 0;
+export const ROUND_SCALE_COMPOUND = false;
 
 /** Build-aware target scaling: phases become harder as the player's build grows.
  *  The factor is computed from activeCatalysts.length and globalMultiplier,
@@ -267,7 +109,7 @@ export const CATALYST_MULTIPLIERS = {
   combo_wire:     1.3,   // 3-consecutive-scoring-moves multiplier
   high_tribute:   1.4,   // highest-tile merge multiplier
   reserve_bonus:  20,    // output per unused step (Reserve catalyst)
-  bankers_edge_energy: 2, // extra energy from Banker's Edge on phase clear
+  bankers_edge_energy: 1, // extra energy from Banker's Edge on phase clear
   lucky_seed_pct: 0.75,  // probability of spawning a "2" with Lucky Seed
   // New amplifiers
   empty_amplifier_per_cell: 0.05, // multiplier bonus per empty cell
@@ -282,7 +124,7 @@ export const CATALYST_MULTIPLIERS = {
   stability_field_period:   3,    // consecutive moves needed
   // New generators
   rich_merge_energy_per_merge: 1, // energy gained per merge
-  energy_loop_fraction:        0.1, // fraction of output that becomes energy
+  energy_loop_fraction:        0.08, // fraction of output that becomes energy
   reserve_bank_energy_per_step: 1, // energy per step at phase clear
   double_spawn_probability:    0.25, // chance of double spawn
   delay_spawn_probability:     0.5,  // chance delay_spawn triggers on a given move
@@ -329,24 +171,34 @@ export const SIGNAL_CAPACITY    = 2;   // max signals a player can hold
 export const PULSE_BOOST_MULT   = 2.0; // pulse_boost output multiplier
 export const GRID_CLEAN_COUNT   = 2;   // number of lowest tiles removed by grid_clean
 
-// ─── Infusion rewards ─────────────────────────────────────────────────────────
-export const INFUSION_ENERGY_BONUS     = 3;
-export const INFUSION_STEPS_BONUS      = 2;
-export const INFUSION_MULTIPLIER_BONUS = 0.1;
-export function getInfusionCatalystOfferChance(roundNumber: number): number {
-  if (roundNumber <= 2) return 0.06;
-  if (roundNumber <= 4) return 0.10;
-  return 0.14;
-}
-
 // ─── Forge ────────────────────────────────────────────────────────────────────
 export const FORGE_REROLL_COST = 1;
 export const MAX_CATALYSTS     = 6;
+export const FORGE_ITEM_COUNTS = {
+  catalysts: 3,
+  signals: 1,
+  patterns: 1,
+  utilities: 1,
+};
 export const CATALYST_SELL_REFUND_BY_RARITY: Record<CatalystRarity, number> = {
   common: 0.6,
   rare: 0.5,
   epic: 0.4,
 };
+export const PATTERN_SELL_REFUND = 0.5;
+export const SIGNAL_SELL_REFUND = 0.5;
+export const FORGE_PATTERN_PRICE = 4;
+export const FORGE_SIGNAL_PRICE = 3;
+export const FORGE_UTILITY_PRICES = {
+  energy: 2,
+  steps: 3,
+  multiplier: 4,
+} as const;
+export const FORGE_UTILITY_VALUES = {
+  energy: 2,
+  steps: 2,
+  multiplier: 0.08,
+} as const;
 
 export interface RarityRule {
   offerWeight: number;
@@ -407,7 +259,7 @@ export const SPAWN_4_PROBABILITY         = 0.10; // base chance of spawning a "4
 export const LUCKY_SEED_SPAWN_4_PROBABILITY = 0.25; // with Lucky Seed
 
 // ─── Starting energy ─────────────────────────────────────────────────────────
-export const STARTING_ENERGY = 10;
+export const STARTING_ENERGY = 5;
 
 // ─── Display score scaling ────────────────────────────────────────────────────
 // Internal score values are unchanged.  All player-facing score displays
@@ -440,10 +292,10 @@ export const JACKPOT_MIN_OUTPUT = 50;
 /** Output bonus added when jackpot triggers */
 export const JACKPOT_OUTPUT_BONUS = 100;
 /** Energy bonus added when jackpot triggers */
-export const JACKPOT_ENERGY_BONUS = 3;
+export const JACKPOT_ENERGY_BONUS = 2;
 
 // ─── Round-end reward ────────────────────────────────────────────────────────
 /** Energy bonus granted on every round completion */
-export const ROUND_COMPLETE_ENERGY_BONUS = 3;
+export const ROUND_COMPLETE_ENERGY_BONUS = 2;
 /** Global multiplier bonus granted on every round completion */
 export const ROUND_COMPLETE_MULTIPLIER_BONUS = 0.05;

@@ -1,16 +1,21 @@
 import React, { useState } from 'react';
-import { CatalystDef, CatalystId, LocalizedText, PatternId, SignalId } from '../../core/types';
+import { CatalystId, ForgeShopItem, LocalizedText, PatternId, SignalId } from '../../core/types';
 import { ALL_SYNERGIES } from '../../core/synergies';
 import { Modal } from './Modal';
 import { useT } from '../../i18n';
 
 interface ForgeModalProps {
-  offers: CatalystDef[];
+  items: ForgeShopItem[];
   activeCatalysts: CatalystId[];
+  activePattern: PatternId | null;
+  activePatternLevel: number;
+  signals: SignalId[];
   energy: number;
   lastIntermissionMessage: LocalizedText | null;
-  onBuy: (catalyst: CatalystDef, replaceIndex?: number) => void;
+  onBuy: (item: ForgeShopItem, replaceIndex?: number) => void;
   onSell: (index: number) => void;
+  onSellPattern: () => void;
+  onSellSignal: (signalId: SignalId) => void;
   onReroll: () => void;
   onSkip: () => void;
 }
@@ -53,16 +58,17 @@ function getSynergyHint(catalystId: CatalystId, activeCatalysts: CatalystId[]): 
 }
 
 export const ForgeModal: React.FC<ForgeModalProps> = ({
-  offers, activeCatalysts, energy, lastIntermissionMessage, onBuy, onSell, onReroll, onSkip
+  items, activeCatalysts, activePattern, activePatternLevel, signals, energy,
+  lastIntermissionMessage, onBuy, onSell, onSellPattern, onSellSignal, onReroll, onSkip
 }) => {
   const t = useT();
-  const [pendingCatalyst, setPendingCatalyst] = useState<CatalystDef | null>(null);
+  const [pendingCatalyst, setPendingCatalyst] = useState<ForgeShopItem | null>(null);
 
-  const handleBuyClick = (catalyst: CatalystDef) => {
-    if (activeCatalysts.length >= 6) {
-      setPendingCatalyst(catalyst);
+  const handleBuyClick = (item: ForgeShopItem) => {
+    if (item.type === 'catalyst' && activeCatalysts.length >= 6) {
+      setPendingCatalyst(item);
     } else {
-      onBuy(catalyst);
+      onBuy(item);
     }
   };
 
@@ -77,15 +83,39 @@ export const ForgeModal: React.FC<ForgeModalProps> = ({
     <Modal title={t('ui.forge_title')}>
       <p className="modal-subtitle">{t('ui.forge_subtitle')}</p>
       <div className="forge-offers">
-        {offers.map((cat, i) => {
+        {items.map((item) => {
+          if (item.type !== 'catalyst') {
+            const blocked = energy < item.price;
+            const name = item.type === 'pattern'
+              ? t(`pattern.${item.pattern}.name`)
+              : item.type === 'signal'
+                ? t(`signal.${item.signal}.name`)
+                : t(`ui.forge_utility_${item.utility}`);
+            const desc = item.type === 'pattern'
+              ? t(`pattern.${item.pattern}.description`)
+              : item.type === 'signal'
+                ? t(`signal.${item.signal}.description`)
+                : t(`ui.forge_utility_${item.utility}_desc`, { value: item.amount });
+            return (
+              <div key={item.id} className="forge-offer common">
+                <div className="offer-name">{name}</div>
+                <div className="offer-desc">{desc}</div>
+                <div className="offer-cost">⚡ {item.price} {t('ui.energy')}</div>
+                <button className="offer-btn" disabled={blocked} onClick={() => handleBuyClick(item)}>
+                  {blocked ? t('ui.forge_not_enough') : t('ui.forge_buy')}
+                </button>
+              </div>
+            );
+          }
+          const cat = item.catalyst;
           const synergyPartnerId = getSynergyHint(cat.id, activeCatalysts);
           const alreadyOwned = activeCatalysts.includes(cat.id);
-          const blocked = alreadyOwned || energy < cat.cost;
+          const blocked = alreadyOwned || energy < item.price;
           const tName = t(`catalyst.${cat.id}.name`);
           const tDesc = t(`catalyst.${cat.id}.description`);
           const tagKey = `tag.${cat.category}`;
           return (
-            <div key={i} className={`forge-offer ${cat.rarity}`}>
+              <div key={item.id} className={`forge-offer ${cat.rarity}`}>
               <div className="offer-name">{tName}</div>
               <div className="offer-rarity-row">
                 <span className="offer-rarity">{cat.rarity}</span>
@@ -99,14 +129,14 @@ export const ForgeModal: React.FC<ForgeModalProps> = ({
                   {t('ui.forge_synergy_hint', { partner: t(`catalyst.${synergyPartnerId}.name`) })}
                 </div>
               )}
-              <div className="offer-cost">⚡ {cat.cost} {t('ui.energy')}</div>
+              <div className="offer-cost">⚡ {item.price} {t('ui.energy')}</div>
               <button
                 className="offer-btn"
                 disabled={blocked}
-                onClick={() => handleBuyClick(cat)}
-              >
-                {alreadyOwned ? t('ui.forge_owned') : energy < cat.cost ? t('ui.forge_not_enough') : t('ui.forge_equip')}
-              </button>
+                  onClick={() => handleBuyClick(item)}
+                >
+                  {alreadyOwned ? t('ui.forge_owned') : energy < item.price ? t('ui.forge_not_enough') : t('ui.forge_equip')}
+                </button>
             </div>
           );
         })}
@@ -156,6 +186,22 @@ export const ForgeModal: React.FC<ForgeModalProps> = ({
           {activeCatalysts.map((id, idx) => (
             <button key={`${id}-${idx}`} className="action-btn" onClick={() => onSell(idx)}>
               {t('ui.forge_sell', { name: t(`catalyst.${id}.name`) })}
+            </button>
+          ))}
+        </div>
+      )}
+      {activePattern && (
+        <div className="forge-actions">
+          <button className="action-btn" onClick={onSellPattern}>
+            {t('ui.forge_sell_pattern', { name: t(`pattern.${activePattern}.name`), level: activePatternLevel })}
+          </button>
+        </div>
+      )}
+      {signals.length > 0 && (
+        <div className="forge-actions">
+          {signals.map(signalId => (
+            <button key={signalId} className="action-btn" onClick={() => onSellSignal(signalId)}>
+              {t('ui.forge_sell_signal', { name: t(`signal.${signalId}.name`) })}
             </button>
           ))}
         </div>

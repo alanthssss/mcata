@@ -17,7 +17,7 @@ import { ALL_ASCENSION_LEVELS, ASCENSION_MODIFIER_DEFS } from '../core/ascension
 import { DEFAULT_PROFILE } from '../core/profile';
 import { applyRunReward, calculateRunReward } from '../core/profile';
 import { createRunState, finalizeRun } from '../core/runAdapter';
-import { processMoveAction, selectInfusion, buyFromForge, skipForge, advanceRound } from '../core/engine';
+import { processMoveAction, buyForgeItem, skipForge, advanceRound } from '../core/engine';
 import { ProfileState } from '../core/types';
 import { PHASES } from '../core/phases';
 
@@ -104,13 +104,9 @@ function simulateProgression() {
           }
         }
         steps++;
-      } else if (state.screen === 'infusion') {
-        const choice = state.infusionOptions[0];
-        if (choice) state = selectInfusion(state, choice);
-        else state = { ...state, screen: 'playing' };
       } else if (state.screen === 'forge') {
-        const affordable = state.forgeOffers.filter(c => state.energy >= c.cost).sort((a,b) => a.cost - b.cost);
-        if (affordable.length) state = buyFromForge(state, affordable[0]);
+        const affordable = state.forgeItems.filter(i => state.energy >= i.price).sort((a,b) => a.price - b.price);
+        if (affordable.length) state = buyForgeItem(state, affordable[0]);
         state = skipForge(state);
       } else if (state.screen === 'round_complete') {
         roundsCleared++;
