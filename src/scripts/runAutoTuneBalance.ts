@@ -140,6 +140,7 @@ for (let i = 1; i <= ITERATIONS; i++) {
 }
 
 const baseline = history[0];
+// score is a penalty distance to target ranges, so lower is better.
 const best = [...history].sort((a, b) => a.score - b.score)[0];
 const rejected = history.filter(h => h.iteration !== best.iteration).map(h => ({
   iteration: h.iteration,

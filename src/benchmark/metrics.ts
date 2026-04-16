@@ -173,6 +173,10 @@ function variance(xs: number[]): number {
   return mean(xs.map(x => (x - m) ** 2));
 }
 
+function calculateTier(maxTile: number): number {
+  return Math.log2(Math.max(2, maxTile));
+}
+
 // ─── Build suite metrics from run results ─────────────────────────────────────
 export function buildSuiteMetrics(runs: RunMetrics[]): SuiteMetrics {
   if (runs.length === 0) {
@@ -258,7 +262,7 @@ export function buildSuiteMetrics(runs: RunMetrics[]): SuiteMetrics {
   const tiersByRound: Record<number, number[]> = {};
   const catalystsByRound: Record<number, number[]> = {};
   for (const p of clearedPhases) {
-    const tier = Math.log2(Math.max(2, p.maxTile));
+    const tier = calculateTier(p.maxTile);
     if (!tiersByRound[p.round]) tiersByRound[p.round] = [];
     tiersByRound[p.round].push(tier);
     if (p.catalystCount !== undefined) {
@@ -309,7 +313,7 @@ export function buildSuiteMetrics(runs: RunMetrics[]): SuiteMetrics {
   const roundsClearedArr = runs.map(r => r.roundsCleared ?? 0);
   const highestRoundArr  = runs.map(r => r.highestRound ?? 1);
   const highestTierReachDistribution: Record<number, number> = {};
-  const avgHighestTierPerPhase = mean(clearedPhases.map(p => Math.log2(Math.max(2, p.maxTile))));
+  const avgHighestTierPerPhase = mean(clearedPhases.map(p => calculateTier(p.maxTile)));
   const energyIncomePerRound = mean(
     runs.map(r => (r.totalEnergyEarned ?? 0) / Math.max(1, r.highestRound ?? 1)),
   );
@@ -323,7 +327,7 @@ export function buildSuiteMetrics(runs: RunMetrics[]): SuiteMetrics {
     }),
   );
   for (const r of runs) {
-    const tier = r.highestTierReached ?? Math.log2(Math.max(2, r.maxTile));
+    const tier = r.highestTierReached ?? calculateTier(r.maxTile);
     highestTierReachDistribution[tier] = (highestTierReachDistribution[tier] ?? 0) + 1;
   }
   const offerDistributionByRarity: Record<'common' | 'rare' | 'epic', number> = { common: 0, rare: 0, epic: 0 };
