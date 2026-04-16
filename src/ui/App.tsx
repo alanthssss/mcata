@@ -39,6 +39,17 @@ export const App: React.FC = () => {
   const { profile } = useProfileStore();
   const t = useT();
   const [showCollection, setShowCollection] = useState(false);
+  const renderLocalized = useCallback((key: string, params?: Record<string, string | number>) => {
+    if (!params) return t(key);
+    const resolved = { ...params };
+    if (typeof resolved.name === 'string') {
+      const id = resolved.name;
+      if (SIGNAL_IDS.has(id)) resolved.name = t(`signal.${id}.name`);
+      else if (PATTERN_IDS.has(id)) resolved.name = t(`pattern.${id}.name`);
+      else resolved.name = t(`catalyst.${id}.name`);
+    }
+    return t(key, resolved);
+  }, [t]);
 
   const handleMove = useCallback((dir: Direction) => {
     state.move(dir);
@@ -217,14 +228,3 @@ export const App: React.FC = () => {
     </div>
   );
 };
-  const renderLocalized = useCallback((key: string, params?: Record<string, string | number>) => {
-    if (!params) return t(key);
-    const resolved = { ...params };
-    if (typeof resolved.name === 'string') {
-      const id = resolved.name;
-      if (SIGNAL_IDS.has(id)) resolved.name = t(`signal.${id}.name`);
-      else if (PATTERN_IDS.has(id)) resolved.name = t(`pattern.${id}.name`);
-      else resolved.name = t(`catalyst.${id}.name`);
-    }
-    return t(key, resolved);
-  }, [t]);
