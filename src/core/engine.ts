@@ -643,8 +643,8 @@ export function selectInfusion(state: GameState, choice: InfusionChoice): GameSt
       newState.lastIntermissionMessage = { key: 'ui.infusion_pool_converted', params: { energy: 2 } };
       break;
     case 'pattern':
-      const isUpgrade = newState.activePattern === choice.pattern;
       const previousPattern = newState.activePattern;
+      const isUpgrade = previousPattern === choice.pattern;
       const nextLevel = isUpgrade ? newState.patternLevels[choice.pattern] + 1 : 1;
       newState.activePattern = choice.pattern;
       newState.patternLevels = {

@@ -32,7 +32,8 @@ describe('Forge intermission localization', () => {
       key: 'ui.infusion_pattern_replaced',
       params: { from: 'chain', to: 'corner', level: 1 },
     };
-    expect(localizeIntermissionMessage(message, createT('en'))).toContain('Chain Pattern');
-    expect(localizeIntermissionMessage(message, createT('en'))).toContain('Corner Pattern');
+    const localized = localizeIntermissionMessage(message, createT('en'));
+    expect(localized).toContain('Chain Pattern');
+    expect(localized).toContain('Corner Pattern');
   });
 });
