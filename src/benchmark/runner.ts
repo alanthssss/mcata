@@ -8,20 +8,16 @@ import {
   createInitialState,
   startGame,
   processMoveAction,
-  selectInfusion,
-  buyFromForge,
+  buyForgeItem,
   skipForge,
   advanceRound,
 } from '../core/engine';
 import { GameState, Direction, CatalystId, AscensionLevel } from '../core/types';
 import { getEmptyCells, getHighestTileValue } from '../core/board';
 import { getPhasesForRound, PHASES_PER_ROUND } from '../core/phases';
-import { MAX_CATALYSTS } from '../core/config';
 import { ProtocolId } from '../core/types';
 import { DEFAULT_PROTOCOL } from '../core/protocols';
 import { calculateRunReward } from '../core/profile';
-import { generateForgeOffers } from '../core/forge';
-import { createRng } from '../core/rng';
 import { CATALYST_DEFS } from '../core/catalysts';
 
 export interface BenchmarkTuningOverrides {
@@ -32,40 +28,11 @@ export interface BenchmarkTuningOverrides {
   energyIncomeMultiplier?: number;
 }
 
-// ─── Auto-pilot helpers for non-playing screens ───────────────────────────────
-function autoInfusion(state: GameState): GameState {
-  if (state.infusionOptions.length === 0) {
-    // No infusion options — skip directly to forge with pre-populated offers
-    // (this mirrors the path selectInfusion() takes)
-    const rng = createRng(state.rngSeed + 100);
-    const forgeOffers = generateForgeOffers(
-      state.activeCatalysts, 3, rng.next.bind(rng), state.catalystPool, state.roundNumber
-    );
-    return { ...state, screen: 'forge', forgeOffers };
-  }
-  // When at max catalysts, a catalyst choice does nothing — prefer steps instead.
-  const atMaxCatalysts = state.activeCatalysts.length >= MAX_CATALYSTS;
-  let choice: typeof state.infusionOptions[0];
-  if (!atMaxCatalysts) {
-    // Prefer catalyst; fall back to first option
-    choice = state.infusionOptions.find(o => o.type === 'catalyst') ?? state.infusionOptions[0];
-  } else {
-    // Prefer steps (+2 moves) > multiplier > energy
-    choice =
-      state.infusionOptions.find(o => o.type === 'steps') ??
-      state.infusionOptions.find(o => o.type === 'multiplier') ??
-      state.infusionOptions[0];
-  }
-  return selectInfusion(state, choice);
-}
-
 function autoForge(state: GameState): GameState {
-  // Buy cheapest available catalyst if enough energy, then always skip to 'playing'.
-  // buyFromForge keeps screen='forge', so we must call skipForge to advance the screen.
-  const affordable = state.forgeOffers
-    .filter(c => state.energy >= c.cost)
-    .sort((a, b) => a.cost - b.cost);
-  const afterBuy = affordable.length > 0 ? buyFromForge(state, affordable[0]) : state;
+  const affordable = state.forgeItems
+    .filter(item => state.energy >= item.price)
+    .sort((a, b) => a.price - b.price);
+  const afterBuy = affordable.length > 0 ? buyForgeItem(state, affordable[0]) : state;
   return skipForge(afterBuy);
 }
 
@@ -204,7 +171,7 @@ export function runSingle(opts: RunOptions): RunMetrics {
       state.screen !== 'game_over' &&
       state.screen !== 'run_complete'
     ) {
-      if (state.screen === 'infusion') {
+      if (state.screen === 'forge') {
         // Phase just ended — capture PhaseRecord and pacing metrics
         const movesUsed = totalSteps - phaseStepStart;
         phaseStepSum += movesUsed;
@@ -219,18 +186,17 @@ export function runSingle(opts: RunOptions): RunMetrics {
           cleared:      true,
           catalystCount: state.activeCatalysts.length,
         });
-        state = autoInfusion(state);
-        state = withPhaseOverrides(state, tuningOverrides);
         phaseStepStart   = totalSteps;
         phaseStartRound  = state.roundNumber;
         phaseStartIndex  = state.phaseIndex;
         phaseStartTarget = state.phaseTargetOutput;
-      } else if (state.screen === 'forge') {
-        for (const offer of state.forgeOffers) {
-          forgeOfferRarityCounts[offer.rarity]++;
+        for (const offer of state.forgeItems) {
+          if (offer.type !== 'catalyst') continue;
+          const catalyst = offer.catalyst;
+          forgeOfferRarityCounts[catalyst.rarity]++;
         }
-        forgeOffersSeen += state.forgeOffers.length;
-        forgeOffersAffordable += state.forgeOffers.filter(c => state.energy >= c.cost).length;
+        forgeOffersSeen += state.forgeItems.filter(i => i.type === 'catalyst').length;
+        forgeOffersAffordable += state.forgeItems.filter(i => i.type === 'catalyst' && state.energy >= i.price).length;
         const beforeIds = new Set(state.activeCatalysts);
         const preForge = state;
         state = autoForge(state);
@@ -299,8 +265,7 @@ export function runSingle(opts: RunOptions): RunMetrics {
     state.screen !== 'run_complete' &&
     state.screen !== 'round_complete'
   ) {
-    if (state.screen === 'infusion') state = autoInfusion(state);
-    else if (state.screen === 'forge') state = autoForge(state);
+    if (state.screen === 'forge') state = autoForge(state);
     else break;
   }
 

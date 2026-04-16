@@ -50,8 +50,8 @@ GameState.protocol = protocol
 ## 2. Catalyst System
 
 Catalysts are **passive build modifiers** equipped during a run. Up to 6 can be
-active simultaneously. Forge is the primary permanent Catalyst acquisition path.
-Infusion direct Catalyst rewards are rare and explicit.
+active simultaneously. Forge is the unified post-phase acquisition path.
+Forge also supports selling Catalysts, Pattern, and Signals for partial refunds.
 
 ### Catalyst Schema (`CatalystDef`)
 
@@ -90,13 +90,13 @@ Infusion direct Catalyst rewards are rare and explicit.
 ## 2.1 Pattern System (Run Archetype Growth)
 
 Patterns are a separate run-level progression layer from Catalysts and Signals.
-Pattern rewards are sourced from Infusion and strengthen one archetype
+Pattern purchases are sourced from Forge and strengthen one archetype
 for the rest of the run (`corner`, `chain`, `empty_space`, `high_tier`,
 `economy`, `survival`).
 
 Player-facing flow:
-- Acquisition: choose a Pattern reward in Infusion (`Grow Pattern: {name}`)
-- Canonical source: Infusion is the only acquisition path
+- Acquisition: buy a Pattern in Forge
+- Canonical source: Forge is the acquisition path
 - Replacement/upgrade: one active Pattern at a time — same Pattern upgrades level, different Pattern replaces active Pattern at Lv.1
 - Active display: Pattern panel in the run HUD shows active pattern + level
 - Empty-state visibility: Signal/Pattern/Catalyst/Synergy/Momentum/Protocol panels remain visible with compact localized placeholders even before acquisition
@@ -113,12 +113,12 @@ optional anomaly, and benchmark data.
 
 | Phase | Target | Steps | Challenge Tier | Anomaly |
 |---|---|---|---|---|
-| 1 | 70 | 12 | small | — |
-| 2 | 80 | 12 | big | — |
-| 3 | 75 | 10 | boss | corner bonus disabled |
-| 4 | 40 | 8  | small | Entropy Tax |
-| 5 | 80 | 10 | big | — |
-| 6 | 55 | 8  | boss | Collapse Field |
+| 1 | 170+ | 20+ | small | — |
+| 2 | 205+ | 21+ | big | — |
+| 3 | 190+ | 20+ | boss | corner bonus disabled |
+| 4 | 165+ | 20+ | small | Entropy Tax |
+| 5 | 235+ | 23+ | big | — |
+| 6 | 220+ | 24+ | boss | Collapse Field |
 
 ### Challenge Tiers
 

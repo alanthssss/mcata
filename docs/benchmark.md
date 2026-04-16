@@ -397,7 +397,7 @@ Run | Shards | Total | Phases | Rounds
 | `ascensionLevel` | `0–8` | `0` | Ascension level for the run |
 | `protocol` | `ProtocolId` | `corner_protocol` | Protocol to use |
 | `maxRounds` | `number` | `10` | Maximum rounds to simulate (caps endless runs for benchmark) |
-| `unlockedCatalysts` | `CatalystId[] \| undefined` | `undefined` (full pool) | Restricts Forge/Infusion pool |
+| `unlockedCatalysts` | `CatalystId[] \| undefined` | `undefined` (full pool) | Restricts Forge catalyst pool |
 
 ---
 
@@ -433,6 +433,6 @@ Every cleared (and failed) phase is recorded with:
 - **Late-game short-clear rate above 5 %**: compound scaling insufficient for high rounds
   → increase `ROUND_TARGET_SCALE` or reduce `maxFactor`
 - **avgRoundsCleared drops below 1** for HeuristicAgent: early-game overtightened
-  → reduce base targets in `ROUND_TEMPLATES[0]` (alpha template, phase 1–3)
+  → reduce base targets in `PHASE_CONFIG` (phase 1–3)
 - **Avg moves per phase > 15**: targets are too high for typical builds
   → reduce `BUILD_AWARE_SCALING.maxFactor` or `catalystWeight`

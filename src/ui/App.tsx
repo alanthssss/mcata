@@ -6,11 +6,9 @@ import { GridView } from './components/GridView';
 import { Header } from './components/Header';
 import { PhasePanel } from './components/PhasePanel';
 import { CatalystPanel } from './components/CatalystPanel';
-import { ControlPad } from './components/ControlPad';
 import { OutputPanel } from './components/OutputPanel';
 import { LogPanel } from './components/LogPanel';
 import { ForgeModal } from './components/ForgeModal';
-import { InfusionModal } from './components/InfusionModal';
 import { StartScreen } from './components/StartScreen';
 import { EndScreen } from './components/EndScreen';
 import { RoundCompleteScreen } from './components/RoundCompleteScreen';
@@ -39,6 +37,9 @@ export const App: React.FC = () => {
   const { profile } = useProfileStore();
   const t = useT();
   const [showCollection, setShowCollection] = useState(false);
+  const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(null);
+  const [showBreakdown, setShowBreakdown] = useState(true);
+  const [showLog, setShowLog] = useState(true);
   const renderLocalized = useCallback((key: string, params?: Record<string, string | number>) => {
     if (!params) return t(key);
     const resolved = { ...params };
@@ -54,6 +55,25 @@ export const App: React.FC = () => {
   const handleMove = useCallback((dir: Direction) => {
     state.move(dir);
   }, [state.move]);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    const touch = e.changedTouches[0];
+    setTouchStart({ x: touch.clientX, y: touch.clientY });
+  }, []);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (!touchStart || state.screen !== 'playing') return;
+    const touch = e.changedTouches[0];
+    const dx = touch.clientX - touchStart.x;
+    const dy = touch.clientY - touchStart.y;
+    const threshold = 26;
+    if (Math.abs(dx) < threshold && Math.abs(dy) < threshold) return;
+    if (Math.abs(dx) > Math.abs(dy)) {
+      handleMove(dx > 0 ? 'right' : 'left');
+    } else {
+      handleMove(dy > 0 ? 'down' : 'up');
+    }
+  }, [handleMove, state.screen, touchStart]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -160,16 +180,15 @@ export const App: React.FC = () => {
             activePattern={state.activePattern}
             level={state.activePattern ? state.patternLevels[state.activePattern] : 0}
           />
-          <OutputPanel lastEntry={lastEntry} />
         </div>
 
-        <div className="center-column">
+        <div className="center-column" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
           <GridView
             grid={state.grid}
             frozenCell={state.activeCatalysts.includes('frozen_cell') ? state.frozenCell : null}
             blockedCell={state.entropyBlockedCell}
           />
-          <ControlPad onMove={handleMove} />
+          <div className="control-help">{t('ui.controls_desc')}</div>
         </div>
 
         <div className="right-column">
@@ -182,27 +201,32 @@ export const App: React.FC = () => {
               {t('ui.open_collection')}
             </button>
           </div>
-          <LogPanel log={state.reactionLog} />
+          <button className="panel-collapse-btn" onClick={() => setShowBreakdown(v => !v)}>
+            {showBreakdown ? t('ui.collapse_breakdown') : t('ui.expand_breakdown')}
+          </button>
+          {showBreakdown && <OutputPanel lastEntry={lastEntry} />}
+          <button className="panel-collapse-btn" onClick={() => setShowLog(v => !v)}>
+            {showLog ? t('ui.collapse_log') : t('ui.expand_log')}
+          </button>
+          {showLog && <LogPanel log={state.reactionLog} />}
         </div>
       </div>
 
       {state.screen === 'forge' && (
-          <ForgeModal
-          offers={state.forgeOffers}
+        <ForgeModal
+          items={state.forgeItems}
           activeCatalysts={state.activeCatalysts}
+          activePattern={state.activePattern}
+          activePatternLevel={state.activePattern ? state.patternLevels[state.activePattern] : 0}
+          signals={state.signals}
           energy={state.energy}
           lastIntermissionMessage={state.lastIntermissionMessage}
-          onBuy={state.purchaseCatalyst}
+          onBuy={state.purchaseForgeItem}
           onSell={state.sellCatalystAt}
+          onSellPattern={state.sellPatternActive}
+          onSellSignal={state.sellSignalById}
           onReroll={state.reroll}
           onSkip={state.skipForgePhase}
-          />
-      )}
-
-      {state.screen === 'infusion' && (
-        <InfusionModal
-          options={state.infusionOptions}
-          onChoose={state.chooseInfusion}
         />
       )}
 
