@@ -233,9 +233,10 @@ src/
 ## How to Run Benchmarks
 
 ```bash
-npm run benchmark          # Baseline suite (100 runs × 5 agents)
-npm run benchmark:long     # Long suite (500 runs × 5 agents)
-npm run balance            # Balance probe + pacing + round-stress suites
+npm run benchmark          # Baseline suite (Heuristic-only tuning flow)
+npm run benchmark:long     # Long suite (Heuristic-only tuning flow)
+npm run balance            # Balance probe + pacing + round-stress (Heuristic-only)
+npm run balance:tune       # Heuristic-driven iterative auto-tuning + artifacts
 npm run docs:assets        # Generate Mermaid diagrams + SVG assets
 ```
 
@@ -244,7 +245,7 @@ Custom suite:
 npx tsx src/scripts/runBenchmark.ts --suite smoke
 ```
 
-Available suites: `smoke`, `baseline`, `long`, `balance`, `pacing`, `round_stress`
+Available suites: `smoke`, `baseline`, `long`, `balance`, `pacing`, `round_stress`, `debug_agents`
 
 ## Output Artifacts
 

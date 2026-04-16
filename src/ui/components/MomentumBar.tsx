@@ -36,6 +36,7 @@ export const MomentumBar: React.FC<MomentumBarProps> = ({
         <span className="momentum-streak-label">{t('ui.momentum_streak')}:</span>
         <span className="momentum-streak-val">{consecutiveValidMoves}</span>
       </div>
+      {!isActive && <div className="panel-help">{t('ui.momentum_help_empty')}</div>}
     </div>
   );
 };

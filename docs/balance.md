@@ -39,10 +39,17 @@ Each phase defines three output tiers used by the benchmark suite:
 Run `npm run balance` to generate a live balance report at
 `artifacts/benchmark/latest/balance_report.md`.
 
-`npm run balance` runs three suites in sequence:
+`npm run balance` runs three Heuristic-focused suites in sequence:
 - `balance`
 - `pacing`
 - `round_stress`
+
+For iterative numeric tuning, run `npm run balance:tune` to execute the
+Heuristic auto-tuning loop and generate:
+- `tuning_history.json`
+- `tuning_summary.md`
+- `best_config.json`
+- `before_vs_after.md`
 
 ---
 
@@ -139,6 +146,15 @@ Run `npm run balance` to generate `artifacts/benchmark/latest/balance_report.md`
 | Catalyst win rate > 2× global | Reduce multiplier by 0.1–0.2 |
 | Anomaly survival < 30% | Increase `COLLAPSE_FIELD_PERIOD` or reduce spawn block frequency |
 | Average momentum > 1.6× | Reduce `MOMENTUM_CONFIG.growthRate` |
+
+Additional tuning-loop targets (see `src/benchmark/tuning.ts`):
+- `avgMovesPerPhase` and `avgMovesPerPhaseByRound`
+- `avgHighestTierPerPhase` and `avgHighestTierPerRound`
+- `highTierReachDistribution`
+- `energyIncomePerRound` / `energySpentPerRound`
+- `forgeAffordabilityRate`
+- `buildMaturityByRound`
+- `lateGameClearSpeed`
 
 ---
 

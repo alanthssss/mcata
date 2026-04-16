@@ -12,6 +12,7 @@
     "benchmark:long": "tsx src/scripts/runBenchmark.ts --suite long",
     "benchmark:meta": "tsx src/scripts/runMetaBenchmark.ts",
     "balance": "tsx src/scripts/runBalanceCheck.ts",
+    "balance:tune": "tsx src/scripts/runAutoTuneBalance.ts",
     "docs:assets": "tsx src/scripts/generateDocsAssets.ts"
   },
   "dependencies": {

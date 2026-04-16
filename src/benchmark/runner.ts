@@ -24,6 +24,14 @@ import { generateForgeOffers } from '../core/forge';
 import { createRng } from '../core/rng';
 import { CATALYST_DEFS } from '../core/catalysts';
 
+export interface BenchmarkTuningOverrides {
+  stepsMultiplier?: number;
+  targetOutputMultiplier?: number;
+  roundScaleMultiplier?: number;
+  startingEnergy?: number;
+  energyIncomeMultiplier?: number;
+}
+
 // ─── Auto-pilot helpers for non-playing screens ───────────────────────────────
 function autoInfusion(state: GameState): GameState {
   if (state.infusionOptions.length === 0) {
@@ -61,6 +69,27 @@ function autoForge(state: GameState): GameState {
   return skipForge(afterBuy);
 }
 
+function withPhaseOverrides(state: GameState, overrides?: BenchmarkTuningOverrides): GameState {
+  if (!overrides) return state;
+  const stepsMultiplier = overrides.stepsMultiplier ?? 1;
+  const targetOutputMultiplier = overrides.targetOutputMultiplier ?? 1;
+  const roundScaleMultiplier = overrides.roundScaleMultiplier ?? 1;
+  const roundScale = Math.pow(roundScaleMultiplier, Math.max(0, state.roundNumber - 1));
+  return {
+    ...state,
+    stepsRemaining: Math.max(3, Math.round(state.stepsRemaining * stepsMultiplier)),
+    phaseTargetOutput: Math.max(1, Math.ceil(state.phaseTargetOutput * targetOutputMultiplier * roundScale)),
+  };
+}
+
+function withEnergyIncomeScaling(prev: GameState, next: GameState, overrides?: BenchmarkTuningOverrides): GameState {
+  const energyIncomeMultiplier = overrides?.energyIncomeMultiplier ?? 1;
+  if (energyIncomeMultiplier === 1) return next;
+  const delta = next.energy - prev.energy;
+  if (delta <= 0) return next;
+  return { ...next, energy: prev.energy + Math.max(0, Math.round(delta * energyIncomeMultiplier)) };
+}
+
 // ─── Single run ───────────────────────────────────────────────────────────────
 export interface RunOptions {
   seed:  number;
@@ -80,6 +109,7 @@ export interface RunOptions {
    * Leave undefined for full pool (benchmark default).
    */
   unlockedCatalysts?: CatalystId[];
+  tuningOverrides?: BenchmarkTuningOverrides;
 }
 
 export function runSingle(opts: RunOptions): RunMetrics {
@@ -89,16 +119,22 @@ export function runSingle(opts: RunOptions): RunMetrics {
   const protocol       = opts.protocol ?? DEFAULT_PROTOCOL;
   const ascensionLevel = opts.ascensionLevel ?? 0;
   const unlockedCatalysts = opts.unlockedCatalysts;
+  const tuningOverrides = opts.tuningOverrides;
 
   let state = startGame(createInitialState(seed, protocol, {
     ascensionLevel,
     unlockedCatalysts,
   }));
+  state = withPhaseOverrides(state, tuningOverrides);
+  if (tuningOverrides?.startingEnergy !== undefined) {
+    state = { ...state, energy: tuningOverrides.startingEnergy };
+  }
 
   let totalSteps           = 0;
   let totalCatalysts       = 0;
   let catalystReplacements = 0;
   let totalEnergyEarned    = 0;
+  let totalEnergySpent     = 0;
   let prevCatalysts: CatalystId[] = [];
   let anomalyPhaseCount    = 0;
   let anomalyPhasesSurvived = 0;
@@ -113,6 +149,8 @@ export function runSingle(opts: RunOptions): RunMetrics {
   const phaseHistory: PhaseRecord[] = [];
   const forgeOfferRarityCounts: Record<'common' | 'rare' | 'epic', number> = { common: 0, rare: 0, epic: 0 };
   const acquiredRarityCounts: Record<'common' | 'rare' | 'epic', number> = { common: 0, rare: 0, epic: 0 };
+  let forgeOffersSeen = 0;
+  let forgeOffersAffordable = 0;
   let firstRareRound: number | undefined;
   let firstEpicRound: number | undefined;
   // Snapshot of state at the start of each phase for PhaseRecord
@@ -131,16 +169,20 @@ export function runSingle(opts: RunOptions): RunMetrics {
   while (isRunning()) {
     if (state.screen === 'playing') {
       const dir: Direction = agent.nextAction(state);
-      const prevOutput = state.output;
       const prevState  = state;
       state = processMoveAction(state, dir);
+      state = withEnergyIncomeScaling(prevState, state, tuningOverrides);
 
       if (state === prevState) {
         // invalid move — try fallback directions
         const dirs: Direction[] = ['up', 'down', 'left', 'right'];
         for (const d of dirs) {
           const next = processMoveAction(state, d);
-          if (next !== state) { state = next; actionCounts[d]++; break; }
+          if (next !== state) {
+            state = withEnergyIncomeScaling(prevState, next, tuningOverrides);
+            actionCounts[d]++;
+            break;
+          }
         }
       } else {
         actionCounts[dir]++;
@@ -151,10 +193,9 @@ export function runSingle(opts: RunOptions): RunMetrics {
       const mergesThisMove = state.reactionLog[0]?.merges.length ?? 0;
       totalMergesPerMove   += mergesThisMove;
 
-      // Energy tracking
-      if (state.screen === 'infusion' || state.screen === 'forge') {
-        totalEnergyEarned += state.energy - prevOutput; // rough proxy
-      }
+      const energyDelta = state.energy - prevState.energy;
+      if (energyDelta > 0) totalEnergyEarned += energyDelta;
+      if (energyDelta < 0) totalEnergySpent += Math.abs(energyDelta);
     }
 
     // Handle all non-playing, non-terminal screens
@@ -176,8 +217,10 @@ export function runSingle(opts: RunOptions): RunMetrics {
           actualOutput: state.output,
           maxTile:      getHighestTileValue(state.grid),
           cleared:      true,
+          catalystCount: state.activeCatalysts.length,
         });
         state = autoInfusion(state);
+        state = withPhaseOverrides(state, tuningOverrides);
         phaseStepStart   = totalSteps;
         phaseStartRound  = state.roundNumber;
         phaseStartIndex  = state.phaseIndex;
@@ -186,8 +229,16 @@ export function runSingle(opts: RunOptions): RunMetrics {
         for (const offer of state.forgeOffers) {
           forgeOfferRarityCounts[offer.rarity]++;
         }
+        forgeOffersSeen += state.forgeOffers.length;
+        forgeOffersAffordable += state.forgeOffers.filter(c => state.energy >= c.cost).length;
         const beforeIds = new Set(state.activeCatalysts);
+        const preForge = state;
         state = autoForge(state);
+        state = withEnergyIncomeScaling(preForge, state, tuningOverrides);
+        state = withPhaseOverrides(state, tuningOverrides);
+        const forgeEnergyDelta = state.energy - preForge.energy;
+        if (forgeEnergyDelta > 0) totalEnergyEarned += forgeEnergyDelta;
+        if (forgeEnergyDelta < 0) totalEnergySpent += Math.abs(forgeEnergyDelta);
         for (const id of state.activeCatalysts) {
           if (!beforeIds.has(id)) {
             const rarity = CATALYST_DEFS[id].rarity;
@@ -209,6 +260,7 @@ export function runSingle(opts: RunOptions): RunMetrics {
           actualOutput: state.output,
           maxTile:      getHighestTileValue(state.grid),
           cleared:      true,
+          catalystCount: state.activeCatalysts.length,
         });
         roundsCleared++;
         highestRound = Math.max(highestRound, state.roundNumber);
@@ -216,7 +268,13 @@ export function runSingle(opts: RunOptions): RunMetrics {
           // Treat hitting maxRounds as a "won enough" condition
           break;
         }
+        const preRound = state;
         state = advanceRound(state);
+        state = withEnergyIncomeScaling(preRound, state, tuningOverrides);
+        state = withPhaseOverrides(state, tuningOverrides);
+        const roundEnergyDelta = state.energy - preRound.energy;
+        if (roundEnergyDelta > 0) totalEnergyEarned += roundEnergyDelta;
+        if (roundEnergyDelta < 0) totalEnergySpent += Math.abs(roundEnergyDelta);
         phaseStepStart   = totalSteps;
         phaseStartRound  = state.roundNumber;
         phaseStartIndex  = state.phaseIndex;
@@ -256,6 +314,7 @@ export function runSingle(opts: RunOptions): RunMetrics {
       actualOutput: state.output,
       maxTile:      getHighestTileValue(state.grid),
       cleared:      false,
+      catalystCount: state.activeCatalysts.length,
     });
   }
 
@@ -291,6 +350,7 @@ export function runSingle(opts: RunOptions): RunMetrics {
   const anomalySurvivalRate = anomalyPhaseCount > 0 ? anomalyPhasesSurvived / anomalyPhaseCount : 1;
   const avgMovesPerPhase = phasesTracked > 0 ? phaseStepSum / phasesTracked : 0;
   const uniqueCatalystsAcquired = new Set(state.activeCatalysts).size;
+  const highestTierReached = Math.log2(Math.max(2, maxTile));
 
   const reward = calculateRunReward(state, anomalySurvivalRate);
 
@@ -304,6 +364,7 @@ export function runSingle(opts: RunOptions): RunMetrics {
     totalCatalysts,
     catalystReplacements,
     totalEnergyEarned,
+    totalEnergySpent,
     avgOutputPerMove,
     anomalySurvivalRate,
     avgMergesPerMove,
@@ -325,6 +386,9 @@ export function runSingle(opts: RunOptions): RunMetrics {
     firstRareRound,
     firstEpicRound,
     selectedPattern: state.activePattern,
+    highestTierReached,
+    forgeOffersSeen,
+    forgeOffersAffordable,
   };
 }
 
@@ -336,6 +400,7 @@ export interface BatchOptions {
   protocol?:          ProtocolId;
   ascensionLevel?:    AscensionLevel;
   unlockedCatalysts?: CatalystId[];
+  tuningOverrides?: BenchmarkTuningOverrides;
   onProgress?: (done: number, total: number) => void;
 }
 
@@ -348,6 +413,7 @@ export function runBatch(opts: BatchOptions): RunMetrics[] {
       protocol:          opts.protocol,
       ascensionLevel:    opts.ascensionLevel,
       unlockedCatalysts: opts.unlockedCatalysts,
+      tuningOverrides: opts.tuningOverrides,
     }));
     opts.onProgress?.(i + 1, opts.runCount);
   }

@@ -210,6 +210,7 @@ npm run build          # TypeScript + Vite production build
 npm test               # run all unit tests (vitest)
 npm run benchmark      # run baseline benchmark suite
 npm run balance        # run balance + pacing + round-stress suites, generate report
+npm run balance:tune   # run heuristic-driven auto-tuning loop + tuning artifacts
 npm run docs:assets    # generate Mermaid diagram SVGs
 ```
 
@@ -222,6 +223,11 @@ Typical loop:
 2. Run `npm run balance`
 3. Review `artifacts/benchmark/latest/balance_report.md` and charts
 4. Compare with previous benchmark artifacts before committing tuning changes
+
+Auto-tuning loop:
+1. Run `npm run balance:tune`
+2. Review `tuning_summary.md`, `before_vs_after.md`, and `best_config.json`
+3. Apply accepted recommendations to core balance constants when validated
 
 ---
 

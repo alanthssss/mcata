@@ -45,6 +45,7 @@ export const ProtocolPanel: React.FC<{ protocol: ProtocolId; highlighted?: boole
           <div className="protocol-desc">{tDesc}</div>
         </div>
       </div>
+      <div className="panel-help">{t('ui.protocol_help')}</div>
     </div>
   );
 };
