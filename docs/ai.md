@@ -48,6 +48,10 @@ interface AgentEvaluation {
 
 ## Implemented Agents
 
+> Benchmark policy note: default balance/tuning suites now run **HeuristicAgent**
+> as the main practical benchmark strategy. Other agents are retained for smoke
+> and debug suites, plus future AI extension work.
+
 ### RandomAgent (`src/ai/agents/randomAgent.ts`)
 
 ```ts

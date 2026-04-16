@@ -3,8 +3,8 @@
  * Run a benchmark suite and export results.
  *
  * Usage:
- *   npm run benchmark              → runs Baseline suite (100 runs/agent)
- *   npm run benchmark:long         → runs Long suite (500 runs/agent)
+ *   npm run benchmark              → runs Baseline suite (Heuristic-only tuning pass)
+ *   npm run benchmark:long         → runs Long suite (Heuristic-only, higher confidence)
  *   tsx src/scripts/runBenchmark.ts --suite smoke
  */
 

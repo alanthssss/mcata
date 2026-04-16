@@ -23,7 +23,10 @@ export const CatalystPanel: React.FC<CatalystPanelProps> = ({ activeCatalysts, f
     <div className="panel catalyst-panel">
       <div className="panel-title">{t('ui.active_catalysts', { count: activeCatalysts.length })}</div>
       {activeCatalysts.length === 0 ? (
-        <div className="empty-state">{t('ui.no_catalysts')}</div>
+        <>
+          <div className="empty-state">{t('ui.no_catalysts')}</div>
+          <div className="panel-help">{t('ui.catalyst_help_empty')}</div>
+        </>
       ) : (
         <div className="catalyst-list">
           {activeCatalysts.map(id => {

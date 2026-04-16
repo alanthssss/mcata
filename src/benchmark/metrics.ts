@@ -17,6 +17,8 @@ export interface PhaseRecord {
   maxTile: number;
   /** Whether the phase was cleared successfully. */
   cleared: boolean;
+  /** Active catalyst count at phase end. */
+  catalystCount?: number;
 }
 
 // ─── Per-run metrics ──────────────────────────────────────────────────────────
@@ -31,6 +33,7 @@ export interface RunMetrics {
   totalCatalysts:       number;
   catalystReplacements: number;
   totalEnergyEarned:    number;
+  totalEnergySpent?:    number;
   avgOutputPerMove:     number;
   anomalySurvivalRate:  number;  // 0–1: fraction of anomaly phases survived
   avgMergesPerMove:     number;
@@ -69,6 +72,9 @@ export interface RunMetrics {
   firstRareRound?: number;
   firstEpicRound?: number;
   selectedPattern?: string | null;
+  highestTierReached?: number;
+  forgeOffersSeen?: number;
+  forgeOffersAffordable?: number;
 }
 
 // ─── Aggregate suite metrics ──────────────────────────────────────────────────
@@ -118,6 +124,14 @@ export interface SuiteMetrics {
   lateGameShortClearRate: number;
   /** Average moves per phase broken down by round number */
   avgMovesPerPhaseByRound: Record<number, number>;
+  avgHighestTierPerPhase: number;
+  avgHighestTierPerRound: Record<number, number>;
+  highTierReachDistribution: Record<number, number>;
+  energyIncomePerRound: number;
+  energySpentPerRound: number;
+  forgeAffordabilityRate: number;
+  buildMaturityByRound: Record<number, number>;
+  lateGameClearSpeed: number;
   // ── Legacy progression metrics ──
   /** Average milestones per run */
   avgMilestones:       number;
@@ -194,6 +208,14 @@ export function buildSuiteMetrics(runs: RunMetrics[]): SuiteMetrics {
       shortClearRate: 0,
       lateGameShortClearRate: 0,
       avgMovesPerPhaseByRound: {},
+      avgHighestTierPerPhase: 0,
+      avgHighestTierPerRound: {},
+      highTierReachDistribution: {},
+      energyIncomePerRound: 0,
+      energySpentPerRound: 0,
+      forgeAffordabilityRate: 0,
+      buildMaturityByRound: {},
+      lateGameClearSpeed: 0,
       offerDistributionByRarity: { common: 0, rare: 0, epic: 0 },
       acquisitionDistributionByRarity: { common: 0, rare: 0, epic: 0 },
       avgFirstRareRound: 0,
@@ -228,8 +250,27 @@ export function buildSuiteMetrics(runs: RunMetrics[]): SuiteMetrics {
     movesByRound[p.round].push(p.movesUsed);
   }
   const avgMovesPerPhaseByRound: Record<number, number> = {};
+  const avgHighestTierPerRound: Record<number, number> = {};
+  const buildMaturityByRound: Record<number, number> = {};
   for (const [round, moves] of Object.entries(movesByRound)) {
     avgMovesPerPhaseByRound[Number(round)] = mean(moves);
+  }
+  const tiersByRound: Record<number, number[]> = {};
+  const catalystsByRound: Record<number, number[]> = {};
+  for (const p of clearedPhases) {
+    const tier = Math.log2(Math.max(2, p.maxTile));
+    if (!tiersByRound[p.round]) tiersByRound[p.round] = [];
+    tiersByRound[p.round].push(tier);
+    if (p.catalystCount !== undefined) {
+      if (!catalystsByRound[p.round]) catalystsByRound[p.round] = [];
+      catalystsByRound[p.round].push(p.catalystCount);
+    }
+  }
+  for (const [round, tiers] of Object.entries(tiersByRound)) {
+    avgHighestTierPerRound[Number(round)] = mean(tiers);
+  }
+  for (const [round, counts] of Object.entries(catalystsByRound)) {
+    buildMaturityByRound[Number(round)] = mean(counts);
   }
 
   // Output growth by round: avg finalOutput of runs that reached each round
@@ -267,6 +308,24 @@ export function buildSuiteMetrics(runs: RunMetrics[]): SuiteMetrics {
 
   const roundsClearedArr = runs.map(r => r.roundsCleared ?? 0);
   const highestRoundArr  = runs.map(r => r.highestRound ?? 1);
+  const highestTierReachDistribution: Record<number, number> = {};
+  const avgHighestTierPerPhase = mean(clearedPhases.map(p => Math.log2(Math.max(2, p.maxTile))));
+  const energyIncomePerRound = mean(
+    runs.map(r => (r.totalEnergyEarned ?? 0) / Math.max(1, r.highestRound ?? 1)),
+  );
+  const energySpentPerRound = mean(
+    runs.map(r => (r.totalEnergySpent ?? 0) / Math.max(1, r.highestRound ?? 1)),
+  );
+  const forgeAffordabilityRate = mean(
+    runs.map(r => {
+      const seen = r.forgeOffersSeen ?? 0;
+      return seen > 0 ? (r.forgeOffersAffordable ?? 0) / seen : 0;
+    }),
+  );
+  for (const r of runs) {
+    const tier = r.highestTierReached ?? Math.log2(Math.max(2, r.maxTile));
+    highestTierReachDistribution[tier] = (highestTierReachDistribution[tier] ?? 0) + 1;
+  }
   const offerDistributionByRarity: Record<'common' | 'rare' | 'epic', number> = { common: 0, rare: 0, epic: 0 };
   const acquisitionDistributionByRarity: Record<'common' | 'rare' | 'epic', number> = { common: 0, rare: 0, epic: 0 };
   const firstRareRounds = runs.map(r => r.firstRareRound).filter((n): n is number => n !== undefined);
@@ -319,6 +378,14 @@ export function buildSuiteMetrics(runs: RunMetrics[]): SuiteMetrics {
     shortClearRate,
     lateGameShortClearRate,
     avgMovesPerPhaseByRound,
+    avgHighestTierPerPhase,
+    avgHighestTierPerRound,
+    highTierReachDistribution: highestTierReachDistribution,
+    energyIncomePerRound,
+    energySpentPerRound,
+    forgeAffordabilityRate,
+    buildMaturityByRound,
+    lateGameClearSpeed: lateGameClearTurns,
     offerDistributionByRarity,
     acquisitionDistributionByRarity,
     avgFirstRareRound: firstRareRounds.length ? mean(firstRareRounds) : 0,

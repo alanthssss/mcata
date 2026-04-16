@@ -99,6 +99,7 @@ Player-facing flow:
 - Canonical source: Infusion is the only acquisition path
 - Replacement/upgrade: one active Pattern at a time — same Pattern upgrades level, different Pattern replaces active Pattern at Lv.1
 - Active display: Pattern panel in the run HUD shows active pattern + level
+- Empty-state visibility: Signal/Pattern/Catalyst/Synergy/Momentum/Protocol panels remain visible with compact localized placeholders even before acquisition
 - Effect visibility: move logs/output panel include Pattern multiplier entries
 
 ---

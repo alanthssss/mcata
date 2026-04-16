@@ -48,7 +48,9 @@ describe('buildSuiteMetrics pacing metrics', () => {
 
     expect(metrics.avgMaxTile).toBe(96);
     expect(metrics.lateGameClearTurns).toBe(5);
+    expect(metrics.lateGameClearSpeed).toBe(5);
     expect(metrics.avgMovesPerPhase).toBe(6);
+    expect(metrics.avgHighestTierPerPhase).toBeGreaterThan(0);
   });
 });
 

@@ -12,7 +12,7 @@ import {
   MCTSAgent,
 } from '../ai/agents/index';
 
-function defaultAgents() {
+function debugAgents() {
   return [
     new RandomAgent(),
     new GreedyAgent(),
@@ -25,55 +25,71 @@ function defaultAgents() {
 /** Suite: Smoke — Quick sanity / correctness check (5 runs each). */
 export const SUITE_SMOKE: SuiteDefinition = {
   name:        'Smoke',
-  description: 'Quick sanity check: verify agents run to completion, artifacts generate, and core metrics are non-zero.',
-  agents:      defaultAgents(),
+  description: 'Quick sanity check: verify benchmark plumbing and extension agents still run end-to-end.',
+  agents:      debugAgents(),
   runCount:    5,
   seedStart:   999,
+  category:    'debug',
 };
 
-/** Suite: Baseline — Standard endless-mode comparison (100 runs each). */
+/** Suite: Baseline — Standard Heuristic tuning pass. */
 export const SUITE_BASELINE: SuiteDefinition = {
   name:        'Baseline',
-  description: 'Compare agents on score-chasing performance: avgRoundsCleared, meanOutput, and pacing across 100 runs per agent.',
-  agents:      defaultAgents(),
-  runCount:    100,
+  description: 'Primary balance baseline using only HeuristicAgent for pacing/economy/board-growth tuning.',
+  agents:      [new HeuristicAgent()],
+  runCount:    40,
   seedStart:   1000,
+  category:    'tuning',
 };
 
-/** Suite: Long — Stable endless-mode comparison (500 runs each). */
+/** Suite: Long — Higher-confidence Heuristic tuning pass. */
 export const SUITE_LONG: SuiteDefinition = {
   name:        'Long',
-  description: 'High-confidence agent comparison: rounds reached, output growth, build maturity, and failure distribution across 500 runs per agent.',
-  agents:      defaultAgents(),
-  runCount:    500,
+  description: 'Higher-confidence Heuristic-only run for validating longer-term scaling trends.',
+  agents:      [new HeuristicAgent()],
+  runCount:    120,
   seedStart:   2000,
+  category:    'tuning',
 };
 
-/** Suite: Balance — Catalyst diversity and economy probing (50 runs each). */
+/** Suite: Balance — Heuristic-only economy and growth probe. */
 export const SUITE_BALANCE: SuiteDefinition = {
   name:        'BalanceProbe',
-  description: 'Balance-focused: inspect catalyst pick rates, synergy density, economy trend, and anomaly pressure across rounds.',
-  agents:      [new GreedyAgent(), new HeuristicAgent()],
-  runCount:    50,
+  description: 'Balance-focused Heuristic probe for pacing, economy tightness, and board growth.',
+  agents:      [new HeuristicAgent()],
+  runCount:    35,
   seedStart:   3000,
+  category:    'tuning',
 };
 
-/** Suite: Pacing — Phase pacing and moves-per-phase analysis (50 runs each). */
+/** Suite: Pacing — Heuristic-only pacing analysis. */
 export const SUITE_PACING: SuiteDefinition = {
   name:        'Pacing',
-  description: 'Pacing-focused: measure avgMovesPerPhase by round, late-game clear speed, short-clear rate, and max tier reached.',
-  agents:      [new HeuristicAgent(), new MCTSAgent({ rollouts: 20, rolloutDepth: 10 })],
-  runCount:    50,
+  description: 'Pacing-focused Heuristic run: moves-per-phase by round and late-game clear speed.',
+  agents:      [new HeuristicAgent()],
+  runCount:    30,
   seedStart:   4000,
+  category:    'tuning',
 };
 
-/** Suite: RoundStress — Later-round failure pattern analysis (50 runs each). */
+/** Suite: RoundStress — Heuristic-only late-round pressure analysis. */
 export const SUITE_ROUND_STRESS: SuiteDefinition = {
   name:        'RoundStress',
-  description: 'Late-round stress: focus on failureDistributionByRound, anomaly survival in rounds 3+, and output growth trajectory.',
-  agents:      [new HeuristicAgent(), new MCTSAgent({ rollouts: 20, rolloutDepth: 10 })],
-  runCount:    50,
+  description: 'Late-round stress with Heuristic to inspect failure distribution and board maturity.',
+  agents:      [new HeuristicAgent()],
+  runCount:    30,
   seedStart:   5000,
+  category:    'tuning',
+};
+
+/** Suite: Debug agents — optional strategy comparison outside tuning workflow. */
+export const SUITE_DEBUG_AGENTS: SuiteDefinition = {
+  name:        'DebugAgents',
+  description: 'Optional suite for smoke-comparing non-primary agents. Not used by default tuning flows.',
+  agents:      debugAgents(),
+  runCount:    20,
+  seedStart:   7000,
+  category:    'debug',
 };
 
 export const ALL_PRESETS: Record<string, SuiteDefinition> = {
@@ -83,4 +99,5 @@ export const ALL_PRESETS: Record<string, SuiteDefinition> = {
   balance:      SUITE_BALANCE,
   pacing:       SUITE_PACING,
   round_stress: SUITE_ROUND_STRESS,
+  debug_agents: SUITE_DEBUG_AGENTS,
 };

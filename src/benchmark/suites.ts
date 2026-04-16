@@ -14,6 +14,7 @@ export interface SuiteDefinition {
   agents:      Agent[];
   runCount:    number;
   seedStart:   number;
+  category?:   'tuning' | 'debug';
 }
 
 export interface SuiteResult {

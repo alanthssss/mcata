@@ -3,12 +3,14 @@
 ## Goals
 
 The benchmark framework lets you:
-- Measure how well each AI agent plays the endless-round game
+- Tune pacing, economy, and board growth with a stable high-performing strategy
 - Identify which phases or rounds are too hard or too easy
 - Detect overpowered or underpowered Catalysts and Synergies
 - Track score-chasing progression and build growth across rounds
 - Measure pacing (moves per phase), late-game pressure, and survival depth
 - Produce reproducible, comparable numbers across code changes
+
+Default balance suites are now **Heuristic-first**; multi-agent comparison is optional debug-only.
 
 > **Theme note**: The UI presentation layer (tile labels, colours, display score
 > scaling) has **no effect on benchmark results**.  All benchmark metrics —
@@ -157,6 +159,14 @@ Each cleared or failed phase is recorded as a `PhaseRecord`:
 | `shortClearRate` | Fraction of cleared phases completed in ≤3 moves |
 | `lateGameShortClearRate` | Same, restricted to round 4+ |
 | `avgMaxTile` | Average of each run's maxTile value |
+| `avgHighestTierPerPhase` | Mean log2(maxTile) across cleared phases |
+| `avgHighestTierPerRound` | Mean highest tier grouped by round |
+| `highTierReachDistribution` | Distribution of highest tiers reached per run |
+| `energyIncomePerRound` | Mean positive energy change per round |
+| `energySpentPerRound` | Mean energy spent per round |
+| `forgeAffordabilityRate` | Affordable Forge offers / total offers |
+| `buildMaturityByRound` | Mean active catalyst count per round |
+| `lateGameClearSpeed` | Late-game moves per phase alias for pacing checks |
 
 #### Other
 
@@ -218,11 +228,12 @@ The analysis engine flags:
 | Suite | Agents | Runs/Agent | Purpose |
 |-------|--------|-----------|---------|
 | `smoke` | All 5 | 5 | Quick sanity — verify runs complete and artifacts generate |
-| `baseline` | All 5 | 100 | Standard agent comparison — score-chasing and depth |
-| `long` | All 5 | 500 | High-confidence comparison — rounds, output growth, failure distribution |
-| `balance` | Greedy, Heuristic | 50 | Catalyst diversity, synergy density, economy and anomaly pressure |
-| `pacing` | Heuristic, MCTS | 50 | Moves per phase, late-game clear speed, max tier by round |
-| `round_stress` | Heuristic, MCTS | 50 | Later-round failure patterns, anomaly survival in rounds 3+ |
+| `baseline` | Heuristic | 40 | Default tuning baseline for pacing/economy/board growth |
+| `long` | Heuristic | 120 | Higher-confidence Heuristic tuning validation |
+| `balance` | Heuristic | 35 | Economy tightness + catalyst/build maturity probe |
+| `pacing` | Heuristic | 30 | Moves per phase, late-game clear speed, tier growth |
+| `round_stress` | Heuristic | 30 | Later-round failure patterns and pressure checks |
+| `debug_agents` | All 5 | 20 | Optional debug comparison (not in default tuning flow) |
 
 ---
 
@@ -264,11 +275,13 @@ flowchart TD
 ## How to Run
 
 ```bash
-npm run benchmark             # baseline suite (100 runs/agent)
-npm run benchmark:long        # long suite (500 runs/agent)
+npm run benchmark             # baseline suite (Heuristic-focused)
+npm run benchmark:long        # long suite (Heuristic-focused)
 npm run balance               # balance + pacing + round_stress suites
+npm run balance:tune          # iterative Heuristic auto-tuning loop
 npx tsx src/scripts/runBenchmark.ts --suite smoke
 npx tsx src/scripts/runBenchmark.ts --suite round_stress
+npx tsx src/scripts/runBenchmark.ts --suite debug_agents
 ```
 
 ---
