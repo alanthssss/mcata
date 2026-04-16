@@ -101,7 +101,7 @@ export function generateForgeOffers(
 const ALL_PATTERNS: PatternId[] = ['corner', 'chain', 'empty_space', 'high_tier', 'economy', 'survival'];
 const ALL_SIGNALS: SignalId[] = ['pulse_boost', 'grid_clean', 'chain_trigger', 'freeze_step'];
 
-function pickRandom<T>(items: T[], rngFn: () => number): T | null {
+function pickRandomItem<T>(items: T[], rngFn: () => number): T | null {
   if (items.length === 0) return null;
   return items[Math.floor(rngFn() * items.length)];
 }
@@ -135,7 +135,7 @@ export function generateForgeItems(
     : ALL_PATTERNS;
   const patternItems: ForgeShopItem[] = [];
   for (let i = 0; i < FORGE_ITEM_COUNTS.patterns; i++) {
-    const picked = pickRandom(patternPool, rngFn);
+    const picked = pickRandomItem(patternPool, rngFn);
     if (!picked) break;
     patternItems.push({
       id: `pattern:${picked}`,
@@ -151,7 +151,7 @@ export function generateForgeItems(
   const signalPool = ALL_SIGNALS.filter(s => !ownedSignals.includes(s));
   const signalItems: ForgeShopItem[] = [];
   for (let i = 0; i < FORGE_ITEM_COUNTS.signals; i++) {
-    const picked = pickRandom(signalPool, rngFn);
+    const picked = pickRandomItem(signalPool, rngFn);
     if (!picked) break;
     signalItems.push({
       id: `signal:${picked}`,
@@ -171,7 +171,7 @@ export function generateForgeItems(
   ];
   const utilityItems: ForgeShopItem[] = [];
   for (let i = 0; i < FORGE_ITEM_COUNTS.utilities; i++) {
-    const picked = pickRandom(utilityPool, rngFn);
+    const picked = pickRandomItem(utilityPool, rngFn);
     if (!picked) break;
     utilityItems.push({
       id: `util:${picked.key}`,
