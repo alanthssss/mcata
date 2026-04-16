@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CatalystDef, CatalystId } from '../../core/types';
+import { CatalystDef, CatalystId, LocalizedText, PatternId, SignalId } from '../../core/types';
 import { ALL_SYNERGIES } from '../../core/synergies';
 import { Modal } from './Modal';
 import { useT } from '../../i18n';
@@ -8,11 +8,26 @@ interface ForgeModalProps {
   offers: CatalystDef[];
   activeCatalysts: CatalystId[];
   energy: number;
-  lastIntermissionMessage: string | null;
+  lastIntermissionMessage: LocalizedText | null;
   onBuy: (catalyst: CatalystDef, replaceIndex?: number) => void;
   onSell: (index: number) => void;
   onReroll: () => void;
   onSkip: () => void;
+}
+
+export function localizeIntermissionMessage(message: LocalizedText, t: ReturnType<typeof useT>): string {
+  const params = { ...message.params };
+  if (typeof params.name === 'string') {
+    const name = params.name as string;
+    if (['pulse_boost', 'grid_clean', 'chain_trigger', 'freeze_step'].includes(name)) {
+      params.name = t(`signal.${name as SignalId}.name`);
+    } else if (['corner', 'chain', 'empty_space', 'high_tier', 'economy', 'survival'].includes(name)) {
+      params.name = t(`pattern.${name as PatternId}.name`);
+    } else {
+      params.name = t(`catalyst.${name as CatalystId}.name`);
+    }
+  }
+  return t(message.key, params);
 }
 
 const CATEGORY_ICON: Record<string, string> = {
@@ -80,7 +95,7 @@ export const ForgeModal: React.FC<ForgeModalProps> = ({
                   {t('ui.forge_synergy_hint', { partner: t(`catalyst.${synergyPartnerId}.name`) })}
                 </div>
               )}
-              <div className="offer-cost">⚡ {cat.cost} Energy</div>
+              <div className="offer-cost">⚡ {cat.cost} {t('ui.energy')}</div>
               <button
                 className="offer-btn"
                 disabled={blocked}
@@ -93,7 +108,7 @@ export const ForgeModal: React.FC<ForgeModalProps> = ({
         })}
       </div>
       {lastIntermissionMessage && (
-        <div className="signal-pending">{lastIntermissionMessage}</div>
+        <div className="signal-pending">{localizeIntermissionMessage(lastIntermissionMessage, t)}</div>
       )}
 
       {pendingCatalyst && (

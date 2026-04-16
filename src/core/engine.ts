@@ -233,7 +233,7 @@ export function processMoveAction(state: GameState, dir: Direction): GameState {
   }
 
   // ── Grid Clean signal ─────────────────────────────────────────────────────
-  let signalEffect: string | null = null;
+  let signalEffect: GameState['reactionLog'][number]['signalEffect'] = null;
   const usedSignal: SignalId | null = state.pendingSignal;
 
   if (state.pendingSignal === 'grid_clean') {
@@ -249,7 +249,10 @@ export function processMoveAction(state: GameState, dir: Direction): GameState {
     const toRemove = allTiles.slice(0, GRID_CLEAN_COUNT);
     newGrid = cloneGrid(newGrid);
     for (const t of toRemove) newGrid[t.row][t.col] = null;
-    signalEffect = `Grid Clean removed ${toRemove.length} tile(s)`;
+    signalEffect = {
+      key: 'ui.signal_effect_grid_clean',
+      params: { count: toRemove.length },
+    };
   }
 
   // ── Momentum update ───────────────────────────────────────────────────────
@@ -286,7 +289,10 @@ export function processMoveAction(state: GameState, dir: Direction): GameState {
   let finalOutputAdjusted = scoreResult.finalOutput;
   if (state.pendingSignal === 'pulse_boost') {
     finalOutputAdjusted = Math.floor(scoreResult.finalOutput * 2.0);
-    signalEffect = `Pulse Boost ×2 → ${finalOutputAdjusted}`;
+    signalEffect = {
+      key: 'ui.signal_effect_pulse_boost',
+      params: { output: finalOutputAdjusted },
+    };
   }
   const patternMultiplier = getPatternMultiplier(state, state.activePattern, moveResult.merges, emptyCells);
   if (patternMultiplier > 1) {
@@ -333,7 +339,9 @@ export function processMoveAction(state: GameState, dir: Direction): GameState {
   if (freezeStepActive || (delaySpawnActive && newDelayedSpawnCount === 0 && rng.next() < CATALYST_MULTIPLIERS.delay_spawn_probability)) {
     // Skip spawn this turn; note the debt
     if (!freezeStepActive) newDelayedSpawnCount = 1;
-    if (freezeStepActive) signalEffect = 'Freeze Step: no spawn this turn';
+    if (freezeStepActive) {
+      signalEffect = { key: 'ui.signal_effect_freeze_step' };
+    }
   } else {
     // Number of tiles to spawn
     const spawnsOwed = newDelayedSpawnCount > 0 ? newDelayedSpawnCount + 1 : 1;
@@ -580,7 +588,10 @@ export function selectInfusion(state: GameState, choice: InfusionChoice): GameSt
   switch (choice.type) {
     case 'catalyst':
       if (newState.activeCatalysts.includes(choice.catalyst.id)) {
-        newState.lastIntermissionMessage = `Infusion blocked: ${choice.catalyst.name} already owned`;
+        newState.lastIntermissionMessage = {
+          key: 'ui.infusion_blocked_owned',
+          params: { name: choice.catalyst.id },
+        };
       } else if (newState.activeCatalysts.length < MAX_CATALYSTS) {
         newState.activeCatalysts = [...newState.activeCatalysts, choice.catalyst.id];
         // Remove the acquired catalyst from the run-level pool so it cannot be
@@ -594,7 +605,10 @@ export function selectInfusion(state: GameState, choice: InfusionChoice): GameSt
       } else {
         // Deterministic full-slot handling for direct catalyst infusions.
         newState.energy += INFUSION_ENERGY_BONUS;
-        newState.lastIntermissionMessage = `Catalyst slot full: converted ${choice.catalyst.name} into +${INFUSION_ENERGY_BONUS} Energy`;
+        newState.lastIntermissionMessage = {
+          key: 'ui.infusion_catalyst_slot_full',
+          params: { name: choice.catalyst.id, energy: INFUSION_ENERGY_BONUS },
+        };
       }
       break;
     case 'energy':
@@ -610,20 +624,23 @@ export function selectInfusion(state: GameState, choice: InfusionChoice): GameSt
       if (!newState.signals.includes(choice.signal) && newState.signals.length < SIGNAL_CAPACITY) {
         newState.signals = [...newState.signals, choice.signal];
       }
-      newState.lastIntermissionMessage = `Infusion granted signal: ${choice.signal}`;
+      newState.lastIntermissionMessage = {
+        key: 'ui.infusion_granted_signal',
+        params: { name: choice.signal },
+      };
       break;
     case 'catalyst_upgrade':
       newState.globalMultiplier = Math.round((newState.globalMultiplier + 0.05) * 100) / 100;
-      newState.lastIntermissionMessage = 'Catalyst upgrade: +5% Global Multiplier';
+      newState.lastIntermissionMessage = { key: 'ui.infusion_catalyst_upgrade_applied' };
       break;
     case 'pool_reroll': {
       newState.rngSeed += 17;
-      newState.lastIntermissionMessage = 'Infusion rerolled the Forge pool';
+      newState.lastIntermissionMessage = { key: 'ui.infusion_pool_rerolled' };
       break;
     }
     case 'pool_convert':
       newState.energy += 2;
-      newState.lastIntermissionMessage = 'Infusion converted reward into +2 Energy';
+      newState.lastIntermissionMessage = { key: 'ui.infusion_pool_converted', params: { energy: 2 } };
       break;
     case 'pattern':
       newState.activePattern = choice.pattern;
@@ -631,7 +648,10 @@ export function selectInfusion(state: GameState, choice: InfusionChoice): GameSt
         ...newState.patternLevels,
         [choice.pattern]: newState.patternLevels[choice.pattern] + 1,
       };
-      newState.lastIntermissionMessage = `Pattern growth: ${choice.pattern} Lv.${newState.patternLevels[choice.pattern]}`;
+      newState.lastIntermissionMessage = {
+        key: 'ui.infusion_pattern_growth',
+        params: { name: choice.pattern, level: newState.patternLevels[choice.pattern] },
+      };
       break;
   }
 
@@ -716,7 +736,10 @@ export function sellCatalyst(state: GameState, index: number): GameState {
     ...state,
     activeCatalysts: next,
     energy: state.energy + refund,
-    lastIntermissionMessage: `Sold ${def.name} for +${refund} Energy`,
+    lastIntermissionMessage: {
+      key: 'ui.forge_sold_catalyst',
+      params: { name: def.id, energy: refund },
+    },
   };
 }
 

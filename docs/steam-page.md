@@ -14,7 +14,7 @@ A strategy puzzle roguelike where every run plays differently.
 In **Merge Catalyst**, you slide tiles on a 4×4 grid to merge them and generate
 Output. But this isn't 2048 — the real game is in the **Catalysts** you equip.
 
-Each run, you build a loadout of up to 3 Catalysts that change how your merges
+Each run, you build a loadout of up to 6 Catalysts that change how your merges
 score: amplify chain reactions, recover energy from tiles, shield against
 anomalies, or bend the rules of the board entirely. Reach the Output target
 before your Steps run out — and survive 6 escalating phases to complete the run.
@@ -85,7 +85,7 @@ The demo includes the full 6-phase run loop:
 
 > Merge tiles. Build Catalysts. Trigger chain reactions.
 >
-> Merge Catalyst is a strategy roguelike puzzle where you equip up to 3 Catalysts per run that change how your merges score — amplify chains, recover energy, bend board rules, survive anomaly phases.
+> Merge Catalyst is a strategy roguelike puzzle where you equip up to 6 Catalysts per run that change how your merges score — amplify chains, recover energy, bend board rules, survive anomaly phases.
 >
 > Each run is a new build. Synergies between Catalyst pairs unlock powerful bonuses. Momentum rewards consecutive scoring moves. 6 escalating phases with 24 Catalysts, 5 Synergies, and 3 Protocols.
 >

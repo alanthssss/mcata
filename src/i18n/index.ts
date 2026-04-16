@@ -9,6 +9,7 @@ const TRANSLATIONS: Record<Locale, TranslationMap> = {
   en,
   'zh-CN': zhCN,
 };
+const warnedMissingKeys = new Set<string>();
 
 // ─── Locale store ─────────────────────────────────────────────────────────────
 
@@ -36,7 +37,17 @@ export const useLocaleStore = create<LocaleStore>((set) => ({
 export function createT(locale: Locale) {
   return function t(key: string, params?: Record<string, string | number>): string {
     const map = TRANSLATIONS[locale];
-    let str = map[key] ?? TRANSLATIONS['en'][key] ?? key;
+    const localized = map[key];
+    const english = TRANSLATIONS['en'][key];
+    if (localized === undefined && locale !== 'en' && english !== undefined) {
+      const warnKey = `${locale}:${key}`;
+      const isDev = typeof process !== 'undefined' ? process.env.NODE_ENV !== 'production' : true;
+      if (isDev && !warnedMissingKeys.has(warnKey)) {
+        warnedMissingKeys.add(warnKey);
+        console.warn(`[i18n] Missing key "${key}" for locale "${locale}", falling back to English.`);
+      }
+    }
+    let str = localized ?? english ?? key;
     if (params) {
       for (const [k, v] of Object.entries(params)) {
         str = str.replace(`{${k}}`, String(v));

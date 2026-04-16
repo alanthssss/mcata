@@ -39,7 +39,7 @@ export const SignalPanel: React.FC<SignalPanelProps> = ({ signals, pendingSignal
               <button
                 className={`signal-use-btn${isPending ? ' signal-use-btn--active' : ''}`}
                 onClick={() => onActivate(id)}
-                title={isPending ? `${tName} queued` : tDesc}
+                title={isPending ? t('ui.signal_queued_tooltip', { name: tName }) : tDesc}
               >
                 {isPending ? t('ui.signal_armed') : t('ui.signal_use')}
               </button>

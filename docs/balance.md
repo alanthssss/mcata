@@ -28,16 +28,21 @@ Each phase defines three output tiers used by the benchmark suite:
 
 ---
 
-## Win Rate Goals
+## Round-Clear Goals
 
-| Player Tier | Target Win Rate |
+| Player Tier | Target Avg Rounds Cleared |
 |---|---|
-| New player (no strategy) | 20–40% |
-| Intermediate | 40–60% |
-| Skilled (synergy builds) | 50–70% |
+| New player (no strategy) | 0–1 |
+| Intermediate | 1–3 |
+| Skilled (synergy builds) | 2–5 |
 
 Run `npm run balance` to generate a live balance report at
 `artifacts/benchmark/latest/balance_report.md`.
+
+`npm run balance` runs three suites in sequence:
+- `balance`
+- `pacing`
+- `round_stress`
 
 ---
 
@@ -128,8 +133,8 @@ Run `npm run balance` to generate `artifacts/benchmark/latest/balance_report.md`
 
 | Flag | Suggested Action |
 |---|---|
-| Win rate < 2% (all agents) | Reduce Phase 5–6 `targetOutput` by 10–15% |
-| Win rate > 50% (best agent) | Increase Phase 4+ targets or reduce steps |
+| Avg rounds cleared < 1 (all agents) | Reduce early/mid target outputs by 10–15% |
+| Avg rounds cleared > 8 (best agent) | Increase Phase 4+ targets or reduce steps |
 | Catalyst pick rate < 5% | Reduce cost or increase multiplier |
 | Catalyst win rate > 2× global | Reduce multiplier by 0.1–0.2 |
 | Anomaly survival < 30% | Increase `COLLAPSE_FIELD_PERIOD` or reduce spawn block frequency |

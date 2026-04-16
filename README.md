@@ -234,7 +234,7 @@ src/
 ```bash
 npm run benchmark          # Baseline suite (100 runs × 5 agents)
 npm run benchmark:long     # Long suite (500 runs × 5 agents)
-npm run balance            # Balance probe + phase stress suites
+npm run balance            # Balance probe + pacing + round-stress suites
 npm run docs:assets        # Generate Mermaid diagrams + SVG assets
 ```
 
@@ -243,7 +243,7 @@ Custom suite:
 npx tsx src/scripts/runBenchmark.ts --suite smoke
 ```
 
-Available suites: `smoke`, `baseline`, `long`, `balance`, `phase_stress`
+Available suites: `smoke`, `baseline`, `long`, `balance`, `pacing`, `round_stress`
 
 ## Output Artifacts
 
@@ -254,6 +254,16 @@ artifacts/benchmark/latest/
   comparison.md, balance_report.md
   charts/  (SVG bar charts)
 ```
+
+## Documentation
+
+- [docs/README.md](docs/README.md)
+- [docs/design.md](docs/design.md)
+- [docs/system.md](docs/system.md)
+- [docs/dev.md](docs/dev.md)
+- [docs/benchmark.md](docs/benchmark.md)
+- [docs/balance.md](docs/balance.md)
+- [docs/ai.md](docs/ai.md)
 
 ## Localization (i18n)
 

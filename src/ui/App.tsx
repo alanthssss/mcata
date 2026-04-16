@@ -20,6 +20,7 @@ import { SignalPanel } from './components/SignalPanel';
 import { ProtocolPanel } from './components/ProtocolBadge';
 import { MomentumBar } from './components/MomentumBar';
 import { SynergyPanel } from './components/SynergyPanel';
+import { PatternPanel } from './components/PatternPanel';
 import { CatalystCollectionView } from './components/CatalystCollectionView';
 import { useT } from '../i18n';
 import './style.css';
@@ -30,11 +31,25 @@ const KEY_MAP: Record<string, Direction> = {
   W: 'up', S: 'down', A: 'left', D: 'right',
 };
 
+const SIGNAL_IDS = new Set(['pulse_boost', 'grid_clean', 'chain_trigger', 'freeze_step']);
+const PATTERN_IDS = new Set(['corner', 'chain', 'empty_space', 'high_tier', 'economy', 'survival']);
+
 export const App: React.FC = () => {
   const state = useGameStore();
   const { profile } = useProfileStore();
   const t = useT();
   const [showCollection, setShowCollection] = useState(false);
+  const renderLocalized = useCallback((key: string, params?: Record<string, string | number>) => {
+    if (!params) return t(key);
+    const resolved = { ...params };
+    if (typeof resolved.name === 'string') {
+      const id = resolved.name;
+      if (SIGNAL_IDS.has(id)) resolved.name = t(`signal.${id}.name`);
+      else if (PATTERN_IDS.has(id)) resolved.name = t(`pattern.${id}.name`);
+      else resolved.name = t(`catalyst.${id}.name`);
+    }
+    return t(key, resolved);
+  }, [t]);
 
   const handleMove = useCallback((dir: Direction) => {
     state.move(dir);
@@ -106,7 +121,7 @@ export const App: React.FC = () => {
   const lastEntry = state.reactionLog[0] ?? null;
   const lastTriggeredSynergies = lastEntry?.triggeredSynergies ?? [];
   const signalToast = lastEntry?.signalUsed
-    ? `${t(`signal.${lastEntry.signalUsed}.name`)} → ${lastEntry.signalEffect ?? t('ui.signal_consumed')}`
+    ? `${t(`signal.${lastEntry.signalUsed}.name`)} → ${lastEntry.signalEffect ? renderLocalized(lastEntry.signalEffect.key, lastEntry.signalEffect.params) : t('ui.signal_consumed')}`
     : null;
 
   return (
@@ -141,6 +156,10 @@ export const App: React.FC = () => {
             pendingSignal={state.pendingSignal}
             onActivate={state.activateSignal}
           />
+          <PatternPanel
+            activePattern={state.activePattern}
+            level={state.activePattern ? state.patternLevels[state.activePattern] : 0}
+          />
           <OutputPanel lastEntry={lastEntry} />
         </div>
 
@@ -168,7 +187,7 @@ export const App: React.FC = () => {
       </div>
 
       {state.screen === 'forge' && (
-        <ForgeModal
+          <ForgeModal
           offers={state.forgeOffers}
           activeCatalysts={state.activeCatalysts}
           energy={state.energy}
@@ -177,7 +196,7 @@ export const App: React.FC = () => {
           onSell={state.sellCatalystAt}
           onReroll={state.reroll}
           onSkip={state.skipForgePhase}
-        />
+          />
       )}
 
       {state.screen === 'infusion' && (

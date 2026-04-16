@@ -264,7 +264,12 @@ export interface ReactionLogEntry {
   triggeredSynergies: SynergyId[];
   momentumMultiplier: number;
   signalUsed: SignalId | null;
-  signalEffect: string | null;
+  signalEffect: LocalizedText | null;
+}
+
+export interface LocalizedText {
+  key: string;
+  params?: Record<string, string | number>;
 }
 
 // ─── Meta Progression ────────────────────────────────────────────────────────
@@ -326,7 +331,7 @@ export interface GameState {
   activePattern: PatternId | null;
   patternLevels: Record<PatternId, number>;
   // Intermission feedback
-  lastIntermissionMessage: string | null;
+  lastIntermissionMessage: LocalizedText | null;
   // Protocol system
   protocol: ProtocolId;
   // Momentum system
