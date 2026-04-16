@@ -19,13 +19,13 @@ export function localizeIntermissionMessage(message: LocalizedText, t: ReturnTyp
   const params = { ...message.params };
   const localizeIdParam = (key: 'name' | 'from' | 'to') => {
     if (typeof params[key] !== 'string') return;
-    const name = params[key] as string;
-    if (['pulse_boost', 'grid_clean', 'chain_trigger', 'freeze_step'].includes(name)) {
-      params[key] = t(`signal.${name as SignalId}.name`);
-    } else if (['corner', 'chain', 'empty_space', 'high_tier', 'economy', 'survival'].includes(name)) {
-      params[key] = t(`pattern.${name as PatternId}.name`);
+    const paramValue = params[key] as string;
+    if (['pulse_boost', 'grid_clean', 'chain_trigger', 'freeze_step'].includes(paramValue)) {
+      params[key] = t(`signal.${paramValue as SignalId}.name`);
+    } else if (['corner', 'chain', 'empty_space', 'high_tier', 'economy', 'survival'].includes(paramValue)) {
+      params[key] = t(`pattern.${paramValue as PatternId}.name`);
     } else {
-      params[key] = t(`catalyst.${name as CatalystId}.name`);
+      params[key] = t(`catalyst.${paramValue as CatalystId}.name`);
     }
   };
   localizeIdParam('name');
