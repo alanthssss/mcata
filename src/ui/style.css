@@ -1002,6 +1002,8 @@ button:not(:disabled):active {
 .signal-desc { font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; }
 .pattern-name { font-size: 0.82rem; font-weight: 600; color: var(--text); }
 .pattern-desc { font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; }
+.pattern-level { font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; }
+.pattern-description { font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; }
 
 .signal-use-btn {
   background: var(--accent);

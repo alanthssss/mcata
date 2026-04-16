@@ -19,8 +19,8 @@ export const PatternPanel: React.FC<PatternPanelProps> = ({ activePattern, level
       ) : (
         <>
           <div className="pattern-name">🧭 {t(`pattern.${activePattern}.name`)}</div>
-          <div className="pattern-desc">{t('ui.pattern_level', { level })}</div>
-          <div className="pattern-desc">{t(`pattern.${activePattern}.description`)}</div>
+          <div className="pattern-level">{t('ui.pattern_level', { level })}</div>
+          <div className="pattern-description">{t(`pattern.${activePattern}.description`)}</div>
         </>
       )}
     </div>
