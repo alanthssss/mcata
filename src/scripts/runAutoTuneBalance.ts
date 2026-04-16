@@ -36,6 +36,14 @@ interface IterationResult {
   >;
 }
 
+function targetMin(value: { min?: number }): number {
+  return value.min ?? Number.NEGATIVE_INFINITY;
+}
+
+function targetMax(value: { max?: number }): number {
+  return value.max ?? Number.POSITIVE_INFINITY;
+}
+
 function ensureDir(dir: string) {
   fs.mkdirSync(dir, { recursive: true });
 }
@@ -75,30 +83,30 @@ function runCandidate(candidate: TuningCandidate, iteration: number): IterationR
 function nextCandidate(from: TuningCandidate, metrics: IterationResult['metrics']): TuningCandidate {
   const next: TuningCandidate = { ...from };
 
-  if (metrics.avgMovesPerPhase < (HEURISTIC_TUNING_TARGETS.avgMovesPerPhase.min ?? 0)) {
+  if (metrics.avgMovesPerPhase < targetMin(HEURISTIC_TUNING_TARGETS.avgMovesPerPhase)) {
     next.stepsMultiplier += 0.06;
-  } else if (metrics.avgMovesPerPhase > (HEURISTIC_TUNING_TARGETS.avgMovesPerPhase.max ?? Infinity)) {
+  } else if (metrics.avgMovesPerPhase > targetMax(HEURISTIC_TUNING_TARGETS.avgMovesPerPhase)) {
     next.stepsMultiplier -= 0.04;
   }
 
-  if (metrics.lateGameClearSpeed < (HEURISTIC_TUNING_TARGETS.lateGameClearSpeed.min ?? 0)) {
+  if (metrics.lateGameClearSpeed < targetMin(HEURISTIC_TUNING_TARGETS.lateGameClearSpeed)) {
     next.targetOutputMultiplier += 0.05;
     next.roundScaleMultiplier += 0.02;
   }
 
-  if (metrics.energyIncomePerRound > (HEURISTIC_TUNING_TARGETS.energyIncomePerRound.max ?? Infinity)) {
+  if (metrics.energyIncomePerRound > targetMax(HEURISTIC_TUNING_TARGETS.energyIncomePerRound)) {
     next.energyIncomeMultiplier -= 0.08;
     next.startingEnergy -= 1;
-  } else if (metrics.energyIncomePerRound < (HEURISTIC_TUNING_TARGETS.energyIncomePerRound.min ?? 0)) {
+  } else if (metrics.energyIncomePerRound < targetMin(HEURISTIC_TUNING_TARGETS.energyIncomePerRound)) {
     next.energyIncomeMultiplier += 0.04;
   }
 
-  if ((metrics.buildMaturityByRound[3] ?? 0) < (HEURISTIC_TUNING_TARGETS.buildMaturityRound3.min ?? 0)) {
+  if ((metrics.buildMaturityByRound[3] ?? 0) < targetMin(HEURISTIC_TUNING_TARGETS.buildMaturityRound3)) {
     next.stepsMultiplier += 0.03;
     next.targetOutputMultiplier += 0.02;
   }
 
-  if (metrics.avgHighestTierPerPhase < (HEURISTIC_TUNING_TARGETS.avgHighestTierPerPhase.min ?? 0)) {
+  if (metrics.avgHighestTierPerPhase < targetMin(HEURISTIC_TUNING_TARGETS.avgHighestTierPerPhase)) {
     next.stepsMultiplier += 0.02;
   }
 
