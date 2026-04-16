@@ -643,15 +643,30 @@ export function selectInfusion(state: GameState, choice: InfusionChoice): GameSt
       newState.lastIntermissionMessage = { key: 'ui.infusion_pool_converted', params: { energy: 2 } };
       break;
     case 'pattern':
+      const previousPattern = newState.activePattern;
+      const isUpgrade = previousPattern === choice.pattern;
+      const nextLevel = isUpgrade ? newState.patternLevels[choice.pattern] + 1 : 1;
       newState.activePattern = choice.pattern;
       newState.patternLevels = {
         ...newState.patternLevels,
-        [choice.pattern]: newState.patternLevels[choice.pattern] + 1,
+        [choice.pattern]: nextLevel,
       };
-      newState.lastIntermissionMessage = {
-        key: 'ui.infusion_pattern_growth',
-        params: { name: choice.pattern, level: newState.patternLevels[choice.pattern] },
-      };
+      if (isUpgrade) {
+        newState.lastIntermissionMessage = {
+          key: 'ui.infusion_pattern_growth',
+          params: { name: choice.pattern, level: nextLevel },
+        };
+      } else if (previousPattern) {
+        newState.lastIntermissionMessage = {
+          key: 'ui.infusion_pattern_replaced',
+          params: { from: previousPattern, to: choice.pattern, level: nextLevel },
+        };
+      } else {
+        newState.lastIntermissionMessage = {
+          key: 'ui.infusion_pattern_acquired',
+          params: { name: choice.pattern, level: nextLevel },
+        };
+      }
       break;
   }
 

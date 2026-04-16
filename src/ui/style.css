@@ -1000,6 +1000,8 @@ button:not(:disabled):active {
 .signal-info { flex: 1; min-width: 0; }
 .signal-name { font-size: 0.82rem; font-weight: 600; color: var(--text); }
 .signal-desc { font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; }
+.pattern-name { font-size: 0.82rem; font-weight: 600; color: var(--text); }
+.pattern-meta { font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; }
 
 .signal-use-btn {
   background: var(--accent);

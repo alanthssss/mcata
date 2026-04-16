@@ -22,5 +22,18 @@ describe('Pattern panel', () => {
     const html = renderToStaticMarkup(React.createElement(PatternPanel, { activePattern: 'chain', level: 2 }));
     expect(html).toContain('Chain Pattern');
     expect(html).toContain('Level 2');
+    expect(html).toContain('How to get');
+  });
+});
+
+describe('Forge intermission localization', () => {
+  it('localizes pattern replacement message params', () => {
+    const message = {
+      key: 'ui.infusion_pattern_replaced',
+      params: { from: 'chain', to: 'corner', level: 1 },
+    };
+    const localized = localizeIntermissionMessage(message, createT('en'));
+    expect(localized).toContain('Chain Pattern');
+    expect(localized).toContain('Corner Pattern');
   });
 });

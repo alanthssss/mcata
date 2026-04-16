@@ -14,6 +14,7 @@ const HELP_ENTRIES: HelpEntry[] = [
   { titleKey: 'ui.help_catalyst_title', descKey: 'ui.help_catalyst_desc' },
   { titleKey: 'ui.help_signal_title',   descKey: 'ui.help_signal_desc' },
   { titleKey: 'ui.help_protocol_title', descKey: 'ui.help_protocol_desc' },
+  { titleKey: 'ui.help_pattern_title',  descKey: 'ui.help_pattern_desc' },
   { titleKey: 'ui.help_anomaly_title',  descKey: 'ui.help_anomaly_desc' },
   { titleKey: 'ui.help_momentum_title', descKey: 'ui.help_momentum_desc' },
   { titleKey: 'ui.help_synergy_title',  descKey: 'ui.help_synergy_desc' },
