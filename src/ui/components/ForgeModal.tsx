@@ -17,16 +17,20 @@ interface ForgeModalProps {
 
 export function localizeIntermissionMessage(message: LocalizedText, t: ReturnType<typeof useT>): string {
   const params = { ...message.params };
-  if (typeof params.name === 'string') {
-    const name = params.name as string;
+  const localizeIdParam = (key: 'name' | 'from' | 'to') => {
+    if (typeof params[key] !== 'string') return;
+    const name = params[key] as string;
     if (['pulse_boost', 'grid_clean', 'chain_trigger', 'freeze_step'].includes(name)) {
-      params.name = t(`signal.${name as SignalId}.name`);
+      params[key] = t(`signal.${name as SignalId}.name`);
     } else if (['corner', 'chain', 'empty_space', 'high_tier', 'economy', 'survival'].includes(name)) {
-      params.name = t(`pattern.${name as PatternId}.name`);
+      params[key] = t(`pattern.${name as PatternId}.name`);
     } else {
-      params.name = t(`catalyst.${name as CatalystId}.name`);
+      params[key] = t(`catalyst.${name as CatalystId}.name`);
     }
-  }
+  };
+  localizeIdParam('name');
+  localizeIdParam('from');
+  localizeIdParam('to');
   return t(message.key, params);
 }
 

@@ -125,7 +125,8 @@ Phase End (pass)
 ### Pattern Layer (run-long archetype growth)
 
 Patterns are a separate progression layer from Catalysts and Signals.  
-Choosing a Pattern infusion increases one archetype level for the rest of the run and sets the active Pattern.
+Pattern acquisition is Infusion-only (`Grow Pattern` reward).  
+Only one Pattern is active at a time: selecting the same Pattern upgrades level, while selecting a different Pattern replaces the active Pattern at level 1.
 
 Archetypes:
 - `corner`

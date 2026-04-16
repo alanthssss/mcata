@@ -13,6 +13,7 @@ export const PatternPanel: React.FC<PatternPanelProps> = ({ activePattern, level
   return (
     <div className="panel pattern-panel">
       <div className="panel-title">{t('ui.pattern_title')}</div>
+      <div className="signal-desc" title={t('ui.pattern_how_to_get_detail')}>{t('ui.pattern_how_to_get')}</div>
       {!activePattern || level <= 0 ? (
         <div className="empty-state">{t('ui.pattern_none')}</div>
       ) : (

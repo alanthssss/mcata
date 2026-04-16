@@ -90,12 +90,14 @@ Infusion direct Catalyst rewards are rare and explicit.
 ## 2.1 Pattern System (Run Archetype Growth)
 
 Patterns are a separate run-level progression layer from Catalysts and Signals.
-Pattern rewards are primarily sourced from Infusion and strengthen one archetype
+Pattern rewards are sourced from Infusion and strengthen one archetype
 for the rest of the run (`corner`, `chain`, `empty_space`, `high_tier`,
 `economy`, `survival`).
 
 Player-facing flow:
 - Acquisition: choose a Pattern reward in Infusion (`Grow Pattern: {name}`)
+- Canonical source: Infusion is the only acquisition path
+- Replacement/upgrade: one active Pattern at a time — same Pattern upgrades level, different Pattern replaces active Pattern at Lv.1
 - Active display: Pattern panel in the run HUD shows active pattern + level
 - Effect visibility: move logs/output panel include Pattern multiplier entries
 

@@ -95,6 +95,9 @@ export const InfusionModal: React.FC<InfusionModalProps> = ({ options, onChoose 
                 )}
               </div>
               <div className="infusion-desc">{t(getChoiceDescKey(choice))}</div>
+              {choice.type === 'pattern' && (
+                <div className="infusion-desc">{t('ui.infusion_desc_pattern')}</div>
+              )}
             </button>
           );
         })}

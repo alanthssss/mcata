@@ -357,6 +357,45 @@ describe('selectInfusion', () => {
     expect(result.patternLevels.chain).toBe(1);
   });
 
+  it('pattern reward upgrades when selecting the current active pattern', () => {
+    const state = {
+      ...infusionState(),
+      activePattern: 'chain' as const,
+      patternLevels: {
+        corner: 0,
+        chain: 2,
+        empty_space: 0,
+        high_tier: 0,
+        economy: 0,
+        survival: 0,
+      },
+    };
+    const result = selectInfusion(state, { type: 'pattern', pattern: 'chain' });
+    expect(result.activePattern).toBe('chain');
+    expect(result.patternLevels.chain).toBe(3);
+    expect(result.lastIntermissionMessage?.key).toBe('ui.infusion_pattern_growth');
+  });
+
+  it('pattern reward replaces active pattern when selecting a different pattern', () => {
+    const state = {
+      ...infusionState(),
+      activePattern: 'chain' as const,
+      patternLevels: {
+        corner: 0,
+        chain: 2,
+        empty_space: 0,
+        high_tier: 0,
+        economy: 0,
+        survival: 0,
+      },
+    };
+    const result = selectInfusion(state, { type: 'pattern', pattern: 'corner' });
+    expect(result.activePattern).toBe('corner');
+    expect(result.patternLevels.corner).toBe(1);
+    expect(result.patternLevels.chain).toBe(2);
+    expect(result.lastIntermissionMessage?.key).toBe('ui.infusion_pattern_replaced');
+  });
+
   it('resets output to 0 on new phase', () => {
     const state = { ...infusionState(), output: 100 };
     const result = selectInfusion(state, { type: 'energy' });
