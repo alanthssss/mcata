@@ -120,6 +120,11 @@ export const App: React.FC = () => {
     }
   }, [state.challengeId, state.initGame, state.isDailyRun, state.protocol, state.screen]);
 
+  // Must be computed before any conditional returns to satisfy Rules of Hooks.
+  const mergeMoves = useMemo(() => state.reactionLog.reduce((count, entry) => (
+    entry.merges.length > 0 ? count + 1 : count
+  ), 0), [state.reactionLog]);
+
   if (state.screen === 'start' || (!ENABLE_SECONDARY_MODES && state.screen === 'challenge_select')) {
     return <StartScreen
       onStart={(protocol) => state.initAndStart(undefined, protocol)}
@@ -161,9 +166,6 @@ export const App: React.FC = () => {
   }
 
   const lastEntry = state.reactionLog[0] ?? null;
-  const mergeMoves = useMemo(() => state.reactionLog.reduce((count, entry) => (
-    entry.merges.length > 0 ? count + 1 : count
-  ), 0), [state.reactionLog]);
   const onboardingRun = state.roundNumber === 1 && state.phaseIndex === 0 && state.screen === 'playing';
   const advancedSystemsUnlocked = !onboardingRun || state.reactionLog.length >= ONBOARDING_ADVANCED_SYSTEM_MOVE_THRESHOLD;
   const hintPair = onboardingRun && mergeMoves === 0 ? findMergeHintPair(state.grid) : null;
