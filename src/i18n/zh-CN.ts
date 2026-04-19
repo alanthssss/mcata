@@ -84,6 +84,11 @@ const zhCN: TranslationMap = {
   // ─── UI: Round Complete ────────────────────────────────────────────────────
   'ui.round_complete_title': '🌀 第{round}轮完成！',
   'ui.round_complete_subtitle': '反应链持续稳定，进入下一轮。',
+  'ui.round_flavor_0': '系统已稳定',
+  'ui.round_flavor_1': '链式反应增幅',
+  'ui.round_flavor_2': '增益浪涌完毕',
+  'ui.round_flavor_3': '反应循环收束',
+  'ui.round_flavor_4': '产出级联锁定',
   'ui.round_score': '本轮产出',
   'ui.round_number': '第{round}轮',
   'ui.continue_run': '继续 →',
@@ -94,7 +99,7 @@ const zhCN: TranslationMap = {
   'ui.victory_subtitle': '所有异常已中和，反应链已稳定。',
   'ui.defeat_subtitle': '反应链崩溃，产出不足。',
   'ui.total_output': '总产出',
-  'ui.new_run': '新的一局',
+  'ui.new_round': '新的一轮',
 
   // ─── UI: Forge ─────────────────────────────────────────────────────────────
   'ui.forge_title': '⚗ 熔炉',
@@ -161,7 +166,7 @@ const zhCN: TranslationMap = {
   'ui.signal_effect_freeze_step': '冻结步骤：本回合不生成方块',
   'ui.pattern_title': '模式',
   'ui.pattern_none': '无',
-  'ui.pattern_help_empty': '模式通过熔炉购买获取，并提供整局成长增益。',
+  'ui.pattern_help_empty': '模式通过熔炉购买获取，并提供整轮成长增益。',
   'ui.pattern_level': '等级 {level}',
   'ui.pattern_how_to_get': '获取方式：在熔炉购买模式。',
   'ui.pattern_how_to_get_detail': '模式通过熔炉购买获得。',

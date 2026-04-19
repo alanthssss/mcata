@@ -3,6 +3,7 @@ import { ProtocolId } from '../../core/types';
 import { ALL_PROTOCOLS, DEFAULT_PROTOCOL } from '../../core/protocols';
 import { useT } from '../../i18n';
 import { CompactDetail } from './CompactDetail';
+import { LocaleSwitcher } from './LocaleSwitcher';
 
 interface StartScreenProps {
   onStart: (protocol: ProtocolId) => void;
@@ -14,6 +15,7 @@ export const StartScreen: React.FC<StartScreenProps> = ({ onStart }) => {
 
   return (
     <div className="screen start-screen">
+      <div className="screen-locale-switcher"><LocaleSwitcher /></div>
       <h1 className="game-title">{t('ui.header_title')}</h1>
 
       <div className="protocol-select-section">

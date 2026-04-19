@@ -7,11 +7,13 @@ interface TileProps {
   cell: Cell;
   isFrozen?: boolean;
   isBlocked?: boolean;
+  isHinted?: boolean;
+  mergeFeedback?: 'normal' | 'strong' | null;
   /** Override the global display mode for this tile instance. */
   displayMode?: import('../../core/config').TileDisplayMode;
 }
 
-export const Tile: React.FC<TileProps> = ({ cell, isFrozen, isBlocked, displayMode }) => {
+export const Tile: React.FC<TileProps> = ({ cell, isFrozen, isBlocked, isHinted, mergeFeedback, displayMode }) => {
   const theme = useThemeStore(s => s.getActiveTheme());
   const mode = displayMode ?? TILE_DISPLAY_MODE;
 
@@ -20,6 +22,10 @@ export const Tile: React.FC<TileProps> = ({ cell, isFrozen, isBlocked, displayMo
     cell ? 'tile-filled' : '',
     isFrozen ? 'tile-frozen' : '',
     isBlocked ? 'tile-blocked' : '',
+    isHinted ? 'tile-hinted' : '',
+    mergeFeedback === 'strong'
+      ? 'tile-merge-feedback--strong'
+      : (mergeFeedback === 'normal' ? 'tile-merge-feedback' : ''),
   ].filter(Boolean).join(' ');
 
   let style: React.CSSProperties = {};

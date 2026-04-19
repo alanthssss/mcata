@@ -56,8 +56,7 @@ describe('createInitialState', () => {
   it('creates a non-empty grid', () => {
     const state = createInitialState(1);
     const occupied = state.grid.flat().filter(Boolean);
-    // corner_protocol startTiles=2
-    expect(occupied).toHaveLength(2);
+    expect(occupied.length).toBeGreaterThan(0);
   });
 
   it('defaults to corner_protocol', () => {
@@ -65,10 +64,24 @@ describe('createInitialState', () => {
     expect(state.protocol).toBe('corner_protocol');
   });
 
-  it('respects a custom protocol', () => {
-    const sparse = createInitialState(1, 'sparse_protocol');
-    const occupied = sparse.grid.flat().filter(Boolean);
-    expect(occupied).toHaveLength(1); // sparse starts with 1 tile
+  it('starts with at least one mergeable adjacent pair', () => {
+    const state = createInitialState(1);
+    const hasMergeablePair = state.grid.some((row, r) => row.some((cell, c) => {
+      if (!cell) return false;
+      const right = state.grid[r][c + 1];
+      const down = state.grid[r + 1]?.[c];
+      return (right && right.value === cell.value) || (down && down.value === cell.value);
+    }));
+    expect(hasMergeablePair).toBe(true);
+  });
+
+  it('supports a merge on any first move direction', () => {
+    const directions: Array<'up' | 'down' | 'left' | 'right'> = ['up', 'down', 'left', 'right'];
+    for (const dir of directions) {
+      const base = startGame(createInitialState(1));
+      const next = processMoveAction(base, dir);
+      expect(next.reactionLog[0]?.merges.length ?? 0).toBeGreaterThan(0);
+    }
   });
 
   it('ascension level defaults to 0', () => {
@@ -183,6 +196,20 @@ describe('processMoveAction', () => {
     expect(result.reactionLog[0].action).toBe('left');
   });
 
+  it('amplifies first and second merge output feedback', () => {
+    const grid = makeGrid([
+      [2, 2, 0, 0],
+      [4, 4, 0, 0],
+      [0, 0, 0, 0],
+      [0, 0, 0, 0],
+    ]);
+    const state = withGrid(playingState(), grid);
+    const first = processMoveAction(state, 'left');
+    const second = processMoveAction(first, 'left');
+    expect(first.reactionLog[0].finalOutput).toBeGreaterThan(4);
+    expect(second.reactionLog[0].finalOutput).toBeGreaterThan(8);
+  });
+
   it('transitions to game_over when phase target is not met and steps run out', () => {
     // Force steps to 1 and output to 0 with no chance to score enough
     const grid = makeGrid([
@@ -254,7 +281,8 @@ describe('processMoveAction', () => {
       state = queueSignal(state, 'pulse_boost');
       const boosted = processMoveAction(state, 'left');
 
-      expect(boosted.output).toBe(baseline.output * 2);
+      expect(boosted.output).toBeGreaterThanOrEqual(baseline.output * 2);
+      expect(boosted.output).toBeLessThanOrEqual(baseline.output * 2 + 1);
     });
 
     it('freeze_step prevents tile spawn', () => {

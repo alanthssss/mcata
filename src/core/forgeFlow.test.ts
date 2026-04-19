@@ -16,13 +16,15 @@ function forgingState(): GameState {
 }
 
 describe('unified forge flow', () => {
-  it('phase clear transitions directly to forge', () => {
+  it('phase clear transitions directly to forge after onboarding phase', () => {
     const base = createInitialState(1);
     let state: GameState = {
       ...base,
       screen: 'playing',
+      phaseIndex: 1,
       stepsRemaining: 1,
       output: 9999,
+      phaseTargetOutput: 1,
       grid: [
         [null, null, null, null],
         [null, null, null, null],
@@ -34,6 +36,27 @@ describe('unified forge flow', () => {
     expect(state.screen).toBe('forge');
     expect(state.forgeItems.length).toBeGreaterThan(0);
     expect(state.forgeItems.some(i => i.type !== 'catalyst')).toBe(true);
+  });
+
+  it('first phase clear skips forge to keep onboarding focused', () => {
+    const base = createInitialState(1);
+    let state: GameState = {
+      ...base,
+      screen: 'playing',
+      stepsRemaining: 1,
+      output: 9999,
+      phaseTargetOutput: 1,
+      grid: [
+        [null, null, null, null],
+        [null, null, null, null],
+        [{ id: 1, value: 2, merged: false }, null, null, null],
+        [null, null, null, null],
+      ],
+    };
+    state = processMoveAction(state, 'up');
+    expect(state.screen).toBe('playing');
+    expect(state.phaseIndex).toBe(1);
+    expect(state.forgeItems).toHaveLength(0);
   });
 
   it('selling pattern removes active pattern and refunds energy', () => {
