@@ -37,6 +37,11 @@ import { checkMilestones, MILESTONE_DEFS, MilestoneId } from './milestones';
 import { CATALYST_DEFS } from './catalysts';
 
 const MAX_LOG = 10;
+const FIRST_MERGE_FEEDBACK_MULTIPLIER = 1.25;
+const SECOND_MERGE_FEEDBACK_MULTIPLIER = 1.1;
+// Distinct from other offsets (+200 forge, +500 reroll) to keep onboarding phase-clear
+// board reseeding deterministic without colliding with existing RNG branches.
+const ONBOARDING_SEED_OFFSET = 600;
 
 function makeOnboardingGrid(): { grid: Grid; idCounter: number } {
   const openingTiles: Position[] = [
@@ -309,7 +314,9 @@ export function processMoveAction(state: GameState, dir: Direction): GameState {
     entry.merges.length > 0 ? count + 1 : count
   ), 0);
   if (moveResult.merges.length > 0) {
-    const earlyMergeFeedbackMult = previousMergeMoves === 0 ? 1.25 : (previousMergeMoves === 1 ? 1.1 : 1);
+    const earlyMergeFeedbackMult = previousMergeMoves === 0
+      ? FIRST_MERGE_FEEDBACK_MULTIPLIER
+      : (previousMergeMoves === 1 ? SECOND_MERGE_FEEDBACK_MULTIPLIER : 1);
     if (earlyMergeFeedbackMult > 1) {
       finalOutputAdjusted = Math.floor(finalOutputAdjusted * earlyMergeFeedbackMult);
     }
@@ -578,7 +585,9 @@ function handlePhaseEnd(state: GameState): GameState {
   const nextPhaseTargetOutput = Math.ceil(nextPhase.targetOutput * ascMod.targetOutputScale * buildFactor);
 
   if (state.roundNumber === 1 && state.phaseIndex === 0) {
-    const onboardingRng = createRng(state.rngSeed + 600);
+    // Keep onboarding reseed offset distinct from forge/reroll offsets so phase-clear
+    // transition stays deterministic while avoiding overlap with other intermission RNG paths.
+    const onboardingRng = createRng(state.rngSeed + ONBOARDING_SEED_OFFSET);
     let grid = createEmptyGrid();
     let idCounter = state.tileIdCounter;
     for (let i = 0; i < protocolDef.startTiles; i++) {

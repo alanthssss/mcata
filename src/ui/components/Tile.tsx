@@ -23,8 +23,9 @@ export const Tile: React.FC<TileProps> = ({ cell, isFrozen, isBlocked, isHinted,
     isFrozen ? 'tile-frozen' : '',
     isBlocked ? 'tile-blocked' : '',
     isHinted ? 'tile-hinted' : '',
-    mergeFeedback ? 'tile-merge-feedback' : '',
-    mergeFeedback === 'strong' ? 'tile-merge-feedback--strong' : '',
+    mergeFeedback === 'strong'
+      ? 'tile-merge-feedback--strong'
+      : (mergeFeedback === 'normal' ? 'tile-merge-feedback' : ''),
   ].filter(Boolean).join(' ');
 
   let style: React.CSSProperties = {};

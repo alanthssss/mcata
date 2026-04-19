@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useState } from 'react';
+import React, { useEffect, useCallback, useMemo, useState } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { useProfileStore } from '../store/profileStore';
 import { Direction } from '../core/types';
@@ -31,6 +31,7 @@ const KEY_MAP: Record<string, Direction> = {
 
 const SIGNAL_IDS = new Set(['pulse_boost', 'grid_clean', 'chain_trigger', 'freeze_step']);
 const PATTERN_IDS = new Set(['corner', 'chain', 'empty_space', 'high_tier', 'economy', 'survival']);
+const ONBOARDING_ADVANCED_SYSTEM_MOVE_THRESHOLD = 3;
 
 function findMergeHintPair(grid: import('../core/types').Grid): [import('../core/types').Position, import('../core/types').Position] | null {
   for (let r = 0; r < grid.length; r++) {
@@ -47,6 +48,13 @@ function findMergeHintPair(grid: import('../core/types').Grid): [import('../core
       }
     }
   }
+  return null;
+}
+
+function getMergeFeedbackLevel(mergeMoves: number, hasMergeInLastEntry: boolean): 'normal' | 'strong' | null {
+  if (!hasMergeInLastEntry) return null;
+  if (mergeMoves === 1) return 'strong';
+  if (mergeMoves === 2) return 'normal';
   return null;
 }
 
@@ -153,16 +161,14 @@ export const App: React.FC = () => {
   }
 
   const lastEntry = state.reactionLog[0] ?? null;
-  const mergeMoves = state.reactionLog.reduce((count, entry) => (
+  const mergeMoves = useMemo(() => state.reactionLog.reduce((count, entry) => (
     entry.merges.length > 0 ? count + 1 : count
-  ), 0);
+  ), 0), [state.reactionLog]);
   const onboardingRun = state.roundNumber === 1 && state.phaseIndex === 0 && state.screen === 'playing';
-  const advancedSystemsUnlocked = !onboardingRun || state.reactionLog.length >= 3;
+  const advancedSystemsUnlocked = !onboardingRun || state.reactionLog.length >= ONBOARDING_ADVANCED_SYSTEM_MOVE_THRESHOLD;
   const hintPair = onboardingRun && mergeMoves === 0 ? findMergeHintPair(state.grid) : null;
   const mergeTargets = lastEntry?.merges.map(m => m.to) ?? [];
-  const mergeFeedback = lastEntry?.merges.length
-    ? (mergeMoves === 1 ? 'strong' : mergeMoves === 2 ? 'normal' : null)
-    : null;
+  const mergeFeedback = getMergeFeedbackLevel(mergeMoves, !!lastEntry?.merges.length);
   const showSmallSystemNudge = onboardingRun && !advancedSystemsUnlocked && mergeMoves > 0;
   const lastTriggeredSynergies = lastEntry?.triggeredSynergies ?? [];
   const signalToast = lastEntry?.signalUsed

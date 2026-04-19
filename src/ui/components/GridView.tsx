@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Grid, Position } from '../../core/types';
 import { Tile } from './Tile';
 
@@ -12,12 +12,12 @@ interface GridViewProps {
 }
 
 export const GridView: React.FC<GridViewProps> = ({ grid, frozenCell, blockedCell, hintedPair, mergeTargets = [], mergeFeedback }) => {
-  const hintedLookup = new Set(
+  const hintedLookup = useMemo(() => new Set(
     hintedPair
       ? hintedPair.map(pos => `${pos.row}:${pos.col}`)
       : []
-  );
-  const mergeLookup = new Set(mergeTargets.map(pos => `${pos.row}:${pos.col}`));
+  ), [hintedPair]);
+  const mergeLookup = useMemo(() => new Set(mergeTargets.map(pos => `${pos.row}:${pos.col}`)), [mergeTargets]);
 
   return (
     <div className="grid-container">
