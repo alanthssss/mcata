@@ -76,9 +76,9 @@ describe('createInitialState', () => {
   });
 
   it('supports a merge on any first move direction', () => {
-    const base = startGame(createInitialState(1));
     const directions: Array<'up' | 'down' | 'left' | 'right'> = ['up', 'down', 'left', 'right'];
     for (const dir of directions) {
+      const base = startGame(createInitialState(1));
       const next = processMoveAction(base, dir);
       expect(next.reactionLog[0]?.merges.length ?? 0).toBeGreaterThan(0);
     }

@@ -44,6 +44,8 @@ const SECOND_MERGE_FEEDBACK_MULTIPLIER = 1.1;
 const ONBOARDING_SEED_OFFSET = 600;
 
 function makeOnboardingGrid(): { grid: Grid; idCounter: number } {
+  // Centered 2x2 identical tiles guarantees immediate horizontal+vertical merge
+  // opportunities, so all four first swipe directions can produce a merge.
   const openingTiles: Position[] = [
     { row: 1, col: 1 },
     { row: 1, col: 2 },
