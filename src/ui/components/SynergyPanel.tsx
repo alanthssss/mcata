@@ -45,10 +45,7 @@ export const SynergyPanel: React.FC<SynergyPanelProps> = ({
       </div>
 
       {activeSynergies.length === 0 ? (
-        <>
-          <div className="empty-state">{t('ui.no_synergies')}</div>
-          <div className="panel-help">{t('ui.synergy_help_empty')}</div>
-        </>
+        <div className="empty-state">{t('ui.no_synergies')}</div>
       ) : (
         <div className="synergy-list">
           {activeSynergies.map(id => {

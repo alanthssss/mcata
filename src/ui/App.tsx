@@ -184,7 +184,6 @@ export const App: React.FC = () => {
             frozenCell={state.activeCatalysts.includes('frozen_cell') ? state.frozenCell : null}
             blockedCell={state.entropyBlockedCell}
           />
-          <div className="control-help">{t('ui.controls_desc')}</div>
         </div>
 
         <div className="right-column">

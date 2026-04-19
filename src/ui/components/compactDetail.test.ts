@@ -83,8 +83,11 @@ describe('compact panel rendering', () => {
       React.createElement(StartScreen, { onStart: () => undefined })
     );
     expect(html).toContain('Start Run');
+    expect(html).toContain('Select Rule');
     expect(html).not.toContain('⚔ Challenge');
     expect(html).not.toContain('📅 Daily Run');
     expect(html).not.toContain('Reach target Output before Steps run out');
+    expect(html).not.toContain('Arrow Keys / WASD / Swipe');
+    expect(html).not.toContain('? Help');
   });
 });

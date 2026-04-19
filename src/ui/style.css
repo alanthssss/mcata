@@ -65,11 +65,11 @@ button:not(:disabled):active {
 
 .game-layout {
   display: grid;
-  grid-template-columns: 240px 1fr 240px;
+  grid-template-columns: 200px 1fr 180px;
   gap: 12px;
   padding: 12px;
   flex: 1;
-  max-width: 1000px;
+  max-width: 1120px;
   margin: 0 auto;
   width: 100%;
 }
@@ -78,12 +78,12 @@ button:not(:disabled):active {
 .right-column {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .left-column .panel {
-  padding: 8px 10px;
-  font-size: 0.85rem;
+  padding: 7px 9px;
+  font-size: 0.82rem;
 }
 
 .center-column {
@@ -151,14 +151,14 @@ button:not(:disabled):active {
 }
 
 .panel-title {
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--text-muted);
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   border-bottom: 1px solid var(--border);
-  padding-bottom: 6px;
+  padding-bottom: 4px;
 }
 
 .empty-state {
@@ -473,9 +473,10 @@ button:not(:disabled):active {
   border: 1px solid var(--border);
   color: var(--text-muted);
   border-radius: var(--radius-sm);
-  padding: 5px 8px;
-  font-size: 0.72rem;
+  padding: 4px 7px;
+  font-size: 0.68rem;
   text-align: left;
+  opacity: 0.75;
 }
 
 /* ─── Log Panel ─────────────────────────────────────────────────────────────── */
@@ -1271,8 +1272,8 @@ button:not(:disabled):active {
 /* ── Protocol Selection ── */
 .protocol-select-section {
   width: 100%;
-  max-width: 700px;
-  margin-bottom: 16px;
+  max-width: 560px;
+  margin-bottom: 8px;
 }
 
 .protocol-select-label {
@@ -1288,11 +1289,11 @@ button:not(:disabled):active {
 .protocol-select-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
+  gap: 8px;
 }
 
 .protocol-card {
-  padding: 12px 14px;
+  padding: 10px 12px;
   background: var(--bg-panel);
   border: 2px solid var(--border);
   border-radius: var(--radius);
@@ -1316,7 +1317,7 @@ button:not(:disabled):active {
 .protocol-card--selected {
   border-color: var(--accent);
   background: rgba(124, 109, 240, 0.1);
-  box-shadow: 0 0 12px rgba(124, 109, 240, 0.3);
+  box-shadow: 0 0 16px rgba(124, 109, 240, 0.45);
 }
 
 .protocol-card__icon {
@@ -1397,22 +1398,7 @@ button:not(:disabled):active {
   align-items: center;
   justify-content: center;
   flex-wrap: wrap;
-  margin-top: 8px;
-}
-
-.help-btn {
-  background: var(--bg-panel);
-  border: 1px solid var(--border);
-  color: var(--text-muted);
-  padding: 10px 18px;
-  border-radius: var(--radius);
-  font-size: 0.9rem;
-  font-weight: 600;
-}
-
-.help-btn:hover {
-  border-color: var(--accent);
-  color: var(--accent);
+  margin-top: 2px;
 }
 
 @media (max-width: 980px) {
