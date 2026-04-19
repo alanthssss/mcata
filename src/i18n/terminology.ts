@@ -60,6 +60,7 @@ const REPLACEMENTS_EN: ReplacementRule[] = [
 const REPLACEMENTS_ZH_CN: ReplacementRule[] = [
   [/催化器/g, '增益'],
   [/信号/g, '技能'],
+  [/模式/g, '风格'],
   [/协议/g, '规则'],
   [/协同/g, '连携'],
   [/动量/g, '连击'],

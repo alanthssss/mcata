@@ -47,12 +47,12 @@ generateAllCharts(results.reduce((acc, result) => ({ ...acc, ...result.suiteMetr
 console.log(`\n=== ${term('Balance Findings')} ===`);
 for (const f of report.findings) {
   const icon = f.severity === 'critical' ? '🔴' : f.severity === 'warn' ? '🟡' : '🟢';
-  console.log(term(`  ${icon} [${f.category}] ${f.message}`));
+  console.log(`  ${icon} [${f.category}] ${term(f.message)}`);
 }
 
 if (report.recommendations.length > 0) {
   console.log(`\n=== ${term('Recommendations')} ===`);
-  report.recommendations.forEach(r => console.log(term(`  - ${r}`)));
+  report.recommendations.forEach(r => console.log(`  - ${term(r)}`));
 }
 
 console.log('\nArtifacts written to artifacts/benchmark/latest/');

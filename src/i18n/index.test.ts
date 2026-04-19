@@ -9,7 +9,7 @@ describe('createT', () => {
     const t = createT('zh-CN');
 
     expect(t('ui.header_title')).toBe('⚗ 融合增益');
-    expect(t('challenge.no_corners.name')).toBe('禁角模式');
+    expect(t('challenge.no_corners.name')).toBe('禁角风格');
     expect(warn).not.toHaveBeenCalled();
     warn.mockRestore();
   });
@@ -23,6 +23,8 @@ describe('createT', () => {
   });
 
   it('keeps en and zh-CN translation key sets in sync', () => {
+    expect(Object.keys(en).length).toBeGreaterThan(0);
+    expect(Object.keys(zhCN).length).toBeGreaterThan(0);
     expect(new Set(Object.keys(zhCN))).toEqual(new Set(Object.keys(en)));
   });
 

@@ -15,6 +15,8 @@ import { exportAll }   from '../benchmark/exporters';
 import { generateAllCharts } from '../benchmark/charts';
 import { applyTerminology } from '../i18n/terminology';
 
+const term = (text: string): string => applyTerminology('en', text);
+
 const args    = process.argv.slice(2);
 const suitArg = args.indexOf('--suite');
 const suiteKey = suitArg >= 0 && args[suitArg + 1]
@@ -27,7 +29,7 @@ if (!suite) {
   process.exit(1);
 }
 
-console.log(`\n=== ${term(`Merge Catalyst Benchmark: ${suite.name}`)} ===`);
+console.log(`\n=== ${term('Merge Catalyst Benchmark')}: ${term(suite.name)} ===`);
 console.log(`Agents: ${suite.agents.map(a => a.name).join(', ')}`);
 console.log(`Runs per agent: ${suite.runCount}\n`);
 
@@ -53,4 +55,3 @@ for (const [agent, m] of Object.entries(result.suiteMetrics)) {
   );
 }
 console.log('\nArtifacts written to artifacts/benchmark/latest/');
-const term = (text: string): string => applyTerminology('en', text);

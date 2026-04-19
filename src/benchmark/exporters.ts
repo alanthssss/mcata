@@ -111,7 +111,7 @@ export function exportComparisonMd(results: SuiteResult[], report: BalanceReport
   lines.push('', term('## Balance Findings'), '');
   for (const f of report.findings) {
     const icon = f.severity === 'critical' ? '🔴' : f.severity === 'warn' ? '🟡' : '🟢';
-    lines.push(`- ${icon} **[${f.category}]** ${f.message}`);
+    lines.push(`- ${icon} **[${f.category}]** ${term(f.message)}`);
   }
 
   lines.push('', term('## Recommendations'), '');
@@ -119,7 +119,7 @@ export function exportComparisonMd(results: SuiteResult[], report: BalanceReport
     lines.push('_No recommendations at this time._');
   } else {
     for (const rec of report.recommendations) {
-      lines.push(`- ${rec}`);
+      lines.push(`- ${term(rec)}`);
     }
   }
 
@@ -186,17 +186,17 @@ export function exportBalanceReport(report: BalanceReport): void {
 
   if (critical.length) {
     lines.push('### 🔴 Critical');
-    critical.forEach(f => lines.push(`- **[${f.category}]** ${f.message}`));
+    critical.forEach(f => lines.push(`- **[${f.category}]** ${term(f.message)}`));
     lines.push('');
   }
   if (warn.length) {
     lines.push('### 🟡 Warnings');
-    warn.forEach(f => lines.push(`- **[${f.category}]** ${f.message}`));
+    warn.forEach(f => lines.push(`- **[${f.category}]** ${term(f.message)}`));
     lines.push('');
   }
   if (info.length) {
     lines.push('### 🟢 Info');
-    info.forEach(f => lines.push(`- **[${f.category}]** ${f.message}`));
+    info.forEach(f => lines.push(`- **[${f.category}]** ${term(f.message)}`));
     lines.push('');
   }
 
@@ -204,7 +204,7 @@ export function exportBalanceReport(report: BalanceReport): void {
   if (report.recommendations.length === 0) {
     lines.push('_No specific recommendations._');
   } else {
-    report.recommendations.forEach(r => lines.push(`- ${r}`));
+    report.recommendations.forEach(r => lines.push(`- ${term(r)}`));
   }
 
   lines.push('', term('## Catalyst Analysis'), '');
