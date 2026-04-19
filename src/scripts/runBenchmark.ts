@@ -13,6 +13,7 @@ import { runSuite }    from '../benchmark/suites';
 import { analyseResults } from '../benchmark/analysis';
 import { exportAll }   from '../benchmark/exporters';
 import { generateAllCharts } from '../benchmark/charts';
+import { applyTerminology } from '../i18n/terminology';
 
 const args    = process.argv.slice(2);
 const suitArg = args.indexOf('--suite');
@@ -26,7 +27,7 @@ if (!suite) {
   process.exit(1);
 }
 
-console.log(`\n=== Merge Catalyst Benchmark: ${suite.name} ===`);
+console.log(`\n=== ${term(`Merge Catalyst Benchmark: ${suite.name}`)} ===`);
 console.log(`Agents: ${suite.agents.map(a => a.name).join(', ')}`);
 console.log(`Runs per agent: ${suite.runCount}\n`);
 
@@ -45,10 +46,11 @@ const report = analyseResults([result]);
 exportAll([result], report);
 generateAllCharts(result.suiteMetrics);
 
-console.log('\n=== Summary ===');
+console.log(`\n=== ${term('Summary')} ===`);
 for (const [agent, m] of Object.entries(result.suiteMetrics)) {
   console.log(
-    `  ${agent.padEnd(20)} rounds=${m.avgRoundsCleared.toFixed(2).padStart(5)}  mean=${m.meanOutput.toFixed(0).padStart(7)}  p90=${m.p90Output.toFixed(0).padStart(7)}`
+    term(`  ${agent.padEnd(20)} rounds=${m.avgRoundsCleared.toFixed(2).padStart(5)}  mean=${m.meanOutput.toFixed(0).padStart(7)}  p90=${m.p90Output.toFixed(0).padStart(7)}`)
   );
 }
 console.log('\nArtifacts written to artifacts/benchmark/latest/');
+const term = (text: string): string => applyTerminology('en', text);

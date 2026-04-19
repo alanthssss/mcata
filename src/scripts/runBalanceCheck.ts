@@ -11,8 +11,11 @@ import { runSuite } from '../benchmark/suites';
 import { analyseResults } from '../benchmark/analysis';
 import { exportAll, exportBalanceReport } from '../benchmark/exporters';
 import { generateAllCharts } from '../benchmark/charts';
+import { applyTerminology } from '../i18n/terminology';
 
-console.log('\n=== Merge Catalyst Balance Check ===\n');
+const term = (text: string): string => applyTerminology('en', text);
+
+console.log(`\n=== ${term('Merge Catalyst Balance Check')} ===\n`);
 
 const t0 = Date.now();
 
@@ -41,15 +44,15 @@ exportAll(results, report);
 exportBalanceReport(report);
 generateAllCharts(results.reduce((acc, result) => ({ ...acc, ...result.suiteMetrics }), {}));
 
-console.log('\n=== Balance Findings ===');
+console.log(`\n=== ${term('Balance Findings')} ===`);
 for (const f of report.findings) {
   const icon = f.severity === 'critical' ? '🔴' : f.severity === 'warn' ? '🟡' : '🟢';
-  console.log(`  ${icon} [${f.category}] ${f.message}`);
+  console.log(term(`  ${icon} [${f.category}] ${f.message}`));
 }
 
 if (report.recommendations.length > 0) {
-  console.log('\n=== Recommendations ===');
-  report.recommendations.forEach(r => console.log(`  - ${r}`));
+  console.log(`\n=== ${term('Recommendations')} ===`);
+  report.recommendations.forEach(r => console.log(term(`  - ${r}`)));
 }
 
 console.log('\nArtifacts written to artifacts/benchmark/latest/');

@@ -12,8 +12,8 @@ describe('Forge signal localization', () => {
       key: 'ui.forge_sold_signal',
       params: { name: 'pulse_boost', energy: 2 },
     };
-    expect(localizeIntermissionMessage(message, createT('en'))).toBe('Sold Signal Pulse Boost for +2 Energy');
-    expect(localizeIntermissionMessage(message, createT('zh-CN'))).toBe('出售信号 脉冲强化，获得 +2 能量');
+    expect(localizeIntermissionMessage(message, createT('en'))).toBe('Sold Skill Pulse Boost for +2 Energy');
+    expect(localizeIntermissionMessage(message, createT('zh-CN'))).toBe('出售技能 脉冲强化，获得 +2 能量');
   });
 });
 
@@ -21,14 +21,14 @@ describe('Pattern panel', () => {
   it('renders empty panel state when no pattern is active', () => {
     useLocaleStore.getState().setLocale('en');
     const html = renderToStaticMarkup(React.createElement(PatternPanel, { activePattern: null, level: 0 }));
-    expect(html).toContain('No active Pattern yet');
-    expect(html).toContain('Pattern is obtained in Forge');
+    expect(html).toContain('No active Style yet');
+    expect(html).toContain('Style is obtained in Shop');
   });
 
   it('shows active pattern state', () => {
     useLocaleStore.getState().setLocale('en');
     const html = renderToStaticMarkup(React.createElement(PatternPanel, { activePattern: 'chain', level: 2 }));
-    expect(html).toContain('Chain Pattern');
+    expect(html).toContain('Chain Style');
     expect(html).toContain('Level 2');
     expect(html).toContain('How to get');
   });
@@ -42,14 +42,14 @@ describe('Signal panel', () => {
       pendingSignal: null,
       onActivate: () => undefined,
     }));
-    expect(html).toContain('Signals (0/2)');
-    expect(html).toContain('No Signal equipped');
+    expect(html).toContain('Skills (0/2)');
+    expect(html).toContain('No Skill equipped');
   });
 
   it('localizes empty-state text in zh-CN', () => {
     const t = createT('zh-CN');
-    expect(t('ui.signals', { count: 0, max: 2 })).toBe('信号 (0/2)');
-    expect(t('ui.no_signals_equipped')).toBe('未装备信号');
+    expect(t('ui.signals', { count: 0, max: 2 })).toBe('技能 (0/2)');
+    expect(t('ui.no_signals_equipped')).toBe('未装备技能');
   });
 });
 
@@ -60,6 +60,6 @@ describe('Forge intermission localization', () => {
       params: { name: 'chain', level: 1 },
     };
     const localized = localizeIntermissionMessage(message, createT('en'));
-    expect(localized).toContain('Chain Pattern');
+    expect(localized).toContain('Chain Style');
   });
 });

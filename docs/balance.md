@@ -1,4 +1,4 @@
-# Merge Catalyst — Balance Guide
+# Merge Boost — Balance Guide
 
 > **Audience:** designers and developers tuning the game's difficulty curve.
 
@@ -6,9 +6,9 @@
 
 ## Benchmark Targets
 
-Each phase defines three output tiers used by the benchmark suite:
+Each stage defines three output tiers used by the benchmark suite:
 
-| Phase | Target | Expected (avg player) | High-Skill |
+| Stage | Target | Expected (avg player) | High-Skill |
 |---|---|---|---|
 | 1 (small) | 170 | 225 | 320 |
 | 2 (big) | 205 | 280 | 410 |
@@ -19,22 +19,22 @@ Each phase defines three output tiers used by the benchmark suite:
 
 ### Interpretation
 
-- **Target** — minimum output to pass the phase; set to be achievable by a
+- **Target** — minimum output to pass the stage; set to be achievable by a
   casual player with basic strategy.
 - **Expected** — what a typical player actually achieves on a winning run.
   Should be 20–50% above target.
 - **High-Skill** — output a skilled player with an optimised build can
-  consistently reach.  Used to detect overpowered catalysts.
+  consistently reach.  Used to detect overpowered boosts.
 
 ---
 
-## Round-Clear Goals
+## Level-Clear Goals
 
-| Player Tier | Target Avg Rounds Cleared |
+| Player Tier | Target Avg Levels Cleared |
 |---|---|
 | New player (no strategy) | 0–1 |
 | Intermediate | 1–3 |
-| Skilled (synergy builds) | 2–5 |
+| Skilled (combo builds) | 2–5 |
 
 Run `npm run balance` to generate a live balance report at
 `artifacts/benchmark/latest/balance_report.md`.
@@ -57,14 +57,14 @@ Heuristic auto-tuning loop and generate:
 
 ### Difficulty Curve
 
-Phase targets and steps now scale additively with both phase and round:
+Stage targets and steps now scale additively with both stage and level:
 
 ```
 steps  = base + phaseScale + roundScale
 target = base + phaseScale + roundScale
 ```
 
-### Exponential Growth Reference (for future phases)
+### Exponential Growth Reference (for future stages)
 
 ```
 Phase N target ≈ 50 × 1.5^(N-1)
@@ -82,14 +82,14 @@ win rates stay within the goal range given the step budget.
 
 ### Step Economy
 
-Each phase provides ~20+ steps in round 1 and scales upward by round. Average output-per-step for a typical player
-is roughly 7–10.  A skilled player with synergies can reach 15–20 per step.
+Each stage provides ~20+ steps in level 1 and scales upward by level. Average output-per-step for a typical player
+is roughly 7–10.  A skilled player with combos can reach 15–20 per step.
 
 ### Energy Economy
 
 - Starting Energy: **5**
-- Round-complete Energy bonus: **2**
-- Forge is now the single post-phase acquisition layer (no free Infusion rewards)
+- Level-complete Energy bonus: **2**
+- Shop is now the single post-stage acquisition layer (no free Pick rewards)
 
 To increase difficulty without changing targets: reduce `steps`.
 To reduce difficulty without changing feel: increase `steps`.
@@ -100,7 +100,7 @@ To reduce difficulty without changing feel: increase `steps`.
 
 All tunable constants live in `src/core/config.ts`.
 
-### Phase Targets & Steps
+### Stage Targets & Steps
 
 ```ts
 PHASE_CONFIG = [
@@ -116,7 +116,7 @@ PHASE_CONFIG = [
 **To reduce difficulty:** lower `targetOutput` values or increase `steps`.
 **To increase difficulty:** raise targets or reduce steps.
 
-### Catalyst Power Budget
+### Boost Power Budget
 
 | Rarity | Expected win-rate uplift | Multiplier cap |
 |---|---|---|
@@ -124,12 +124,12 @@ PHASE_CONFIG = [
 | Rare | +10% | ×2.0 |
 | Epic | +15% | ×2.5 |
 
-### Synergy Caps
+### Combo Caps
 
-Synergy multipliers should stay in the ×1.25–×1.40 range.  Exceeding ×1.50
-tends to make synergy-enabled builds dominate regardless of player skill.
+Combo multipliers should stay in the ×1.25–×1.40 range.  Exceeding ×1.50
+tends to make combo-enabled builds dominate regardless of player skill.
 
-### Momentum Cap
+### Streak Cap
 
 `MOMENTUM_CONFIG.maxMultiplier = 2.0`.  The grow rate
 (`MOMENTUM_CONFIG.growthRate = 0.05`) means the cap is reached after 20
@@ -144,12 +144,12 @@ Run `npm run balance` to generate `artifacts/benchmark/latest/balance_report.md`
 
 | Flag | Suggested Action |
 |---|---|
-| Avg rounds cleared < 1 (all agents) | Reduce early/mid target outputs by 10–15% |
-| Avg rounds cleared > 8 (best agent) | Increase Phase 4+ targets or reduce steps |
-| Catalyst pick rate < 5% | Reduce cost or increase multiplier |
-| Catalyst win rate > 2× global | Reduce multiplier by 0.1–0.2 |
-| Anomaly survival < 30% | Increase `COLLAPSE_FIELD_PERIOD` or reduce spawn block frequency |
-| Average momentum > 1.6× | Reduce `MOMENTUM_CONFIG.growthRate` |
+| Avg levels cleared < 1 (all agents) | Reduce early/mid target outputs by 10–15% |
+| Avg levels cleared > 8 (best agent) | Increase Stage 4+ targets or reduce steps |
+| Boost pick rate < 5% | Reduce cost or increase multiplier |
+| Boost win rate > 2× global | Reduce multiplier by 0.1–0.2 |
+| Hazard survival < 30% | Increase `COLLAPSE_FIELD_PERIOD` or reduce spawn block frequency |
+| Average streak > 1.6× | Reduce `MOMENTUM_CONFIG.growthRate` |
 
 Additional tuning-loop targets (see `src/benchmark/tuning.ts`):
 - `avgMovesPerPhase` and `avgMovesPerPhaseByRound`
@@ -167,5 +167,5 @@ Additional tuning-loop targets (see `src/benchmark/tuning.ts`):
 | Version | Key Changes |
 |---|---|
 | v1 | Initial targets (too high, near-0% win rates) |
-| v2 | Phase targets drastically reduced to establish reachable floor |
-| v3 | New catalysts + synergy system; benchmark fields added to PHASE_CONFIG |
+| v2 | Stage targets drastically reduced to establish reachable floor |
+| v3 | New boosts + combo system; benchmark fields added to PHASE_CONFIG |
