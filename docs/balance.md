@@ -10,12 +10,12 @@ Each phase defines three output tiers used by the benchmark suite:
 
 | Phase | Target | Expected (avg player) | High-Skill |
 |---|---|---|---|
-| 1 (small) | 70 | 90 | 140 |
-| 2 (big) | 80 | 110 | 180 |
-| 3 (boss) | 75 | 100 | 160 |
-| 4 (small + Entropy Tax) | 40 | 55 | 90 |
-| 5 (big) | 80 | 110 | 200 |
-| 6 (boss + Collapse Field) | 55 | 75 | 130 |
+| 1 (small) | 170 | 225 | 320 |
+| 2 (big) | 205 | 280 | 410 |
+| 3 (boss) | 190 | 255 | 380 |
+| 4 (small + Entropy Tax) | 165 | 220 | 320 |
+| 5 (big) | 235 | 320 | 470 |
+| 6 (boss + Collapse Field) | 220 | 295 | 430 |
 
 ### Interpretation
 
@@ -57,13 +57,11 @@ Heuristic auto-tuning loop and generate:
 
 ### Difficulty Curve
 
-Phase targets grow roughly 1.5–2× per section:
+Phase targets and steps now scale additively with both phase and round:
 
 ```
-Phase 1–2:  entry zone  (targets 70–80)
-Phase 3:    boss gate   (modifier introduces, target slightly lower to compensate)
-Phase 4:    anomaly tax (low target offset by board disruption)
-Phase 5–6:  endgame     (targets 80 / 55 with compounding anomalies)
+steps  = base + phaseScale + roundScale
+target = base + phaseScale + roundScale
 ```
 
 ### Exponential Growth Reference (for future phases)
@@ -84,8 +82,14 @@ win rates stay within the goal range given the step budget.
 
 ### Step Economy
 
-Each phase provides 8–12 steps.  Average output-per-step for a typical player
+Each phase provides ~20+ steps in round 1 and scales upward by round. Average output-per-step for a typical player
 is roughly 7–10.  A skilled player with synergies can reach 15–20 per step.
+
+### Energy Economy
+
+- Starting Energy: **5**
+- Round-complete Energy bonus: **2**
+- Forge is now the single post-phase acquisition layer (no free Infusion rewards)
 
 To increase difficulty without changing targets: reduce `steps`.
 To reduce difficulty without changing feel: increase `steps`.
@@ -100,12 +104,12 @@ All tunable constants live in `src/core/config.ts`.
 
 ```ts
 PHASE_CONFIG = [
-  { phaseNumber: 1, targetOutput: 70,  steps: 12, expectedOutput: 90,  highSkillOutput: 140, challengeTier: 'small' },
-  { phaseNumber: 2, targetOutput: 80,  steps: 12, expectedOutput: 110, highSkillOutput: 180, challengeTier: 'big'   },
-  { phaseNumber: 3, targetOutput: 75,  steps: 10, expectedOutput: 100, highSkillOutput: 160, challengeTier: 'boss'  },
-  { phaseNumber: 4, targetOutput: 40,  steps: 8,  expectedOutput: 55,  highSkillOutput: 90,  challengeTier: 'small' },
-  { phaseNumber: 5, targetOutput: 80,  steps: 10, expectedOutput: 110, highSkillOutput: 200, challengeTier: 'big'   },
-  { phaseNumber: 6, targetOutput: 55,  steps: 8,  expectedOutput: 75,  highSkillOutput: 130, challengeTier: 'boss'  },
+  { phaseNumber: 1, targetOutput: 170, steps: 20, expectedOutput: 225, highSkillOutput: 320, challengeTier: 'small' },
+  { phaseNumber: 2, targetOutput: 205, steps: 20, expectedOutput: 280, highSkillOutput: 410, challengeTier: 'big'   },
+  { phaseNumber: 3, targetOutput: 190, steps: 18, expectedOutput: 255, highSkillOutput: 380, challengeTier: 'boss'  },
+  { phaseNumber: 4, targetOutput: 165, steps: 17, expectedOutput: 220, highSkillOutput: 320, challengeTier: 'small' },
+  { phaseNumber: 5, targetOutput: 235, steps: 19, expectedOutput: 320, highSkillOutput: 470, challengeTier: 'big'   },
+  { phaseNumber: 6, targetOutput: 220, steps: 19, expectedOutput: 295, highSkillOutput: 430, challengeTier: 'boss'  },
 ]
 ```
 

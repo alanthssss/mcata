@@ -194,26 +194,12 @@ export interface PhaseDef {
   modifier?: string;
 }
 
-// ─── Round Template ───────────────────────────────────────────────────────────
-
-/**
- * A round template defines the 6-phase structure for one round.
- * Templates rotate across rounds to keep runs feeling varied.
- */
-export interface RoundTemplate {
-  id: string;
-  name: string;
-  description: string;
-  phases: PhaseDef[];
-}
-
 // ─── Forge ───────────────────────────────────────────────────────────────────
 export interface ForgeOffer {
   catalyst: CatalystDef;
   index: number;
 }
 
-// ─── Infusion ────────────────────────────────────────────────────────────────
 export type PatternId =
   | 'corner'
   | 'chain'
@@ -222,16 +208,54 @@ export type PatternId =
   | 'economy'
   | 'survival';
 
+export type ForgeItemType = 'catalyst' | 'pattern' | 'signal' | 'utility';
+export type ForgeUtilityType = 'energy' | 'steps' | 'multiplier';
 export type InfusionChoice =
   | { type: 'catalyst'; catalyst: CatalystDef }
   | { type: 'energy' }
   | { type: 'steps' }
   | { type: 'multiplier' }
   | { type: 'signal'; signal: SignalId }
-  | { type: 'catalyst_upgrade' }
-  | { type: 'pool_reroll' }
-  | { type: 'pool_convert' }
   | { type: 'pattern'; pattern: PatternId };
+
+export type ForgeShopItem =
+  | {
+      id: string;
+      type: 'catalyst';
+      category?: string;
+      price: number;
+      name: string;
+      description: string;
+      catalyst: CatalystDef;
+    }
+  | {
+      id: string;
+      type: 'pattern';
+      category?: string;
+      price: number;
+      name: string;
+      description: string;
+      pattern: PatternId;
+    }
+  | {
+      id: string;
+      type: 'signal';
+      category?: string;
+      price: number;
+      name: string;
+      description: string;
+      signal: SignalId;
+    }
+  | {
+      id: string;
+      type: 'utility';
+      category?: string;
+      price: number;
+      name: string;
+      description: string;
+      utility: ForgeUtilityType;
+      amount: number;
+    };
 
 // ─── Merge Info ──────────────────────────────────────────────────────────────
 export interface MergeInfo {
@@ -314,7 +338,7 @@ export interface GameState {
   output: number;               // accumulated output for current phase
   totalOutput: number;          // accumulated across all phases
   activeCatalysts: CatalystId[];
-  globalMultiplier: number;     // starts at 1.0, increases from Infusion
+  globalMultiplier: number;     // starts at 1.0, increases through Forge utility buys
   comboWireCount: number;       // consecutive scoring moves for Combo Wire
   frozenCell: Position | null;  // for Frozen Cell catalyst
   collapseFieldCounter: number; // for Collapse Field anomaly
@@ -322,6 +346,7 @@ export interface GameState {
   reactionLog: ReactionLogEntry[];
   forgeOffers: CatalystDef[];
   infusionOptions: InfusionChoice[];
+  forgeItems: ForgeShopItem[];
   tileIdCounter: number;
   rngSeed: number;
   // Signal system

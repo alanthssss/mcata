@@ -9,11 +9,11 @@ import { createT, useLocaleStore } from '../../i18n';
 describe('Forge signal localization', () => {
   it('renders intermission signal text in zh-CN and updates on locale switch', () => {
     const message = {
-      key: 'ui.infusion_granted_signal',
-      params: { name: 'pulse_boost' },
+      key: 'ui.forge_sold_signal',
+      params: { name: 'pulse_boost', energy: 2 },
     };
-    expect(localizeIntermissionMessage(message, createT('en'))).toBe('Infusion granted signal: Pulse Boost');
-    expect(localizeIntermissionMessage(message, createT('zh-CN'))).toBe('注入获得信号：脉冲强化');
+    expect(localizeIntermissionMessage(message, createT('en'))).toBe('Sold Signal Pulse Boost for +2 Energy');
+    expect(localizeIntermissionMessage(message, createT('zh-CN'))).toBe('出售信号 脉冲强化，获得 +2 能量');
   });
 });
 
@@ -22,7 +22,7 @@ describe('Pattern panel', () => {
     useLocaleStore.getState().setLocale('en');
     const html = renderToStaticMarkup(React.createElement(PatternPanel, { activePattern: null, level: 0 }));
     expect(html).toContain('No active Pattern yet');
-    expect(html).toContain('Pattern is obtained in Infusion');
+    expect(html).toContain('Pattern is obtained in Forge');
   });
 
   it('shows active pattern state', () => {
@@ -54,13 +54,12 @@ describe('Signal panel', () => {
 });
 
 describe('Forge intermission localization', () => {
-  it('localizes pattern replacement message params', () => {
+  it('localizes pattern message params', () => {
     const message = {
-      key: 'ui.infusion_pattern_replaced',
-      params: { from: 'chain', to: 'corner', level: 1 },
+      key: 'ui.forge_sell_pattern',
+      params: { name: 'chain', level: 1 },
     };
     const localized = localizeIntermissionMessage(message, createT('en'));
     expect(localized).toContain('Chain Pattern');
-    expect(localized).toContain('Corner Pattern');
   });
 });

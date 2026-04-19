@@ -1,4 +1,4 @@
-import { GameState, Direction, CatalystDef, InfusionChoice, CatalystId, Grid, Position, SignalId, ProtocolId, AscensionLevel, PatternId } from './types';
+import { GameState, Direction, CatalystDef, CatalystId, Grid, Position, SignalId, ProtocolId, AscensionLevel, PatternId, ForgeShopItem, InfusionChoice } from './types';
 import { applyMove } from './move';
 import { computeScore } from './score';
 import { createRng } from './rng';
@@ -8,8 +8,7 @@ import {
 } from './board';
 import { applyEntropyTax, applyCollapseField } from './anomalies';
 import { getPhasesForRound, PHASES_PER_ROUND, getBuildAwareTargetScale } from './phases';
-import { generateForgeOffers } from './forge';
-import { generateInfusionOptions } from './infusion';
+import { generateForgeItems } from './forge';
 import { ReactionLogEntry } from './types';
 import { PROTOCOL_DEFS, DEFAULT_PROTOCOL } from './protocols';
 import { ASCENSION_MODIFIER_DEFS } from './ascensionModifiers';
@@ -26,11 +25,13 @@ import {
   JACKPOT_PROBABILITY, JACKPOT_MIN_OUTPUT, JACKPOT_OUTPUT_BONUS, JACKPOT_ENERGY_BONUS,
   ROUND_COMPLETE_ENERGY_BONUS, ROUND_COMPLETE_MULTIPLIER_BONUS,
   CATALYST_SELL_REFUND_BY_RARITY,
-  INFUSION_ENERGY_BONUS,
-  INFUSION_MULTIPLIER_BONUS,
-  INFUSION_STEPS_BONUS,
+  PATTERN_SELL_REFUND,
+  SIGNAL_SELL_REFUND,
+  FORGE_PATTERN_PRICE,
+  FORGE_SIGNAL_PRICE,
   PATTERN_BONUS_BY_LEVEL,
   PATTERN_EMPTY_SPACE_CAP,
+  FORGE_UTILITY_VALUES,
 } from './config';
 import { checkMilestones, MILESTONE_DEFS, MilestoneId } from './milestones';
 import { CATALYST_DEFS } from './catalysts';
@@ -92,6 +93,7 @@ export function createInitialState(
     reactionLog: [],
     forgeOffers: [],
     infusionOptions: [],
+    forgeItems: [],
     tileIdCounter: idCounter,
     rngSeed,
     signals: [],
@@ -551,9 +553,7 @@ function handlePhaseEnd(state: GameState): GameState {
     };
   }
 
-  // Not the last phase — advance to next phase via infusion (intermission).
-  // Compute the build-aware effective target for the NEXT phase now, using the
-  // player's current build (catalysts + global multiplier after any bonus).
+  // Not the last phase — advance to next phase and enter the unified Forge.
   const nextPhaseIndex = state.phaseIndex + 1;
   const nextPhase = phases[nextPhaseIndex];
   const nextSteps = Math.max(1, nextPhase.steps - protocolDef.stepsReduction - ascMod.stepsReduction);
@@ -564,17 +564,22 @@ function handlePhaseEnd(state: GameState): GameState {
   const nextPhaseTargetOutput = Math.ceil(nextPhase.targetOutput * ascMod.targetOutputScale * buildFactor);
 
   const rng = createRng(state.rngSeed + 200);
-  const infusionOptions = generateInfusionOptions(
-    state.activeCatalysts, rng.next.bind(rng),
-    state.catalystPool, ascMod.infusionChoiceCount, state.roundNumber
+  const forgeItems = generateForgeItems(
+    state.activeCatalysts,
+    state.activePattern,
+    state.signals,
+    rng.next.bind(rng),
+    state.catalystPool,
+    state.roundNumber,
   );
 
   return {
     ...state,
-    screen: 'infusion',
+    screen: 'forge',
     output,
     energy,
-    infusionOptions,
+    forgeOffers: forgeItems.filter(i => i.type === 'catalyst').map(i => i.catalyst),
+    forgeItems,
     phaseIndex: nextPhaseIndex,
     stepsRemaining: nextSteps,
     phaseTargetOutput: nextPhaseTargetOutput,
@@ -582,109 +587,108 @@ function handlePhaseEnd(state: GameState): GameState {
   };
 }
 
+// Deprecated compatibility path kept for older tests/scripts.
+// Runtime gameplay now transitions directly to forge from phase clear.
 export function selectInfusion(state: GameState, choice: InfusionChoice): GameState {
-  let newState: GameState = { ...state, lastIntermissionMessage: null };
-
-  switch (choice.type) {
-    case 'catalyst':
-      if (newState.activeCatalysts.includes(choice.catalyst.id)) {
-        newState.lastIntermissionMessage = {
-          key: 'ui.infusion_blocked_owned',
-          params: { name: choice.catalyst.id },
-        };
-      } else if (newState.activeCatalysts.length < MAX_CATALYSTS) {
-        newState.activeCatalysts = [...newState.activeCatalysts, choice.catalyst.id];
-        // Remove the acquired catalyst from the run-level pool so it cannot be
-        // offered again later in the same run.
-        if (newState.catalystPool !== undefined) {
-          newState.catalystPool = newState.catalystPool.filter(id => id !== choice.catalyst.id);
-        }
-        if (choice.catalyst.id === 'frozen_cell' && !newState.frozenCell) {
-          newState.frozenCell = { row: 1, col: 1 };
-        }
-      } else {
-        // Deterministic full-slot handling for direct catalyst infusions.
-        newState.energy += INFUSION_ENERGY_BONUS;
-        newState.lastIntermissionMessage = {
-          key: 'ui.infusion_catalyst_slot_full',
-          params: { name: choice.catalyst.id, energy: INFUSION_ENERGY_BONUS },
-        };
-      }
-      break;
-    case 'energy':
-      newState.energy += INFUSION_ENERGY_BONUS;
-      break;
-    case 'steps':
-      newState.stepsRemaining += INFUSION_STEPS_BONUS;
-      break;
-    case 'multiplier':
-      newState.globalMultiplier = Math.round((newState.globalMultiplier + INFUSION_MULTIPLIER_BONUS) * 100) / 100;
-      break;
-    case 'signal':
-      if (!newState.signals.includes(choice.signal) && newState.signals.length < SIGNAL_CAPACITY) {
-        newState.signals = [...newState.signals, choice.signal];
-      }
-      newState.lastIntermissionMessage = {
-        key: 'ui.infusion_granted_signal',
-        params: { name: choice.signal },
-      };
-      break;
-    case 'catalyst_upgrade':
-      newState.globalMultiplier = Math.round((newState.globalMultiplier + 0.05) * 100) / 100;
-      newState.lastIntermissionMessage = { key: 'ui.infusion_catalyst_upgrade_applied' };
-      break;
-    case 'pool_reroll': {
-      newState.rngSeed += 17;
-      newState.lastIntermissionMessage = { key: 'ui.infusion_pool_rerolled' };
-      break;
-    }
-    case 'pool_convert':
-      newState.energy += 2;
-      newState.lastIntermissionMessage = { key: 'ui.infusion_pool_converted', params: { energy: 2 } };
-      break;
-    case 'pattern':
-      const previousPattern = newState.activePattern;
-      const isUpgrade = previousPattern === choice.pattern;
-      const nextLevel = isUpgrade ? newState.patternLevels[choice.pattern] + 1 : 1;
-      newState.activePattern = choice.pattern;
-      newState.patternLevels = {
-        ...newState.patternLevels,
-        [choice.pattern]: nextLevel,
-      };
-      if (isUpgrade) {
-        newState.lastIntermissionMessage = {
-          key: 'ui.infusion_pattern_growth',
-          params: { name: choice.pattern, level: nextLevel },
-        };
-      } else if (previousPattern) {
-        newState.lastIntermissionMessage = {
-          key: 'ui.infusion_pattern_replaced',
-          params: { from: previousPattern, to: choice.pattern, level: nextLevel },
-        };
-      } else {
-        newState.lastIntermissionMessage = {
-          key: 'ui.infusion_pattern_acquired',
-          params: { name: choice.pattern, level: nextLevel },
-        };
-      }
-      break;
+  if (state.screen !== 'infusion') return state;
+  let next = { ...state };
+  if (choice.type === 'energy') next.energy += 3;
+  if (choice.type === 'steps') next.stepsRemaining += 2;
+  if (choice.type === 'multiplier') {
+    next.globalMultiplier = Math.round((next.globalMultiplier + 0.1) * 100) / 100;
   }
-
-  newState.output = 0;
-  // Reset momentum on new phase
-  newState.consecutiveValidMoves = 0;
-  newState.momentumMultiplier = 1.0;
-  newState.stabilityCount = 0;
-
-  // After infusion, always enter the intermission forge
-  const rng = createRng(newState.rngSeed + 100);
-  const forgeOffers = generateForgeOffers(
-    newState.activeCatalysts, 3, rng.next.bind(rng), newState.catalystPool, newState.roundNumber
+  if (choice.type === 'signal' && !next.signals.includes(choice.signal) && next.signals.length < SIGNAL_CAPACITY) {
+    next.signals = [...next.signals, choice.signal];
+    next.lastIntermissionMessage = { key: 'ui.infusion_granted_signal', params: { name: choice.signal } };
+  }
+  if (choice.type === 'pattern') {
+    const prevPattern = next.activePattern;
+    const nextLevel = prevPattern === choice.pattern ? next.patternLevels[choice.pattern] + 1 : 1;
+    next.activePattern = choice.pattern;
+    next.patternLevels = { ...next.patternLevels, [choice.pattern]: nextLevel };
+    next.lastIntermissionMessage = prevPattern === choice.pattern
+      ? { key: 'ui.infusion_pattern_growth', params: { name: choice.pattern, level: nextLevel } }
+      : prevPattern
+        ? { key: 'ui.infusion_pattern_replaced', params: { from: prevPattern, to: choice.pattern, level: nextLevel } }
+        : { key: 'ui.infusion_pattern_acquired', params: { name: choice.pattern, level: nextLevel } };
+  }
+  if (choice.type === 'catalyst') {
+    if (!next.activeCatalysts.includes(choice.catalyst.id) && next.activeCatalysts.length < MAX_CATALYSTS) {
+      next.activeCatalysts = [...next.activeCatalysts, choice.catalyst.id];
+      if (next.catalystPool !== undefined) {
+        next.catalystPool = next.catalystPool.filter(id => id !== choice.catalyst.id);
+      }
+    } else if (next.activeCatalysts.length >= MAX_CATALYSTS) {
+      next.energy += 3;
+      next.lastIntermissionMessage = {
+        key: 'ui.infusion_catalyst_slot_full',
+        params: { name: choice.catalyst.id, energy: 3 },
+      };
+    }
+  }
+  const rng = createRng(next.rngSeed + 200);
+  const forgeItems = generateForgeItems(
+    next.activeCatalysts,
+    next.activePattern,
+    next.signals,
+    rng.next.bind(rng),
+    next.catalystPool,
+    next.roundNumber,
   );
-  newState.forgeOffers = forgeOffers;
-  newState.screen = 'forge';
+  return {
+    ...next,
+    screen: 'forge',
+    output: 0,
+    consecutiveValidMoves: 0,
+    momentumMultiplier: 1.0,
+    stabilityCount: 0,
+    forgeOffers: forgeItems.filter(i => i.type === 'catalyst').map(i => i.catalyst),
+    forgeItems,
+  };
+}
 
-  return newState;
+export function buyForgeItem(state: GameState, item: ForgeShopItem, replaceIndex?: number): GameState {
+  if (state.energy < item.price) return state;
+  switch (item.type) {
+    case 'catalyst':
+      return buyFromForge(state, item.catalyst, replaceIndex);
+    case 'signal':
+      if (state.signals.includes(item.signal) || state.signals.length >= SIGNAL_CAPACITY) return state;
+      return {
+        ...state,
+        energy: state.energy - item.price,
+        signals: [...state.signals, item.signal],
+        forgeItems: state.forgeItems.filter(i => i.id !== item.id),
+      };
+    case 'pattern': {
+      const previousPattern = state.activePattern;
+      const isUpgrade = previousPattern === item.pattern;
+      const nextLevel = isUpgrade ? state.patternLevels[item.pattern] + 1 : 1;
+      return {
+        ...state,
+        energy: state.energy - item.price,
+        activePattern: item.pattern,
+        patternLevels: {
+          ...state.patternLevels,
+          [item.pattern]: nextLevel,
+        },
+        forgeItems: state.forgeItems.filter(i => i.id !== item.id),
+      };
+    }
+    case 'utility': {
+      let next: GameState = {
+        ...state,
+        energy: state.energy - item.price,
+        forgeItems: state.forgeItems.filter(i => i.id !== item.id),
+      };
+      if (item.utility === 'energy') next = { ...next, energy: next.energy + FORGE_UTILITY_VALUES.energy };
+      if (item.utility === 'steps') next = { ...next, stepsRemaining: next.stepsRemaining + FORGE_UTILITY_VALUES.steps };
+      if (item.utility === 'multiplier') {
+        next = { ...next, globalMultiplier: Math.round((next.globalMultiplier + FORGE_UTILITY_VALUES.multiplier) * 100) / 100 };
+      }
+      return next;
+    }
+  }
 }
 
 export function buyFromForge(state: GameState, catalyst: CatalystDef, replaceIndex?: number): GameState {
@@ -726,16 +730,27 @@ export function buyFromForge(state: GameState, catalyst: CatalystDef, replaceInd
     frozenCell,
     catalystPool,
     forgeOffers: state.forgeOffers.filter(c => c.id !== catalyst.id),
+    forgeItems: state.forgeItems.filter(item => item.type !== 'catalyst' || item.catalyst.id !== catalyst.id),
   };
 }
 
 export function rerollForge(state: GameState): GameState {
   if (state.energy < 1) return state;
-  const rng = createRng(state.rngSeed + state.forgeOffers.length + 500);
-  const forgeOffers = generateForgeOffers(
-    state.activeCatalysts, 3, rng.next.bind(rng), state.catalystPool, state.roundNumber
+  const rng = createRng(state.rngSeed + state.forgeItems.length + 500);
+  const forgeItems = generateForgeItems(
+    state.activeCatalysts,
+    state.activePattern,
+    state.signals,
+    rng.next.bind(rng),
+    state.catalystPool,
+    state.roundNumber,
   );
-  return { ...state, energy: state.energy - 1, forgeOffers };
+  return {
+    ...state,
+    energy: state.energy - 1,
+    forgeOffers: forgeItems.filter(i => i.type === 'catalyst').map(i => i.catalyst),
+    forgeItems,
+  };
 }
 
 export function sellCatalyst(state: GameState, index: number): GameState {
@@ -754,6 +769,37 @@ export function sellCatalyst(state: GameState, index: number): GameState {
     lastIntermissionMessage: {
       key: 'ui.forge_sold_catalyst',
       params: { name: def.id, energy: refund },
+    },
+  };
+}
+
+export function sellPattern(state: GameState): GameState {
+  const id = state.activePattern;
+  if (!id) return state;
+  const refund = Math.max(1, Math.floor(FORGE_PATTERN_PRICE * PATTERN_SELL_REFUND));
+  return {
+    ...state,
+    activePattern: null,
+    patternLevels: { ...state.patternLevels, [id]: 0 },
+    energy: state.energy + refund,
+    lastIntermissionMessage: {
+      key: 'ui.forge_sold_pattern',
+      params: { name: id, energy: refund },
+    },
+  };
+}
+
+export function sellSignal(state: GameState, signalId: SignalId): GameState {
+  if (!state.signals.includes(signalId)) return state;
+  const refund = Math.max(1, Math.floor(FORGE_SIGNAL_PRICE * SIGNAL_SELL_REFUND));
+  return {
+    ...state,
+    signals: state.signals.filter(s => s !== signalId),
+    pendingSignal: state.pendingSignal === signalId ? null : state.pendingSignal,
+    energy: state.energy + refund,
+    lastIntermissionMessage: {
+      key: 'ui.forge_sold_signal',
+      params: { name: signalId, energy: refund },
     },
   };
 }
@@ -780,6 +826,9 @@ export function skipForge(state: GameState): GameState {
     output: 0,
     grid,
     tileIdCounter: idCounter,
+    forgeOffers: [],
+    infusionOptions: [],
+    forgeItems: [],
     reactionLog: [],
     consecutiveValidMoves: 0,
     momentumMultiplier: 1.0,
@@ -831,6 +880,9 @@ export function advanceRound(state: GameState): GameState {
     phaseIndex: 0,
     stepsRemaining: nextSteps,
     output: 0,
+    forgeOffers: [],
+    infusionOptions: [],
+    forgeItems: [],
     reactionLog: [],
     consecutiveValidMoves: 0,
     momentumMultiplier: 1.0,

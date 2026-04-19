@@ -29,7 +29,7 @@ npm run preview
 - The run ends only when you **fail a phase** (output too low when steps run out)
 - Survive **Anomaly** phases with special modifiers (Entropy Tax, Collapse Field)
 - Build a team of up to **6 Catalysts** for deep synergies and identity
-- Grow one **Pattern** archetype (Corner / Chain / Empty-space / High-tier / Economy / Survival) from **Infusion** rewards for run-long scaling
+- Grow one **Pattern** archetype (Corner / Chain / Empty-space / High-tier / Economy / Survival) from the **Forge** for run-long scaling
 - Pattern rules: one active Pattern at a time; picking the same Pattern upgrades it, picking a different Pattern replaces it
 - Sell Catalysts in Forge to recover partial Energy and pivot builds safely
 
@@ -52,19 +52,18 @@ the three cards to select it, then click **Start Run**.
 
 The selected protocol is displayed in the top bar throughout the run.
 
-### Round Templates (phase patterns)
+### Phase pacing
 
-Three templates rotate across rounds:
+Phase pacing now uses one centralized formula:
 
-| Template | Flavour |
-|----------|---------|
-| Standard Circuit (alpha) | Balanced ramp — two anomaly climaxes |
-| Pressure Gauntlet (beta) | Anomalies arrive early and often |
-| Economic Surge (gamma) | Long phases reward patient economy |
+- `steps = base + phaseScale + roundScale`
+- `target = base + phaseScale + roundScale`
+
+This keeps pacing predictable while still scaling by both phase and round.
 
 ## Catalysts
 
-Up to **6 Catalysts** can be active at once. The Forge is the default permanent acquisition path; direct Catalyst Infusion rewards are intentionally rare and rarity-gated.
+Up to **6 Catalysts** can be active at once. The Forge is the unified acquisition path for Catalysts, Patterns, Signals, and utility buys.
 
 ### Forge Duplicate Guard
 

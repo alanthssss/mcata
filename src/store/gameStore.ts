@@ -1,11 +1,11 @@
 import { create } from 'zustand';
-import { GameState, Direction, InfusionChoice, CatalystDef, SignalId, ProtocolId } from '../core/types';
+import { GameState, Direction, CatalystDef, ForgeShopItem, SignalId, ProtocolId, CatalystId } from '../core/types';
 import { ChallengeId } from '../core/challenges';
 import { getDailySeed } from '../core/dailyRun';
 import {
   createInitialState, startGame, processMoveAction,
-  selectInfusion, buyFromForge, rerollForge, skipForge,
-  queueSignal, grantSignal, advanceRound, sellCatalyst,
+  buyForgeItem, buyFromForge, rerollForge, skipForge,
+  queueSignal, grantSignal, advanceRound, sellCatalyst, sellPattern, sellSignal,
 } from '../core/engine';
 import { useProfileStore } from './profileStore';
 
@@ -15,9 +15,11 @@ interface GameStore extends GameState {
   initAndStart: (seed?: number, protocol?: ProtocolId) => void;
   start: () => void;
   move: (dir: Direction) => void;
-  chooseInfusion: (choice: InfusionChoice) => void;
+  purchaseForgeItem: (item: ForgeShopItem, replaceIndex?: number) => void;
   purchaseCatalyst: (catalyst: CatalystDef, replaceIndex?: number) => void;
   sellCatalystAt: (index: number) => void;
+  sellPatternActive: () => void;
+  sellSignalById: (signalId: SignalId) => void;
   reroll: () => void;
   skipForgePhase: () => void;
   activateSignal: (signalId: SignalId) => void;
@@ -51,13 +53,16 @@ export const useGameStore = create<GameStore>((set) => ({
     set(state => processMoveAction(state, dir));
   },
 
-  chooseInfusion: (choice: InfusionChoice) => {
-    set(state => selectInfusion(state, choice));
-    // Unlock persistence: mark the catalyst as unlocked in the profile
-    // immediately when it is acquired via Infusion.
-    if (choice.type === 'catalyst') {
-      useProfileStore.getState().unlockCatalysts([choice.catalyst.id]);
-    }
+  purchaseForgeItem: (item: ForgeShopItem, replaceIndex?: number) => {
+    let unlockedCatalystId: CatalystId | null = null;
+    set(state => {
+      const next = buyForgeItem(state, item, replaceIndex);
+      if (item.type === 'catalyst' && next !== state && next.activeCatalysts.includes(item.catalyst.id)) {
+        unlockedCatalystId = item.catalyst.id;
+      }
+      return next;
+    });
+    if (unlockedCatalystId) useProfileStore.getState().unlockCatalysts([unlockedCatalystId]);
   },
 
   purchaseCatalyst: (catalyst: CatalystDef, replaceIndex?: number) => {
@@ -72,6 +77,14 @@ export const useGameStore = create<GameStore>((set) => ({
 
   sellCatalystAt: (index: number) => {
     set(state => sellCatalyst(state, index));
+  },
+
+  sellPatternActive: () => {
+    set(state => sellPattern(state));
+  },
+
+  sellSignalById: (signalId: SignalId) => {
+    set(state => sellSignal(state, signalId));
   },
 
   reroll: () => {

@@ -1,6 +1,14 @@
-import { CatalystDef, CatalystId } from './types';
+import { CatalystDef, CatalystId, ForgeShopItem, PatternId, SignalId } from './types';
 import { ALL_CATALYSTS } from './catalysts';
-import { getRarityRulesForRound } from './config';
+import {
+  FORGE_ITEM_COUNTS,
+  FORGE_PATTERN_PRICE,
+  FORGE_SIGNAL_PRICE,
+  FORGE_UTILITY_PRICES,
+  FORGE_UTILITY_VALUES,
+  getRarityRulesForRound,
+} from './config';
+import { SIGNAL_DEFS } from './signals';
 
 function pickWeightedIndex(weights: number[], rngFn: () => number): number {
   const total = weights.reduce((a, b) => a + b, 0);
@@ -88,4 +96,94 @@ export function generateForgeOffers(
     pool = pool.filter(c => c.id !== drawn.id);
   }
   return picked;
+}
+
+const ALL_PATTERNS: PatternId[] = ['corner', 'chain', 'empty_space', 'high_tier', 'economy', 'survival'];
+const ALL_SIGNALS: SignalId[] = ['pulse_boost', 'grid_clean', 'chain_trigger', 'freeze_step'];
+
+function pickRandomItem<T>(items: T[], rngFn: () => number): T | null {
+  if (items.length === 0) return null;
+  return items[Math.floor(rngFn() * items.length)];
+}
+
+export function generateForgeItems(
+  activeCatalysts: CatalystId[],
+  activePattern: PatternId | null,
+  ownedSignals: SignalId[],
+  rngFn: () => number,
+  catalystPool?: CatalystId[],
+  roundNumber = 1,
+): ForgeShopItem[] {
+  const catalysts = generateForgeOffers(
+    activeCatalysts,
+    FORGE_ITEM_COUNTS.catalysts,
+    rngFn,
+    catalystPool,
+    roundNumber,
+  ).map((catalyst): ForgeShopItem => ({
+    id: `cat:${catalyst.id}`,
+    type: 'catalyst',
+    category: catalyst.category,
+    price: catalyst.cost,
+    name: catalyst.name,
+    description: catalyst.description,
+    catalyst,
+  }));
+
+  const patternPool = activePattern
+    ? ALL_PATTERNS.filter(p => p !== activePattern)
+    : ALL_PATTERNS;
+  const patternItems: ForgeShopItem[] = [];
+  for (let i = 0; i < FORGE_ITEM_COUNTS.patterns; i++) {
+    const picked = pickRandomItem(patternPool, rngFn);
+    if (!picked) break;
+    patternItems.push({
+      id: `pattern:${picked}`,
+      type: 'pattern',
+      category: 'archetype',
+      price: FORGE_PATTERN_PRICE,
+      name: picked,
+      description: picked,
+      pattern: picked,
+    });
+  }
+
+  const signalPool = ALL_SIGNALS.filter(s => !ownedSignals.includes(s));
+  const signalItems: ForgeShopItem[] = [];
+  for (let i = 0; i < FORGE_ITEM_COUNTS.signals; i++) {
+    const picked = pickRandomItem(signalPool, rngFn);
+    if (!picked) break;
+    signalItems.push({
+      id: `signal:${picked}`,
+      type: 'signal',
+      category: 'tactical',
+      price: FORGE_SIGNAL_PRICE,
+      name: SIGNAL_DEFS[picked].name,
+      description: SIGNAL_DEFS[picked].description,
+      signal: picked,
+    });
+  }
+
+  const utilityPool: Array<{ key: keyof typeof FORGE_UTILITY_PRICES; label: string }> = [
+    { key: 'energy', label: 'energy' },
+    { key: 'steps', label: 'steps' },
+    { key: 'multiplier', label: 'multiplier' },
+  ];
+  const utilityItems: ForgeShopItem[] = [];
+  for (let i = 0; i < FORGE_ITEM_COUNTS.utilities; i++) {
+    const picked = pickRandomItem(utilityPool, rngFn);
+    if (!picked) break;
+    utilityItems.push({
+      id: `util:${picked.key}`,
+      type: 'utility',
+      category: 'utility',
+      price: FORGE_UTILITY_PRICES[picked.key],
+      name: picked.label,
+      description: picked.label,
+      utility: picked.key,
+      amount: FORGE_UTILITY_VALUES[picked.key],
+    });
+  }
+
+  return [...catalysts, ...patternItems, ...signalItems, ...utilityItems];
 }

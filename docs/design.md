@@ -75,22 +75,11 @@ Round 1 → 6 phases → Round Complete → Round 2 → 6 phases → Round Compl
 
 - Every **6 phases** form one **round**.
 - After the 6th phase passes, the player sees the **Round Complete** screen, then the run continues into the next round.
-- Phase targets scale with `ROUND_TARGET_SCALE = 0.12` (12% harder per round).
-- Templates rotate every 3 rounds: Round 1 = alpha, Round 2 = beta, Round 3 = gamma, Round 4 = alpha (scaled), …
+- Phase pacing is centralized and additive:
+  - `steps = base + phaseScale + roundScale`
+  - `target = base + phaseScale + roundScale`
 
-### Round Templates
-
-Three named templates define different 6-phase structures:
-
-| Template | ID | Flavour |
-|----------|----|---------|
-| Standard Circuit | `alpha` | Balanced ramp; two anomaly climaxes |
-| Pressure Gauntlet | `beta` | Anomalies arrive early and often |
-| Economic Surge | `gamma` | Long phases reward patient economy |
-
-Each template specifies per-phase: `targetOutput`, `steps`, optional `anomaly`, `challengeTier`, and `modifier`.
-
-### Phase Roles (across all templates)
+### Phase Roles
 
 | Role | Purpose |
 |------|---------|
@@ -104,28 +93,25 @@ Each template specifies per-phase: `targetOutput`, `steps`, optional `anomaly`, 
 ### Intermission (Post-Phase Flow)
 
 After every phase clear:
-1. **Infusion** screen — choose from mostly non-Catalyst rewards (energy / steps / multiplier / signal / pattern / pool tools; direct catalyst is rare).
-2. **Forge** screen — optionally buy a catalyst.  "Skip Forge" proceeds immediately.
+1. **Forge** screen — optionally buy Catalysts, Patterns, Signals, or utility boosts (all priced).
+2. **Forge** also allows selling Catalysts, Pattern, and Signals for config-driven partial refunds.
 3. **Playing** — next phase begins with a fresh grid.
 
 ```
 Phase End (pass)
-  → Infusion (choose reward)
-  → Forge (buy or skip)
+  → Forge (buy / sell / skip)
   → Playing (next phase)
 ```
 
 ### Acquisition Layer Roles (Current Target)
 
-- **Forge**: primary permanent Catalyst acquisition + Catalyst selling.
-- **Infusion**: primarily non-Catalyst tactical/economy rewards (Energy/Steps/Multiplier/Signal/Pattern/pool tools).
-- **Direct Catalyst via Infusion**: rare, explicit, and still rarity-gated.
-- **Full-slot Catalyst Infusion handling**: deterministic conversion to Energy with clear intermission feedback (never silent failure).
+- **Forge**: unified strategic acquisition and selling layer.
+- **All acquisition choices are priced** (no default free reward layer).
 
 ### Pattern Layer (run-long archetype growth)
 
 Patterns are a separate progression layer from Catalysts and Signals.  
-Pattern acquisition is Infusion-only (`Grow Pattern` reward).  
+Pattern acquisition is Forge-based (priced offers).  
 Only one Pattern is active at a time: selecting the same Pattern upgrades level, while selecting a different Pattern replaces the active Pattern at level 1.
 
 Archetypes:
