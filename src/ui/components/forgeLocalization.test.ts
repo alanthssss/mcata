@@ -21,8 +21,8 @@ describe('Pattern panel', () => {
   it('renders empty panel state when no pattern is active', () => {
     useLocaleStore.getState().setLocale('en');
     const html = renderToStaticMarkup(React.createElement(PatternPanel, { activePattern: null, level: 0 }));
-    expect(html).toContain('No active Style yet');
-    expect(html).toContain('How to get: buy Style in Shop.');
+    expect(html).toContain('None');
+    expect(html).not.toContain('How to get: buy Style in Shop.');
   });
 
   it('shows active pattern state', () => {
@@ -42,13 +42,13 @@ describe('Signal panel', () => {
       onActivate: () => undefined,
     }));
     expect(html).toContain('Skills (0/2)');
-    expect(html).toContain('No Skill equipped');
+    expect(html).toContain('Empty');
   });
 
   it('localizes empty-state text in zh-CN', () => {
     const t = createT('zh-CN');
     expect(t('ui.signals', { count: 0, max: 2 })).toBe('技能 (0/2)');
-    expect(t('ui.no_signals_equipped')).toBe('未装备技能');
+    expect(t('ui.no_signals_equipped')).toBe('空');
   });
 });
 

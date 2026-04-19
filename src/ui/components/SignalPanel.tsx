@@ -17,10 +17,7 @@ export const SignalPanel: React.FC<SignalPanelProps> = ({ signals, pendingSignal
     <div className="panel signal-panel">
       <div className="panel-title">{t('ui.signals', { count: signals.length, max: SIGNAL_CAPACITY })}</div>
       {signals.length === 0 ? (
-        <>
-          <div className="empty-state">{t('ui.no_signals_equipped')}</div>
-          <div className="panel-help">{t('ui.signal_help_empty')}</div>
-        </>
+        <div className="empty-state">{t('ui.no_signals_equipped')}</div>
       ) : (
         <div className="signal-list">
           {signals.map(id => {
