@@ -12,7 +12,6 @@ import { ForgeModal } from './components/ForgeModal';
 import { StartScreen } from './components/StartScreen';
 import { EndScreen } from './components/EndScreen';
 import { RoundCompleteScreen } from './components/RoundCompleteScreen';
-import { ChallengeSelectScreen } from './components/ChallengeSelectScreen';
 import { MilestoneNotification, JackpotBanner } from './components/MilestoneNotification';
 import { SignalPanel } from './components/SignalPanel';
 import { ProtocolPanel } from './components/ProtocolBadge';
@@ -21,6 +20,7 @@ import { SynergyPanel } from './components/SynergyPanel';
 import { PatternPanel } from './components/PatternPanel';
 import { CatalystCollectionView } from './components/CatalystCollectionView';
 import { useT } from '../i18n';
+import { ENABLE_SECONDARY_MODES } from '../core/features';
 import './style.css';
 
 const KEY_MAP: Record<string, Direction> = {
@@ -38,8 +38,8 @@ export const App: React.FC = () => {
   const t = useT();
   const [showCollection, setShowCollection] = useState(false);
   const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(null);
-  const [showBreakdown, setShowBreakdown] = useState(true);
-  const [showLog, setShowLog] = useState(true);
+  const [showBreakdown, setShowBreakdown] = useState(false);
+  const [showLog, setShowLog] = useState(false);
   const renderLocalized = useCallback((key: string, params?: Record<string, string | number>) => {
     if (!params) return t(key);
     const resolved = { ...params };
@@ -87,21 +87,17 @@ export const App: React.FC = () => {
     return () => window.removeEventListener('keydown', handler);
   }, [handleMove, state.screen]);
 
-  if (state.screen === 'start') {
+  useEffect(() => {
+    if (ENABLE_SECONDARY_MODES) return;
+    if (state.challengeId || state.isDailyRun || state.screen === 'challenge_select') {
+      state.initGame(undefined, state.protocol);
+    }
+  }, [state.challengeId, state.initGame, state.isDailyRun, state.protocol, state.screen]);
+
+  if (state.screen === 'start' || (!ENABLE_SECONDARY_MODES && state.screen === 'challenge_select')) {
     return <StartScreen
       onStart={(protocol) => state.initAndStart(undefined, protocol)}
-      onChallenge={() => state.showChallengeSelect()}
-      onDailyRun={() => state.startDailyRun()}
     />;
-  }
-
-  if (state.screen === 'challenge_select') {
-    return (
-      <ChallengeSelectScreen
-        onSelect={(challengeId) => state.startChallenge(challengeId)}
-        onBack={() => state.initGame()}
-      />
-    );
   }
 
   if (state.screen === 'round_complete') {

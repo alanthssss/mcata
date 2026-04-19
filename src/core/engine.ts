@@ -159,7 +159,12 @@ function getPatternMultiplier(
 }
 
 export function startGame(state: GameState): GameState {
-  return { ...state, screen: 'playing' };
+  return {
+    ...state,
+    screen: 'playing',
+    challengeId: null,
+    isDailyRun: false,
+  };
 }
 
 /** Queue a signal to be consumed on the next move */

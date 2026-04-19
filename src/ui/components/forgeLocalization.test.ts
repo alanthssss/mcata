@@ -22,15 +22,14 @@ describe('Pattern panel', () => {
     useLocaleStore.getState().setLocale('en');
     const html = renderToStaticMarkup(React.createElement(PatternPanel, { activePattern: null, level: 0 }));
     expect(html).toContain('No active Style yet');
-    expect(html).toContain('Style is obtained in Shop');
+    expect(html).toContain('How to get: buy Style in Shop.');
   });
 
   it('shows active pattern state', () => {
     useLocaleStore.getState().setLocale('en');
     const html = renderToStaticMarkup(React.createElement(PatternPanel, { activePattern: 'chain', level: 2 }));
     expect(html).toContain('Chain Style');
-    expect(html).toContain('Level 2');
-    expect(html).toContain('How to get');
+    expect(html).not.toContain('Level 2');
   });
 });
 

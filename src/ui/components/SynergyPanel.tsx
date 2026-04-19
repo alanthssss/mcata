@@ -2,6 +2,7 @@ import React from 'react';
 import { CatalystId, SynergyId } from '../../core/types';
 import { SYNERGY_DEFS, getActiveSynergies } from '../../core/synergies';
 import { useT } from '../../i18n';
+import { CompactDetail } from './CompactDetail';
 
 interface SynergyPanelProps {
   activeCatalysts: CatalystId[];
@@ -62,15 +63,24 @@ export const SynergyPanel: React.FC<SynergyPanelProps> = ({
               <div
                 key={id}
                 className={`synergy-item${wasTriggered ? ' synergy-item--triggered' : ''}`}
-                title={tDesc}
               >
-                <div className="synergy-header">
-                  <span className="synergy-name">⚡ {tName}</span>
-                  <span className="synergy-mult">×{def.multiplier.toFixed(2)}</span>
-                </div>
-                <div className="synergy-catalysts">
-                  {c1Name} + {c2Name}
-                </div>
+                <CompactDetail
+                  selected={wasTriggered}
+                  summary={(
+                    <div className="synergy-header">
+                      <span className="synergy-name">⚡ {tName}</span>
+                      <span className="synergy-tag">×{def.multiplier.toFixed(2)}</span>
+                    </div>
+                  )}
+                  detail={(
+                    <>
+                      <div className="compact-detail__line">{tDesc}</div>
+                      <div className="synergy-catalysts">
+                        {c1Name} + {c2Name}
+                      </div>
+                    </>
+                  )}
+                />
                 {wasTriggered && (
                   <div className="synergy-triggered-badge">{t('ui.synergy_triggered')}</div>
                 )}
