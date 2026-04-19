@@ -59,7 +59,7 @@ boost interactions.
 3. Add i18n keys to `src/i18n/en.ts` and `src/i18n/zh-CN.ts`:
    - `protocol.<id>.name`
    - `protocol.<id>.description`
-4. Add the icon and difficulty mapping in `src/ui/components/StartScreen.tsx`.
+4. Provide `icon` + `stakes` in the protocol definition (UI reads these directly).
 5. The new rule is automatically shown on the Start Screen selection grid.
 
 ### State Flow
@@ -77,6 +77,16 @@ GameState.protocol = protocol
         score.ts  (cornerMultiplier)
         engine.ts (startTiles, stepsReduction, spawnFrequencyFactor, outputScale)
 ```
+
+---
+
+## Mode Availability
+
+- Standard Run is the only enabled run mode.
+- Challenge Mode and Daily Run are currently disabled via guarded store actions
+  and removed start-screen entry points.
+- Challenge/daily modules are retained in isolated code paths for future
+  re-enable work.
 
 ---
 
@@ -199,6 +209,19 @@ UI behavior:
 Consecutive scoring moves build the streak multiplier (up to ×2.0).  A
 non-scoring move resets it.  Tuning lives in `src/core/config.ts` →
 `MOMENTUM_CONFIG`.
+
+---
+
+## HUD Compact + Detail Interaction
+
+Gameplay/system cards use a unified compact-first presentation:
+- Default card content: name + tag/category + minimal essential numeric info.
+- Detailed descriptions are shown on hover/focus (desktop) and tap/click toggle
+  (touch fallback).
+- A shared `CompactDetail` component handles interaction consistency, outside
+  click close, and keyboard focus behavior.
+- Last Move Breakdown and Reaction Log panels are collapsible from the right
+  column to keep the default gameplay view compact.
 
 ---
 

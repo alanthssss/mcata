@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { GameState, Direction, CatalystDef, ForgeShopItem, SignalId, ProtocolId, CatalystId } from '../core/types';
 import { ChallengeId } from '../core/challenges';
 import { getDailySeed } from '../core/dailyRun';
+import { ENABLE_SECONDARY_MODES } from '../core/features';
 import {
   createInitialState, startGame, processMoveAction,
   buyForgeItem, buyFromForge, rerollForge, skipForge,
@@ -108,14 +109,26 @@ export const useGameStore = create<GameStore>((set) => ({
   },
 
   showChallengeSelect: () => {
+    if (!ENABLE_SECONDARY_MODES) {
+      set(state => ({ ...state, screen: 'start', challengeId: null, isDailyRun: false }));
+      return;
+    }
     set(state => ({ ...state, screen: 'challenge_select' }));
   },
 
   startChallenge: (challengeId: ChallengeId, seed?: number) => {
+    if (!ENABLE_SECONDARY_MODES) {
+      set(createInitialState(seed ?? Date.now()));
+      return;
+    }
     set(startGame({ ...createInitialState(seed ?? Date.now()), challengeId, isDailyRun: false }));
   },
 
   startDailyRun: () => {
+    if (!ENABLE_SECONDARY_MODES) {
+      set(createInitialState(Date.now()));
+      return;
+    }
     const seed = getDailySeed();
     set(startGame({ ...createInitialState(seed), isDailyRun: true, challengeId: null }));
   },

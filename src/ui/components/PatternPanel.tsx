@@ -1,6 +1,7 @@
 import React from 'react';
 import { PatternId } from '../../core/types';
 import { useT } from '../../i18n';
+import { CompactDetail } from './CompactDetail';
 
 interface PatternPanelProps {
   activePattern: PatternId | null;
@@ -13,18 +14,25 @@ export const PatternPanel: React.FC<PatternPanelProps> = ({ activePattern, level
   return (
     <div className="panel pattern-panel">
       <div className="panel-title">{t('ui.pattern_title')}</div>
-      <div className="pattern-meta" title={t('ui.pattern_how_to_get_detail')}>{t('ui.pattern_how_to_get')}</div>
       {!activePattern || level <= 0 ? (
         <>
           <div className="empty-state">{t('ui.pattern_none')}</div>
-          <div className="panel-help">{t('ui.pattern_help_empty')}</div>
+          <CompactDetail
+            className="pattern-help-detail"
+            summary={<span className="pattern-meta">{t('ui.pattern_how_to_get')}</span>}
+            detail={<span>{t('ui.pattern_help_empty')}</span>}
+          />
         </>
       ) : (
-        <>
-          <div className="pattern-name">🧭 {t(`pattern.${activePattern}.name`)}</div>
-          <div className="pattern-meta">{t('ui.pattern_level', { level })}</div>
-          <div className="pattern-meta">{t(`pattern.${activePattern}.description`)}</div>
-        </>
+        <CompactDetail
+          summary={<div className="pattern-name">🧭 {t(`pattern.${activePattern}.name`)}</div>}
+          detail={(
+            <>
+              <div className="compact-detail__line">{t('ui.pattern_level', { level })}</div>
+              <div className="compact-detail__line">{t(`pattern.${activePattern}.description`)}</div>
+            </>
+          )}
+        />
       )}
     </div>
   );

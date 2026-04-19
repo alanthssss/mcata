@@ -174,6 +174,46 @@ button:not(:disabled):active {
   line-height: 1.35;
 }
 
+.compact-detail {
+  position: relative;
+  width: 100%;
+}
+
+.compact-detail__summary {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+}
+
+.compact-detail__summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+.compact-detail__popover {
+  margin-top: 6px;
+  background: rgba(13, 17, 31, 0.95);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 7px 8px;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+
+.compact-detail__line + .compact-detail__line {
+  margin-top: 4px;
+}
+
+.compact-detail--selected .compact-detail__summary {
+  filter: brightness(1.06);
+}
+
 /* ─── Phase Panel ───────────────────────────────────────────────────────────── */
 .progress-bar-container {
   position: relative;
@@ -244,15 +284,17 @@ button:not(:disabled):active {
   border-left: 3px solid var(--accent);
 }
 
+.catalyst-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
 .catalyst-name {
   font-size: 0.82rem;
   font-weight: 600;
   color: var(--text);
-}
-
-.catalyst-desc {
-  font-size: 0.72rem;
-  color: var(--text-muted);
 }
 
 .catalyst-extra {
@@ -757,18 +799,27 @@ button:not(:disabled):active {
   color: var(--text-muted);
 }
 
-.start-info {
+.start-hints-grid {
+  width: 100%;
+  max-width: 700px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.start-hint-card {
   background: var(--bg-panel);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 16px 24px;
-  max-width: 360px;
-  text-align: left;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  font-size: 0.9rem;
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+}
+
+.start-hint-label {
+  font-size: 0.76rem;
   color: var(--text-muted);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 .controls-info {
@@ -850,6 +901,12 @@ button:not(:disabled):active {
   font-size: 0.78rem;
   cursor: default;
 }
+.protocol-badge.compact-detail { width: auto; }
+.protocol-badge .compact-detail__summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
 
 .protocol-badge--highlight {
   border-color: var(--accent);
@@ -869,15 +926,22 @@ button:not(:disabled):active {
 }
 
 .protocol-row {
+  margin-top: 2px;
+}
+.protocol-row .compact-detail__summary {
   display: flex;
   align-items: flex-start;
   gap: 8px;
 }
 
 .protocol-icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 1px; }
-.protocol-info { display: flex; flex-direction: column; gap: 3px; }
+.protocol-info {
+  display: flex;
+  flex-direction: row;
+  gap: 6px;
+  align-items: center;
+}
 .protocol-name { font-weight: 700; font-size: 0.88rem; color: var(--accent); }
-.protocol-desc { font-size: 0.72rem; color: var(--text-muted); line-height: 1.4; }
 
 /* ─── Momentum Panel ────────────────────────────────────────────────────────── */
 .momentum-panel { transition: box-shadow 0.2s, border-color 0.2s; }
@@ -928,12 +992,8 @@ button:not(:disabled):active {
   letter-spacing: 0.05em;
 }
 
-.momentum-meta {
-  display: flex;
-  gap: 6px;
-  font-size: 0.72rem;
-  color: var(--text-muted);
-}
+.momentum-detail { margin-top: 4px; }
+.momentum-meta { font-size: 0.72rem; color: var(--text-muted); }
 
 .momentum-streak-val { font-weight: 600; color: var(--warning); }
 .momentum-value { color: var(--warning) !important; }
@@ -1232,21 +1292,23 @@ button:not(:disabled):active {
 }
 
 .protocol-card {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
   padding: 12px 14px;
   background: var(--bg-panel);
   border: 2px solid var(--border);
   border-radius: var(--radius);
   color: var(--text);
-  text-align: left;
-  cursor: pointer;
   transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
 }
 
-.protocol-card:hover {
+.protocol-card .compact-detail__summary {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.protocol-card:hover,
+.protocol-card .compact-detail__summary:hover {
   border-color: var(--accent);
   background: var(--bg-panel-2);
 }
@@ -1270,13 +1332,6 @@ button:not(:disabled):active {
 
 .protocol-card--selected .protocol-card__name {
   color: var(--accent);
-}
-
-.protocol-card__desc {
-  font-size: 0.72rem;
-  color: var(--text-muted);
-  line-height: 1.4;
-  flex: 1;
 }
 
 .protocol-card__tag {
@@ -1340,6 +1395,8 @@ button:not(:disabled):active {
   display: flex;
   gap: 10px;
   align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
   margin-top: 8px;
 }
 
@@ -1356,6 +1413,12 @@ button:not(:disabled):active {
 .help-btn:hover {
   border-color: var(--accent);
   color: var(--accent);
+}
+
+@media (max-width: 980px) {
+  .start-hints-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 /* ─── Help Overlay ──────────────────────────────────────────────────────────── */

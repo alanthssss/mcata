@@ -363,14 +363,14 @@ Rules define the **immutable base ruleset** for a run, selected at run start and
 The Start Screen shows a **Rule Selection** grid with a card for each rule.  Each card displays:
 - **Icon** (emoji) — from `ProtocolDef.icon`
 - **Name** — from i18n key `protocol.<id>.name`
-- **Description** — from i18n key `protocol.<id>.description`
-- **Difficulty badge** — from `ProtocolDef.difficulty`, styled with a semantic colour
+- **Stakes badge** — from `ProtocolDef.stakes`, styled with a semantic colour
+- **Description on demand** — shown via shared hover/focus/tap compact-detail popover
 
-The difficulty badge comes directly from the rule definition — there is no separate mapping in the UI component.
+The stakes badge comes directly from the rule definition — there is no separate mapping in the UI component.
 
 ### Available Rules
 
-| Icon | ID | Name | Difficulty | Effect |
+| Icon | ID | Name | Stakes | Effect |
 |---|---|---|---|---|
 | 📐 | corner_protocol | Corner Rule | Standard | Corner merges gain extra ×1.5 multiplier |
 | 🌑 | sparse_protocol | Sparse Rule | Tactical | Start with 1 tile; spawn freq halved; output ×1.2 |
@@ -380,7 +380,7 @@ The difficulty badge comes directly from the rule definition — there is no sep
 
 Each `ProtocolDef` defines:
 - `icon`: emoji displayed on the selection card
-- `difficulty`: `'standard' | 'tactical' | 'overclocked'` — the difficulty tier
+- `stakes`: `'standard' | 'tactical' | 'overclocked'` — the challenge tier label
 - `cornerMultiplier`: extra corner bonus
 - `startTiles`: initial tiles placed (1 or 2)
 - `spawnFrequencyFactor`: >1 = less frequent spawns (implemented via chance)
@@ -390,7 +390,7 @@ Each `ProtocolDef` defines:
 ### Adding a New Rule
 
 1. Add the `ProtocolId` literal to `src/core/types.ts`
-2. Add the `ProtocolDef` (with `icon` and `difficulty`) to `src/core/protocols.ts`
+2. Add the `ProtocolDef` (with `icon` and `stakes`) to `src/core/protocols.ts`
 3. Add i18n keys `protocol.<id>.name` and `protocol.<id>.description` to `en.ts` / `zh-CN.ts`
 4. The rule will appear automatically on the Start Screen
 
@@ -579,15 +579,15 @@ The React UI renders the game state from the Zustand store. Key panels:
 |-----------|----------|---------|
 | `Header` | Top bar | Stage, Output, Steps, Energy, Rule badge, Streak, Locale switcher |
 | `PhasePanel` | Left column | Stage progress bar + Hazard info |
-| `ProtocolPanel` | Left column | Active Rule name and description |
-| `MomentumBar` | Left column | Visual streak multiplier meter |
-| `CatalystPanel` | Left column | Active Boosts with category tags |
-| `SynergyPanel` | Left column | Active Combos + Build identity label |
-| `SignalPanel` | Left column | Available Skills with Use buttons |
-| `OutputPanel` | Left column | Last move score breakdown |
+| `ProtocolPanel` | Left column | Active Rule compact summary + on-demand detail |
+| `MomentumBar` | Left column | Visual streak multiplier meter + on-demand detail |
+| `CatalystPanel` | Left column | Active Boost compact cards (name + tag) |
+| `SynergyPanel` | Left column | Active Combo compact cards (name + tag) |
+| `SignalPanel` | Left column | Available Skills compact cards + Use buttons |
+| `OutputPanel` | Right column | Last move score breakdown (collapsible) |
 | `GridView` | Center | 4×4 game board |
 | `ControlPad` | Center | On-screen arrow controls |
-| `LogPanel` | Right column | Reaction log (last 10 moves) |
+| `LogPanel` | Right column | Reaction log (last 10 moves, collapsible) |
 | `ForgeModal` | Overlay | Boost shop with category tags and combo hints |
 | `InfusionModal` | Overlay | Post-stage reward choice with playstyle tags |
 | `HelpOverlay` | Overlay | In-game help (systems explanation) |
@@ -1159,36 +1159,11 @@ A **Streak** tracks consecutive high-output moves (output ≥ `STREAK_MIN_OUTPUT
 
 ---
 
-## Challenge Mode
+## Secondary Modes (Temporarily Disabled)
 
-Challenge runs impose curated rule modifications for a more demanding experience.
-
-### Challenges
-| Challenge | Key Rule | Win Condition |
-|---|---|---|
-| **No Corners** | Corner bonuses disabled | Clear 3 levels |
-| **Energy Starved** | Energy gain × 0.3 | Reach Level 3 |
-| **Chain Master** | Only chain-based scoring | Clear 3 levels |
-| **Hazard Storm** | Hazard frequency × 2 | Survive 3 levels |
-
-Challenges are defined in `src/core/challenges.ts`. Each `ChallengeDef` includes a `baseProtocol`, `rules` list, `winCondition`, and `overrides` record. The `overrides` object contains flags that can be applied on top of the base rule config.
-
-### Challenge Selection Flow
-```
-Start Screen → "Challenge" button → ChallengeSelectScreen → Select challenge → Run starts
-```
-
----
-
-## Daily Run System
-
-Every day all players share the same seeded run, enabling comparison.
-
-- **Seed generation**: `getDailySeed(dateStr)` hashes the date string `YYYY-MM-DD` to a 32-bit integer
-- **Fixed sequence**: same seed → same stage sequence, boost pool, hazard sequence
-- **Local leaderboard** (MVP): persisted to `localStorage` under key `merge_catalyst_daily_runs`
-- **Records**: best output, best levels reached, play count per day, kept for 30 days
-- **UI**: "Daily Run" button on the Start Screen shows today's date and personal best
+Challenge Mode and Daily Run are intentionally disabled from all active entry
+points (start menu, navigation flow, and guarded store actions). The underlying
+modules remain isolated for future reactivation once balance is stable.
 
 
 ---

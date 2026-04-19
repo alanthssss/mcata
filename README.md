@@ -42,7 +42,8 @@ frequency, output scaling, and step budgets.
 ### Choosing a Rule
 
 On the Start Screen you will see a **Rule Selection** grid.  Click one of
-the three cards to select it, then click **Start Run**.
+the three cards to select it, then click **Start Run**. Rule details are
+shown on hover/focus or tap.
 
 | Rule | Icon | Stakes | Effect |
 |---|---|---|---|
@@ -330,21 +331,16 @@ A `<LocaleSwitcher>` component is embedded in the Header. Clicking it toggles be
 5. Continue into the next level (difficulty scales +12% per level)
 6. Run ends only when you fail to reach a stage target within the step limit
 
-### Challenge Mode
-1. Click **⚔ Challenge** on the Start Screen
-2. Select one of 4 challenge runs with unique constraints
-3. The run applies rule overrides on top of the base rule
+### Mode Availability
+- **Standard Run** is the only playable mode right now.
+- Challenge Mode and Daily Run are intentionally disabled until balance
+  stabilization.
 
-Available challenges:
-- **No Corners**: corner bonuses disabled
-- **Energy Starved**: energy gain at 30% of normal
-- **Chain Master**: only chain-based scoring counts
-- **Hazard Storm**: hazard frequency doubled
-
-### Daily Run
-1. Click **📅 Daily Run** on the Start Screen
-2. Every player shares the same seed derived from today's date (`YYYY-MM-DD`)
-3. Your best result (output + levels) is saved locally
+### UI Detail Pattern
+- Gameplay and start-screen system cards now render in compact form by default.
+- Full descriptions are available through a shared hover/focus/tap detail
+  popover.
+- Last Move Breakdown and Reaction Log are collapsible from the right column.
 
 ### Milestones & Rewards
 - **Milestones** trigger on output thresholds, level numbers, and max tile values

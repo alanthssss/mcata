@@ -1,6 +1,7 @@
 import React from 'react';
 import { MOMENTUM_CONFIG } from '../../core/config';
 import { useT } from '../../i18n';
+import { CompactDetail } from './CompactDetail';
 
 interface MomentumBarProps {
   momentumMultiplier: number;
@@ -32,11 +33,11 @@ export const MomentumBar: React.FC<MomentumBarProps> = ({
           {isMax && <span className="momentum-max-label">{t('ui.momentum_max')}</span>}
         </span>
       </div>
-      <div className="momentum-meta">
-        <span className="momentum-streak-label">{t('ui.momentum_streak')}:</span>
-        <span className="momentum-streak-val">{consecutiveValidMoves}</span>
-      </div>
-      {!isActive && <div className="panel-help">{t('ui.momentum_help_empty')}</div>}
+      <CompactDetail
+        className="momentum-detail"
+        summary={<span className="momentum-meta">{t('ui.momentum_streak')}: {consecutiveValidMoves}</span>}
+        detail={<span>{t('ui.momentum_help_empty')}</span>}
+      />
     </div>
   );
 };

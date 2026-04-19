@@ -1,8 +1,8 @@
 import React from 'react';
 import { SignalId } from '../../core/types';
-import { SIGNAL_DEFS } from '../../core/signals';
 import { SIGNAL_CAPACITY } from '../../core/config';
 import { useT } from '../../i18n';
+import { CompactDetail } from './CompactDetail';
 
 interface SignalPanelProps {
   signals: SignalId[];
@@ -24,7 +24,6 @@ export const SignalPanel: React.FC<SignalPanelProps> = ({ signals, pendingSignal
       ) : (
         <div className="signal-list">
           {signals.map(id => {
-            const def = SIGNAL_DEFS[id];
             const isPending = pendingSignal === id;
             const tName = t(`signal.${id}.name`);
             const tDesc = t(`signal.${id}.description`);
@@ -33,17 +32,26 @@ export const SignalPanel: React.FC<SignalPanelProps> = ({ signals, pendingSignal
                 key={id}
                 className={`signal-item${isPending ? ' signal-item--pending' : ''}`}
               >
-                <div className="signal-info">
-                  <div className="signal-name">🔮 {tName}</div>
-                  <div className="signal-desc">{tDesc}</div>
-                  <div className="signal-desc">
-                    {isPending ? t('ui.signal_armed_next_move') : t('ui.signal_ready')}
-                  </div>
-                </div>
+                <CompactDetail
+                  className="signal-info"
+                  selected={isPending}
+                  summary={<div className="signal-name">🔮 {tName}</div>}
+                  detail={(
+                    <>
+                      <div className="compact-detail__line">{tDesc}</div>
+                      <div className="compact-detail__line">
+                        {isPending ? t('ui.signal_armed_next_move') : t('ui.signal_ready')}
+                      </div>
+                    </>
+                  )}
+                />
                 <button
                   className={`signal-use-btn${isPending ? ' signal-use-btn--active' : ''}`}
-                  onClick={() => onActivate(id)}
-                  title={isPending ? t('ui.signal_queued_tooltip', { name: tName }) : tDesc}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onActivate(id);
+                  }}
+                  title={isPending ? t('ui.signal_queued_tooltip', { name: tName }) : t('ui.signal_use')}
                 >
                   {isPending ? t('ui.signal_armed') : t('ui.signal_use')}
                 </button>
