@@ -32,6 +32,24 @@ const KEY_MAP: Record<string, Direction> = {
 const SIGNAL_IDS = new Set(['pulse_boost', 'grid_clean', 'chain_trigger', 'freeze_step']);
 const PATTERN_IDS = new Set(['corner', 'chain', 'empty_space', 'high_tier', 'economy', 'survival']);
 
+function findMergeHintPair(grid: import('../core/types').Grid): [import('../core/types').Position, import('../core/types').Position] | null {
+  for (let r = 0; r < grid.length; r++) {
+    for (let c = 0; c < grid[r].length; c++) {
+      const cell = grid[r][c];
+      if (!cell) continue;
+      const right = grid[r][c + 1];
+      if (right && right.value === cell.value) {
+        return [{ row: r, col: c }, { row: r, col: c + 1 }];
+      }
+      const down = grid[r + 1]?.[c];
+      if (down && down.value === cell.value) {
+        return [{ row: r, col: c }, { row: r + 1, col: c }];
+      }
+    }
+  }
+  return null;
+}
+
 export const App: React.FC = () => {
   const state = useGameStore();
   const { profile } = useProfileStore();
@@ -135,6 +153,17 @@ export const App: React.FC = () => {
   }
 
   const lastEntry = state.reactionLog[0] ?? null;
+  const mergeMoves = state.reactionLog.reduce((count, entry) => (
+    entry.merges.length > 0 ? count + 1 : count
+  ), 0);
+  const onboardingRun = state.roundNumber === 1 && state.phaseIndex === 0 && state.screen === 'playing';
+  const advancedSystemsUnlocked = !onboardingRun || state.reactionLog.length >= 3;
+  const hintPair = onboardingRun && mergeMoves === 0 ? findMergeHintPair(state.grid) : null;
+  const mergeTargets = lastEntry?.merges.map(m => m.to) ?? [];
+  const mergeFeedback = lastEntry?.merges.length
+    ? (mergeMoves === 1 ? 'strong' : mergeMoves === 2 ? 'normal' : null)
+    : null;
+  const showSmallSystemNudge = onboardingRun && !advancedSystemsUnlocked && mergeMoves > 0;
   const lastTriggeredSynergies = lastEntry?.triggeredSynergies ?? [];
   const signalToast = lastEntry?.signalUsed
     ? `${t(`signal.${lastEntry.signalUsed}.name`)} → ${lastEntry.signalEffect ? renderLocalized(lastEntry.signalEffect.key, lastEntry.signalEffect.params) : t('ui.signal_consumed')}`
@@ -158,24 +187,30 @@ export const App: React.FC = () => {
         <div className="left-column">
           <PhasePanel phaseIndex={state.phaseIndex} output={state.output} phaseTargetOutput={state.phaseTargetOutput} />
           <ProtocolPanel protocol={state.protocol} />
-          <MomentumBar
-            momentumMultiplier={state.momentumMultiplier}
-            consecutiveValidMoves={state.consecutiveValidMoves}
-          />
-          <CatalystPanel activeCatalysts={state.activeCatalysts} frozenCell={state.frozenCell} />
-          <SynergyPanel
-            activeCatalysts={state.activeCatalysts}
-            lastTriggeredSynergies={lastTriggeredSynergies}
-          />
-          <SignalPanel
-            signals={state.signals}
-            pendingSignal={state.pendingSignal}
-            onActivate={state.activateSignal}
-          />
-          <PatternPanel
-            activePattern={state.activePattern}
-            level={state.activePattern ? state.patternLevels[state.activePattern] : 0}
-          />
+          {(advancedSystemsUnlocked || showSmallSystemNudge) && (
+            <MomentumBar
+              momentumMultiplier={state.momentumMultiplier}
+              consecutiveValidMoves={state.consecutiveValidMoves}
+            />
+          )}
+          {advancedSystemsUnlocked && (
+            <>
+              <CatalystPanel activeCatalysts={state.activeCatalysts} frozenCell={state.frozenCell} />
+              <SynergyPanel
+                activeCatalysts={state.activeCatalysts}
+                lastTriggeredSynergies={lastTriggeredSynergies}
+              />
+              <SignalPanel
+                signals={state.signals}
+                pendingSignal={state.pendingSignal}
+                onActivate={state.activateSignal}
+              />
+              <PatternPanel
+                activePattern={state.activePattern}
+                level={state.activePattern ? state.patternLevels[state.activePattern] : 0}
+              />
+            </>
+          )}
         </div>
 
         <div className="center-column" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
@@ -183,27 +218,34 @@ export const App: React.FC = () => {
             grid={state.grid}
             frozenCell={state.activeCatalysts.includes('frozen_cell') ? state.frozenCell : null}
             blockedCell={state.entropyBlockedCell}
+            hintedPair={hintPair}
+            mergeTargets={mergeTargets}
+            mergeFeedback={mergeFeedback}
           />
         </div>
 
         <div className="right-column">
-          <div className="right-column-top">
-            <button
-              className="collection-btn"
-              onClick={() => setShowCollection(true)}
-              aria-label={t('ui.open_collection')}
-            >
-              {t('ui.open_collection')}
-            </button>
-          </div>
-          <button className="panel-collapse-btn" onClick={() => setShowBreakdown(v => !v)}>
-            {showBreakdown ? t('ui.collapse_breakdown') : t('ui.expand_breakdown')}
-          </button>
-          {showBreakdown && <OutputPanel lastEntry={lastEntry} />}
-          <button className="panel-collapse-btn" onClick={() => setShowLog(v => !v)}>
-            {showLog ? t('ui.collapse_log') : t('ui.expand_log')}
-          </button>
-          {showLog && <LogPanel log={state.reactionLog} />}
+          {advancedSystemsUnlocked && (
+            <>
+              <div className="right-column-top">
+                <button
+                  className="collection-btn"
+                  onClick={() => setShowCollection(true)}
+                  aria-label={t('ui.open_collection')}
+                >
+                  {t('ui.open_collection')}
+                </button>
+              </div>
+              <button className="panel-collapse-btn" onClick={() => setShowBreakdown(v => !v)}>
+                {showBreakdown ? t('ui.collapse_breakdown') : t('ui.expand_breakdown')}
+              </button>
+              {showBreakdown && <OutputPanel lastEntry={lastEntry} />}
+              <button className="panel-collapse-btn" onClick={() => setShowLog(v => !v)}>
+                {showLog ? t('ui.collapse_log') : t('ui.expand_log')}
+              </button>
+              {showLog && <LogPanel log={state.reactionLog} />}
+            </>
+          )}
         </div>
       </div>
 

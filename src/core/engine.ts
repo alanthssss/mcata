@@ -38,21 +38,20 @@ import { CATALYST_DEFS } from './catalysts';
 
 const MAX_LOG = 10;
 
-function makeInitialGrid(rngSeed: number, startTiles: number): { grid: Grid; idCounter: number } {
-  const rng = createRng(rngSeed);
+function makeOnboardingGrid(): { grid: Grid; idCounter: number } {
+  const openingTiles: Position[] = [
+    { row: 1, col: 1 },
+    { row: 1, col: 2 },
+    { row: 2, col: 1 },
+    { row: 2, col: 2 },
+  ];
   let grid = createEmptyGrid();
   let idCounter = 0;
-
-  for (let i = 0; i < startTiles; i++) {
-    const empty = getEmptyCells(grid);
-    if (empty.length === 0) break;
-    const pos = rng.pick(empty);
-    const value = rng.next() < 0.9 ? 2 : 4;
-    const result = spawnTile(grid, value, pos, idCounter);
+  for (const pos of openingTiles) {
+    const result = spawnTile(grid, 2, pos, idCounter);
     grid = result.grid;
     idCounter = result.id;
   }
-
   return { grid, idCounter };
 }
 
@@ -66,7 +65,7 @@ export function createInitialState(
   const unlockedCatalysts = runConfig?.unlockedCatalysts;
   const ascMod = ASCENSION_MODIFIER_DEFS[ascensionLevel];
   const protocolDef = PROTOCOL_DEFS[protocol];
-  const { grid, idCounter } = makeInitialGrid(rngSeed, protocolDef.startTiles);
+  const { grid, idCounter } = makeOnboardingGrid();
   const roundNumber = 1;
   const phases = getPhasesForRound(roundNumber);
   const phase = phases[0];
@@ -304,6 +303,16 @@ export function processMoveAction(state: GameState, dir: Direction): GameState {
   const patternMultiplier = getPatternMultiplier(state, state.activePattern, moveResult.merges, emptyCells);
   if (patternMultiplier > 1) {
     finalOutputAdjusted = Math.floor(finalOutputAdjusted * patternMultiplier);
+  }
+
+  const previousMergeMoves = state.reactionLog.reduce((count, entry) => (
+    entry.merges.length > 0 ? count + 1 : count
+  ), 0);
+  if (moveResult.merges.length > 0) {
+    const earlyMergeFeedbackMult = previousMergeMoves === 0 ? 1.25 : (previousMergeMoves === 1 ? 1.1 : 1);
+    if (earlyMergeFeedbackMult > 1) {
+      finalOutputAdjusted = Math.floor(finalOutputAdjusted * earlyMergeFeedbackMult);
+    }
   }
 
   let newComboCount = state.comboWireCount;
@@ -567,6 +576,39 @@ function handlePhaseEnd(state: GameState): GameState {
     state.globalMultiplier,
   );
   const nextPhaseTargetOutput = Math.ceil(nextPhase.targetOutput * ascMod.targetOutputScale * buildFactor);
+
+  if (state.roundNumber === 1 && state.phaseIndex === 0) {
+    const onboardingRng = createRng(state.rngSeed + 600);
+    let grid = createEmptyGrid();
+    let idCounter = state.tileIdCounter;
+    for (let i = 0; i < protocolDef.startTiles; i++) {
+      const empty = getEmptyCells(grid);
+      if (empty.length === 0) break;
+      const pos = onboardingRng.pick(empty);
+      const val = onboardingRng.next() < 0.9 ? 2 : 4;
+      const spawned = spawnTile(grid, val, pos, idCounter);
+      grid = spawned.grid;
+      idCounter = spawned.id;
+    }
+    return {
+      ...state,
+      screen: 'playing',
+      output: 0,
+      grid,
+      tileIdCounter: idCounter,
+      forgeOffers: [],
+      infusionOptions: [],
+      forgeItems: [],
+      reactionLog: [],
+      phaseIndex: nextPhaseIndex,
+      stepsRemaining: nextSteps,
+      phaseTargetOutput: nextPhaseTargetOutput,
+      consecutiveValidMoves: 0,
+      momentumMultiplier: 1.0,
+      stabilityCount: 0,
+      lastIntermissionMessage: null,
+    };
+  }
 
   const rng = createRng(state.rngSeed + 200);
   const forgeItems = generateForgeItems(
