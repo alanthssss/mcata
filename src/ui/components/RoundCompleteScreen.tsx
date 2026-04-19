@@ -3,6 +3,7 @@ import { formatScore } from '../scoreDisplay';
 import { useT } from '../../i18n';
 import { CatalystId, SynergyId } from '../../core/types';
 import { CATALYST_DEFS } from '../../core/catalysts';
+import { LocaleSwitcher } from './LocaleSwitcher';
 import { SYNERGY_DEFS, getActiveSynergies } from '../../core/synergies';
 import { ROUND_COMPLETE_ENERGY_BONUS, ROUND_COMPLETE_MULTIPLIER_BONUS } from '../../core/config';
 
@@ -16,13 +17,7 @@ interface RoundCompleteScreenProps {
   onQuit: () => void;
 }
 
-const ROUND_FLAVORS = [
-  'System Stabilized',
-  'Chain Reaction Amplified',
-  'Boost Surge Complete',
-  'Reaction Loop Closed',
-  'Output Cascade Locked',
-];
+const ROUND_FLAVOR_COUNT = 5;
 
 function getBestCatalyst(activeCatalysts: CatalystId[]): CatalystId | null {
   // Prefer epic > rare > common
@@ -60,13 +55,15 @@ export const RoundCompleteScreen: React.FC<RoundCompleteScreenProps> = ({
   onQuit,
 }) => {
   const t = useT();
-  const flavorText = ROUND_FLAVORS[(Math.max(roundNumber, 1) - 1) % ROUND_FLAVORS.length];
+  const flavorKey = `ui.round_flavor_${(Math.max(roundNumber, 1) - 1) % ROUND_FLAVOR_COUNT}`;
+  const flavorText = t(flavorKey);
   const activeSynergies = getActiveSynergies(activeCatalysts);
   const mvpCatalyst = getBestCatalyst(activeCatalysts);
   const strongestSynergy = getBestSynergy(activeCatalysts);
 
   return (
     <div className="screen end-screen">
+      <div className="screen-locale-switcher"><LocaleSwitcher /></div>
       <div className="round-complete-banner">
         <h1 className="end-title end-title--victory round-complete-pulse">
           {t('ui.round_complete_title', { round: String(roundNumber) })}

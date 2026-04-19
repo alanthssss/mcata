@@ -826,6 +826,7 @@ button:not(:disabled):active {
 
 /* ─── Screens (Start / End) ─────────────────────────────────────────────────── */
 .screen {
+  position: relative;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -1491,6 +1492,12 @@ button:not(:disabled):active {
 }
 
 /* ─── Locale Switcher ───────────────────────────────────────────────────────── */
+.screen-locale-switcher {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+}
+
 .locale-switcher {
   background: var(--bg-panel-2);
   border: 1px solid var(--border);

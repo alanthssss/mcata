@@ -84,6 +84,11 @@ const en: TranslationMap = {
   // ─── UI: Round Complete ────────────────────────────────────────────────────
   'ui.round_complete_title': '🌀 Round {round} Complete!',
   'ui.round_complete_subtitle': 'The reaction chain holds. Entering the next round.',
+  'ui.round_flavor_0': 'System Stabilized',
+  'ui.round_flavor_1': 'Chain Reaction Amplified',
+  'ui.round_flavor_2': 'Boost Surge Complete',
+  'ui.round_flavor_3': 'Reaction Loop Closed',
+  'ui.round_flavor_4': 'Output Cascade Locked',
   'ui.round_score': 'Round Score',
   'ui.round_number': 'Round {round}',
   'ui.continue_run': 'Continue Run →',
