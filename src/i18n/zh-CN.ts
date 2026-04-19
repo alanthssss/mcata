@@ -99,7 +99,7 @@ const zhCN: TranslationMap = {
   'ui.victory_subtitle': '所有异常已中和，反应链已稳定。',
   'ui.defeat_subtitle': '反应链崩溃，产出不足。',
   'ui.total_output': '总产出',
-  'ui.new_run': '新的一局',
+  'ui.new_round': '新的一轮',
 
   // ─── UI: Forge ─────────────────────────────────────────────────────────────
   'ui.forge_title': '⚗ 熔炉',

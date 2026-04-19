@@ -151,7 +151,7 @@ export const RoundCompleteScreen: React.FC<RoundCompleteScreenProps> = ({
           {t('ui.continue_run')}
         </button>
         <button className="help-btn" onClick={onQuit}>
-          {t('ui.new_run')}
+          {t('ui.new_round')}
         </button>
       </div>
     </div>

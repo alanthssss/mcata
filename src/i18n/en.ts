@@ -99,7 +99,7 @@ const en: TranslationMap = {
   'ui.victory_subtitle': 'You have neutralized all Anomalies. The reaction chain is stable.',
   'ui.defeat_subtitle': 'The reaction chain collapsed. Output insufficient.',
   'ui.total_output': 'Total Output',
-  'ui.new_run': 'New Run',
+  'ui.new_round': 'New Round',
 
   // ─── UI: Forge ─────────────────────────────────────────────────────────────
   'ui.forge_title': '⚗ Forge',
