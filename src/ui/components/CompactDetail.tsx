@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useId, useRef, useState } from 'react';
 
 export interface CompactDetailState {
   hovered: boolean;
@@ -60,7 +60,7 @@ export const CompactDetail: React.FC<CompactDetailProps> = ({
   const [state, setState] = useState<CompactDetailState>(COMPACT_DETAIL_INITIAL_STATE);
   const rootRef = useRef<HTMLDivElement | null>(null);
   const isOpen = state.hovered || state.focused || state.pinned;
-  const popoverId = useMemo(() => `compact-detail-${Math.random().toString(36).slice(2, 10)}`, []);
+  const popoverId = useId();
 
   useEffect(() => {
     if (!state.pinned) return;
