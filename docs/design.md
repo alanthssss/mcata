@@ -1,8 +1,8 @@
-# Merge Catalyst — Design Document
+# Merge Boost — Design Document
 
 ## Overview
 
-Merge Catalyst is a roguelike puzzle game built on a discrete tile-merge grid.  The player progresses through **endless rounds**, each containing 6 Phases.  After every phase, the player enters an **Intermission**: first choosing an Infusion reward, then optionally shopping at the Forge.  Two Anomaly phases per round add asymmetric challenges.  Rounds scale in difficulty — targets increase by 12% per round — so score-chasing runs grow progressively more demanding.
+Merge Boost is a roguelike puzzle game built on a discrete tile-merge grid.  The player progresses through **endless levels**, each containing 6 Stages.  After every stage, the player enters an **Intermission**: first choosing a Pick reward, then optionally shopping at the Shop.  Two Hazard stages per level add asymmetric challenges.  Levels scale in difficulty — targets increase by 12% per level — so score-chasing runs grow progressively more demanding.
 
 The player-facing tile visuals are driven by a **pluggable theme layer** — the default shell uses a generic progression ladder (Seed → Singularity) rather than raw numeric labels.  Core game logic always operates on internal power-of-two values; the theme layer is purely presentational.
 
@@ -14,24 +14,24 @@ It also ships a complete **benchmark-aware simulation framework** that allows AI
 
 | Term | Meaning |
 |------|---------|
-| Catalyst | Power-up modifier |
-| Category | Catalyst classification (Amplifier / Stabilizer / Generator / Modifier / Legacy) |
-| Signal | One-time-use tactical ability |
-| Protocol | Immutable base ruleset selected at run start |
-| RunStakes | Descriptor tag on a Protocol expressing how demanding its ruleset is (`standard` / `tactical` / `overclocked`) |
-| Phase | One stage within a round (6 phases = 1 round) |
-| Round | Group of 6 phases; runs continue across rounds endlessly |
-| Anomaly | Special challenge modifier active during certain phases |
-| Forge | Shop for buying Catalysts (available after every phase via Intermission) |
-| Intermission | Post-phase node: Infusion choice followed by Forge access |
-| Infusion | Post-phase reward choice |
-| Energy | Currency for the Forge |
+| Boost | Power-up modifier |
+| Category | Boost classification (Amplifier / Stabilizer / Generator / Modifier / Legacy) |
+| Skill | One-time-use tactical ability |
+| Rule | Immutable base ruleset selected at run start |
+| RunStakes | Descriptor tag on a Rule expressing how demanding its ruleset is (`standard` / `tactical` / `overclocked`) |
+| Stage | One stage within a level (6 stages = 1 level) |
+| Level | Group of 6 stages; runs continue across levels endlessly |
+| Hazard | Special challenge modifier active during certain stages |
+| Shop | Shop for buying Boosts (available after every stage via Intermission) |
+| Intermission | Post-stage node: Pick choice followed by Shop access |
+| Pick | Post-stage reward choice |
+| Energy | Currency for the Shop |
 | Output | Score |
 | Steps | Moves remaining |
 | Grid | 4×4 play field |
 | Reaction Log | Move history log |
-| Synergy | Bonus from holding two complementary Catalysts |
-| Momentum | Multiplier that grows with consecutive valid moves |
+| Combo | Bonus from holding two complementary Boosts |
+| Streak | Multiplier that grows with consecutive valid moves |
 
 ---
 
@@ -51,7 +51,7 @@ Phase End
                                               (run continues, never auto-ends)
 ```
 
-The run continues indefinitely — there is **no final round**.  The run ends only when the player fails a phase (output < target when steps reach 0).
+The run continues indefinitely — there is **no final level**.  The run ends only when the player fails a stage (output < target when steps reach 0).
 
 ---
 
@@ -65,37 +65,37 @@ The run continues indefinitely — there is **no final round**.  The run ends on
 
 ---
 
-## Round & Phase Structure
+## Level & Stage Structure
 
-### Endless Round Model
+### Endless Level Model
 
 ```
 Round 1 → 6 phases → Round Complete → Round 2 → 6 phases → Round Complete → …
 ```
 
-- Every **6 phases** form one **round**.
-- After the 6th phase passes, the player sees the **Round Complete** screen, then the run continues into the next round.
-- Phase pacing is centralized and additive:
+- Every **6 stages** form one **level**.
+- After the 6th stage passes, the player sees the **Level Complete** screen, then the run continues into the next level.
+- Stage pacing is centralized and additive:
   - `steps = base + phaseScale + roundScale`
   - `target = base + phaseScale + roundScale`
 
-### Phase Roles
+### Stage Roles
 
 | Role | Purpose |
 |------|---------|
 | Opener | Low target; get the board moving |
-| Economy | Longer steps; build energy and catalysts |
+| Economy | Longer steps; build energy and boosts |
 | Combo Pressure | Moderate target; chain bonuses are needed |
-| Anomaly Pressure | Anomaly active; survive with existing build |
+| Hazard Pressure | Hazard active; survive with existing build |
 | Recovery / Spike | High steps or high target; push score |
-| Climax | Final phase of the round; boss-tier challenge |
+| Climax | Final stage of the level; boss-tier challenge |
 
-### Intermission (Post-Phase Flow)
+### Intermission (Post-Stage Flow)
 
-After every phase clear:
-1. **Forge** screen — optionally buy Catalysts, Patterns, Signals, or utility boosts (all priced).
-2. **Forge** also allows selling Catalysts, Pattern, and Signals for config-driven partial refunds.
-3. **Playing** — next phase begins with a fresh grid.
+After every stage clear:
+1. **Shop** screen — optionally buy Boosts, Styles, Skills, or utility boosts (all priced).
+2. **Shop** also allows selling Boosts, Style, and Skills for config-driven partial refunds.
+3. **Playing** — next stage begins with a fresh grid.
 
 ```
 Phase End (pass)
@@ -105,14 +105,14 @@ Phase End (pass)
 
 ### Acquisition Layer Roles (Current Target)
 
-- **Forge**: unified strategic acquisition and selling layer.
+- **Shop**: unified strategic acquisition and selling layer.
 - **All acquisition choices are priced** (no default free reward layer).
 
-### Pattern Layer (run-long archetype growth)
+### Style Layer (run-long archetype growth)
 
-Patterns are a separate progression layer from Catalysts and Signals.  
-Pattern acquisition is Forge-based (priced offers).  
-Only one Pattern is active at a time: selecting the same Pattern upgrades level, while selecting a different Pattern replaces the active Pattern at level 1.
+Styles are a separate progression layer from Boosts and Skills.  
+Style acquisition is Shop-based (priced offers).  
+Only one Style is active at a time: selecting the same Style upgrades level, while selecting a different Style replaces the active Style at level 1.
 
 Archetypes:
 - `corner`
@@ -203,28 +203,28 @@ Sum of merged tile values in that move.
 | 3 | 1.5 |
 | 4+ | 2.0 |
 
-With **Chain Reactor** catalyst active, the chain multiplier scales linearly: `1.0 + (N-1) × 1.2`.
+With **Chain Reactor** boost active, the chain multiplier scales linearly: `1.0 + (N-1) × 1.2`.
 
 ### Condition Multipliers
 - Corner merge (destination is a corner cell): ×1.2
 - Highest tile merge (result exceeds prior max): ×1.2
 - Both conditions stack multiplicatively.
 
-### Catalyst Multipliers
-Applied from active Catalysts (see below). Each catalyst triggers according to its `trigger` type and `effectParams`.
+### Boost Multipliers
+Applied from active Boosts (see below). Each boost triggers according to its `trigger` type and `effectParams`.
 
-### Synergy Multiplier
-When two complementary Catalysts are both active, a Synergy bonus is applied. See Synergy System section.
+### Combo Multiplier
+When two complementary Boosts are both active, a Combo bonus is applied. See Combo System section.
 
-### Momentum Multiplier
-Grows with consecutive valid (scoring) moves. Resets on phase start. See Momentum System section.
+### Streak Multiplier
+Grows with consecutive valid (scoring) moves. Resets on stage start. See Streak System section.
 
 ### Global Multiplier
-Starts at 1.0. Increased by +0.1 for each Infusion multiplier choice taken. Also scaled by Protocol `outputScale`.
+Starts at 1.0. Increased by +0.1 for each Pick multiplier choice taken. Also scaled by Rule `outputScale`.
 
 ---
 
-## Catalyst Categories
+## Boost Categories
 
 ### Amplifier (score multipliers)
 Boost Output through various scaling mechanisms.
@@ -235,7 +235,7 @@ Boost Output through various scaling mechanisms.
 | chain_reactor | Chain Reactor | Rare | 5 | Chain scales ×0.2 per extra merge |
 | echo_multiplier | Echo Multiplier | Rare | 5 | Carry 20% of last move's Output |
 | threshold_surge | Threshold Surge | Rare | 5 | ×1.5 if base > 30 |
-| phase_resonance | Phase Resonance | Epic | 7 | +0.1× per phase index |
+| phase_resonance | Stage Resonance | Epic | 7 | +0.1× per stage index |
 
 ### Stabilizer (board control)
 Help maintain a clean, controllable board state.
@@ -245,7 +245,7 @@ Help maintain a clean, controllable board state.
 | gravity_well | Gravity Well | Common | 3 | ×1.1 if merge at corner |
 | soft_reset | Soft Reset | Rare | 5 | Remove lowest tile once per run |
 | buffer_zone | Buffer Zone | Common | 3 | Row 0 blocked from spawns |
-| merge_shield | Merge Shield | Epic | 7 | Absorbs phase failure every 5 moves |
+| merge_shield | Merge Shield | Epic | 7 | Absorbs stage failure every 5 moves |
 | stability_field | Stability Field | Rare | 5 | ×1.2 after 3 consecutive valid moves |
 
 ### Generator (resource / spawn)
@@ -255,9 +255,9 @@ Convert actions into energy and spawn additional resources.
 |----|------|--------|------|--------|
 | double_spawn | Double Spawn | Common | 3 | 25% chance to spawn 2 tiles |
 | rich_merge | Rich Merge | Rare | 5 | +1 Energy per merge |
-| catalyst_echo | Catalyst Echo | Epic | 7 | Duplicate weakest catalyst effect once/phase |
+| catalyst_echo | Boost Echo | Epic | 7 | Duplicate weakest boost effect once/stage |
 | energy_loop | Energy Loop | Rare | 5 | 10% of Output converts to Energy |
-| reserve_bank | Reserve Bank | Common | 3 | +1 Energy per step used at phase clear |
+| reserve_bank | Reserve Bank | Common | 3 | +1 Energy per step used at stage clear |
 
 ### Modifier (rule changes)
 Alter fundamental game mechanics.
@@ -265,21 +265,21 @@ Alter fundamental game mechanics.
 | ID | Name | Rarity | Cost | Effect |
 |----|------|--------|------|--------|
 | diagonal_merge | Diagonal Merge | Epic | 7 | ×1.2 on every 4th move |
-| split_protocol | Split Protocol | Epic | 7 | Split highest tile once per phase |
+| split_protocol | Split Rule | Epic | 7 | Split highest tile once per stage |
 | inversion_field | Inversion Field | Rare | 5 | ×1.15 Output always |
 | overflow_grid | Overflow Grid | Epic | 7 | +2 virtual empty cells once per run |
 | delay_spawn | Delay Spawn | Rare | 5 | Skip spawn; double next spawn |
-| anomaly_sync | Anomaly Sync | Epic | 7 | ×1.3 when anomaly triggers |
+| anomaly_sync | Hazard Sync | Epic | 7 | ×1.3 when hazard triggers |
 
 ### Legacy (original 8)
-The original 8 catalysts retain full compatibility.
+The original 8 boosts retain full compatibility.
 
 | ID | Name | Rarity | Cost | Effect |
 |----|------|--------|------|--------|
 | corner_crown | Corner Crown | Rare | 5 | Corner merges ×2 Output |
 | twin_burst | Twin Burst | Common | 3 | ≥2 merges ×1.5 Output |
 | lucky_seed | Lucky Seed | Common | 3 | Spawn: 75% 2, 25% 4 |
-| bankers_edge | Banker's Edge | Common | 3 | +2 Energy on phase clear |
+| bankers_edge | Banker's Edge | Common | 3 | +2 Energy on stage clear |
 | reserve | Reserve | Rare | 5 | +20 Output per unused step on clear |
 | frozen_cell | Frozen Cell | Common | 3 | Cell (1,1) blocked from spawns |
 | combo_wire | Combo Wire | Rare | 5 | 3 consecutive moves → ×1.3 |
@@ -287,21 +287,21 @@ The original 8 catalysts retain full compatibility.
 
 ---
 
-## Synergy System
+## Combo System
 
-When two complementary Catalysts are both active simultaneously, a **Synergy** bonus multiplier is applied to Output.
+When two complementary Boosts are both active simultaneously, a **Combo** bonus multiplier is applied to Output.
 
-### Defined Synergies
+### Defined Combos
 
-| Synergy ID | Catalysts | Multiplier | Description |
+| Combo ID | Boosts | Multiplier | Description |
 |-----------|-----------|-----------|-------------|
 | corner_empire | corner_crown + empty_amplifier | ×1.3 | Empty board space amplifies corner dominance |
 | chain_echo | chain_reactor + echo_multiplier | ×1.4 | Chain length echoes into next move |
 | generator_surplus | double_spawn + rich_merge | ×1.25 | Extra tiles convert directly to energy |
 | amplified_stability | stability_field + threshold_surge | ×1.35 | Stable board unlocks surge multiplier |
-| phase_reactor | phase_resonance + energy_loop | ×1.3 | Late-phase output feeds energy loop |
+| phase_reactor | phase_resonance + energy_loop | ×1.3 | Late-stage output feeds energy loop |
 
-Synergy bonuses stack multiplicatively if multiple synergies are active.
+Combo bonuses stack multiplicatively if multiple combos are active.
 
 ```mermaid
 graph TD
@@ -319,24 +319,24 @@ graph TD
 
 ---
 
-## Momentum System
+## Streak System
 
-- Each consecutive valid (scoring) move increments momentum
-- Momentum multiplier = `min(1.0 + N × 0.05, 2.0)` where N = consecutive valid moves
-- Resets to 1.0 at the start of each phase (after Infusion / Forge)
+- Each consecutive valid (scoring) move increments streak
+- Streak multiplier = `min(1.0 + N × 0.05, 2.0)` where N = consecutive valid moves
+- Resets to 1.0 at the start of each stage (after Pick / Shop)
 - A "valid move" is any move that produces at least 1 Output
 
 ---
 
-## Signal System
+## Skill System
 
-Signals are **one-time-use tactical abilities** within a run. They are consumable items stored in `RunState`.
+Skills are **one-time-use tactical abilities** within a run. They are consumable items stored in `RunState`.
 
-### Signal Capacity
+### Skill Capacity
 - Maximum 2 slots per run
-- Signals are consumed on use
+- Skills are consumed on use
 
-### Available Signals
+### Available Skills
 
 | ID | Name | Effect |
 |----|------|--------|
@@ -346,37 +346,37 @@ Signals are **one-time-use tactical abilities** within a run. They are consumabl
 | freeze_step | Freeze Step | Skip tile spawn this turn |
 
 ### Usage Flow
-1. Signals are obtained via Infusion rewards
-2. Player queues a signal before making a move (clicks the signal button in the UI)
-3. The signal activates when the next move is processed
-4. Signal is removed from inventory after use
-5. Effect and signal name are recorded in the `ReactionLogEntry`
+1. Skills are obtained via Pick rewards
+2. Player queues a skill before making a move (clicks the skill button in the UI)
+3. The skill activates when the next move is processed
+4. Skill is removed from inventory after use
+5. Effect and skill name are recorded in the `ReactionLogEntry`
 
 ---
 
-## Protocol System
+## Rule System
 
-Protocols define the **immutable base ruleset** for a run, selected at run start and fixed throughout.
+Rules define the **immutable base ruleset** for a run, selected at run start and fixed throughout.
 
 ### Pre-Run Selection UI
 
-The Start Screen shows a **Protocol Selection** grid with a card for each protocol.  Each card displays:
+The Start Screen shows a **Rule Selection** grid with a card for each rule.  Each card displays:
 - **Icon** (emoji) — from `ProtocolDef.icon`
 - **Name** — from i18n key `protocol.<id>.name`
 - **Description** — from i18n key `protocol.<id>.description`
 - **Difficulty badge** — from `ProtocolDef.difficulty`, styled with a semantic colour
 
-The difficulty badge comes directly from the protocol definition — there is no separate mapping in the UI component.
+The difficulty badge comes directly from the rule definition — there is no separate mapping in the UI component.
 
-### Available Protocols
+### Available Rules
 
 | Icon | ID | Name | Difficulty | Effect |
 |---|---|---|---|---|
-| 📐 | corner_protocol | Corner Protocol | Standard | Corner merges gain extra ×1.5 multiplier |
-| 🌑 | sparse_protocol | Sparse Protocol | Tactical | Start with 1 tile; spawn freq halved; output ×1.2 |
-| ⚡ | overload_protocol | Overload Protocol | Overclocked | Output ×1.4 but each phase has 2 fewer steps |
+| 📐 | corner_protocol | Corner Rule | Standard | Corner merges gain extra ×1.5 multiplier |
+| 🌑 | sparse_protocol | Sparse Rule | Tactical | Start with 1 tile; spawn freq halved; output ×1.2 |
+| ⚡ | overload_protocol | Overload Rule | Overclocked | Output ×1.4 but each stage has 2 fewer steps |
 
-### Protocol Fields
+### Rule Fields
 
 Each `ProtocolDef` defines:
 - `icon`: emoji displayed on the selection card
@@ -385,26 +385,26 @@ Each `ProtocolDef` defines:
 - `startTiles`: initial tiles placed (1 or 2)
 - `spawnFrequencyFactor`: >1 = less frequent spawns (implemented via chance)
 - `outputScale`: global output scaling
-- `stepsReduction`: steps removed from each phase
+- `stepsReduction`: steps removed from each stage
 
-### Adding a New Protocol
+### Adding a New Rule
 
 1. Add the `ProtocolId` literal to `src/core/types.ts`
 2. Add the `ProtocolDef` (with `icon` and `difficulty`) to `src/core/protocols.ts`
 3. Add i18n keys `protocol.<id>.name` and `protocol.<id>.description` to `en.ts` / `zh-CN.ts`
-4. The protocol will appear automatically on the Start Screen
+4. The rule will appear automatically on the Start Screen
 
 ---
 
-## Anomalies
+## Hazards
 
-### Entropy Tax (Phase 4)
+### Entropy Tax (Stage 4)
 - Before each move, 1 random empty cell is blocked from receiving a spawn tile.
 - The blocked cell is highlighted in the UI.
 
-### Collapse Field (Phase 6)
+### Collapse Field (Stage 6)
 - Every 4 valid moves, the highest tile on the grid is reduced by one level (value / 2).
-- Counter resets per phase.
+- Counter resets per stage.
 
 ---
 
@@ -413,11 +413,11 @@ Each `ProtocolDef` defines:
 Introduced in Balance v3 (`balanceVersion: "v3"`, see `src/core/config.ts`).
 
 ### New Systems
-- 16 new Catalysts across 4 categories (total: 24)
-- Signal system (4 one-time abilities)
-- Protocol system (3 run modifiers)
-- Synergy system (5 catalyst pair bonuses)
-- Momentum system (consecutive move scaling)
+- 16 new Boosts across 4 categories (total: 24)
+- Skill system (4 one-time abilities)
+- Rule system (3 run modifiers)
+- Combo system (5 boost pair bonuses)
+- Streak system (consecutive move scaling)
 
 ### Score Formula Extension
 Formula extended from `base × chain × condition × catalyst × global` to:
@@ -425,23 +425,23 @@ Formula extended from `base × chain × condition × catalyst × global` to:
 
 ---
 
-## Forge (Between Phase 3 and 4)
+## Shop (Between Stage 3 and 4)
 
-- 3 random Catalyst offers shown
+- 3 random Boost offers shown
 - Player may buy any (if affordable) or reroll
 - Reroll costs 1 Energy
-- If all 3 slots are full, player must choose which Catalyst to replace
-- Player may skip the Forge entirely at no cost
-- Grid resets (protocol.startTiles fresh tiles) when entering Phase 4
+- If all 3 slots are full, player must choose which Boost to replace
+- Player may skip the Shop entirely at no cost
+- Grid resets (rule.startTiles fresh tiles) when entering Stage 4
 
 ---
 
-## Infusion (After Each Phase Clear)
+## Pick (After Each Stage Clear)
 
 Player chooses one of up to 4 options:
-1. **Gain a Catalyst** — add a random catalyst not already active (if < 3 slots)
+1. **Gain a Boost** — add a random boost not already active (if < 3 slots)
 2. **Gain 3 Energy** — adds 3 to energy reserve
-3. **Gain +2 Steps** — adds 2 steps to the next phase's step limit
+3. **Gain +2 Steps** — adds 2 steps to the next stage's step limit
 4. **+10% Global Multiplier** — increments globalMultiplier by 0.1
 
 ---
@@ -454,14 +454,14 @@ Each valid move records:
 - `gridBefore`, `gridAfter`: full grid snapshots
 - `merges`: list of merge events with positions and values
 - `spawn`: position of the newly spawned tile (or null)
-- `anomalyEffect`: description of any anomaly effect that fired
+- `anomalyEffect`: description of any hazard effect that fired
 - `base`, `multipliers`, `finalOutput`: scoring breakdown
-- `triggeredCatalysts`: list of catalyst IDs that activated
-- `synergyMultiplier`: combined synergy bonus for this move
-- `triggeredSynergies`: list of synergy IDs that activated
-- `momentumMultiplier`: current momentum multiplier at time of move
-- `signalUsed`: signal ID consumed this move (or null)
-- `signalEffect`: description of the signal's effect (or null)
+- `triggeredCatalysts`: list of boost IDs that activated
+- `synergyMultiplier`: combined combo bonus for this move
+- `triggeredSynergies`: list of combo IDs that activated
+- `momentumMultiplier`: current streak multiplier at time of move
+- `signalUsed`: skill ID consumed this move (or null)
+- `signalEffect`: description of the skill's effect (or null)
 
 The UI displays the last 10 log entries.
 
@@ -499,9 +499,9 @@ src/
 ## Balancing Philosophy
 
 - **Centralized config**: all tuning knobs live in `src/core/config.ts`
-- **Benchmark-driven tuning**: run `npm run balance` to check rounds cleared, catalyst stats, and pacing metrics
+- **Benchmark-driven tuning**: run `npm run balance` to check levels cleared, boost stats, and pacing metrics
 - **Agent distinction**: if HeuristicAgent and RandomAgent score similarly, the game lacks depth
-- **Phase ramp**: each phase should feel meaningfully harder, not just step-limited
+- **Stage ramp**: each stage should feel meaningfully harder, not just step-limited
 - See [balance.md](balance.md) for the full tuning guide
 
 ---
@@ -577,19 +577,19 @@ The React UI renders the game state from the Zustand store. Key panels:
 
 | Component | Location | Purpose |
 |-----------|----------|---------|
-| `Header` | Top bar | Phase, Output, Steps, Energy, Protocol badge, Momentum, Locale switcher |
-| `PhasePanel` | Left column | Phase progress bar + Anomaly info |
-| `ProtocolPanel` | Left column | Active Protocol name and description |
-| `MomentumBar` | Left column | Visual momentum multiplier meter |
-| `CatalystPanel` | Left column | Active Catalysts with category tags |
-| `SynergyPanel` | Left column | Active Synergies + Build identity label |
-| `SignalPanel` | Left column | Available Signals with Use buttons |
+| `Header` | Top bar | Stage, Output, Steps, Energy, Rule badge, Streak, Locale switcher |
+| `PhasePanel` | Left column | Stage progress bar + Hazard info |
+| `ProtocolPanel` | Left column | Active Rule name and description |
+| `MomentumBar` | Left column | Visual streak multiplier meter |
+| `CatalystPanel` | Left column | Active Boosts with category tags |
+| `SynergyPanel` | Left column | Active Combos + Build identity label |
+| `SignalPanel` | Left column | Available Skills with Use buttons |
 | `OutputPanel` | Left column | Last move score breakdown |
 | `GridView` | Center | 4×4 game board |
 | `ControlPad` | Center | On-screen arrow controls |
 | `LogPanel` | Right column | Reaction log (last 10 moves) |
-| `ForgeModal` | Overlay | Catalyst shop with category tags and synergy hints |
-| `InfusionModal` | Overlay | Post-phase reward choice with playstyle tags |
+| `ForgeModal` | Overlay | Boost shop with category tags and combo hints |
+| `InfusionModal` | Overlay | Post-stage reward choice with playstyle tags |
 | `HelpOverlay` | Overlay | In-game help (systems explanation) |
 | `LocaleSwitcher` | Header | Toggle EN / 中文 |
 
@@ -609,11 +609,11 @@ src/i18n/
 
 Translation keys are grouped by domain:
 - `ui.*` — UI labels, buttons, panel titles, screen text
-- `catalyst.*` — Catalyst names and descriptions
-- `signal.*` — Signal names and descriptions
-- `protocol.*` — Protocol names and descriptions
-- `anomaly.*` — Anomaly names and descriptions
-- `synergy.*` — Synergy names and descriptions
+- `catalyst.*` — Boost names and descriptions
+- `signal.*` — Skill names and descriptions
+- `protocol.*` — Rule names and descriptions
+- `anomaly.*` — Hazard names and descriptions
+- `synergy.*` — Combo names and descriptions
 - `tag.*` — Category/playstyle tag labels
 - `locale.*` — Locale switcher labels
 
@@ -632,7 +632,7 @@ Adding a new language: create `src/i18n/<locale>.ts`, add it to `TRANSLATIONS` i
 
 ## Overview
 
-Merge Catalyst is a roguelike puzzle game built on 2048-style grid mechanics. The player progresses through 6 Phases, each with an Output target and step limit. Between Phase 3 and 4, the Forge allows purchasing Catalysts. After each phase, an Infusion reward is offered. Two Anomaly phases add asymmetric challenges.
+Merge Boost is a roguelike puzzle game built on 2048-style grid mechanics. The player progresses through 6 Stages, each with an Output target and step limit. Between Stage 3 and 4, the Shop allows purchasing Boosts. After each stage, a Pick reward is offered. Two Hazard stages add asymmetric challenges.
 
 It also ships a complete **benchmark-aware simulation framework** that allows AI agents to play the game headlessly, batch simulations to run for balance analysis, and results to be exported for review.
 
@@ -642,12 +642,12 @@ It also ships a complete **benchmark-aware simulation framework** that allows AI
 
 | Term | Meaning |
 |------|---------|
-| Catalyst | Power-up modifier |
-| Phase | Game stage/level |
-| Anomaly | Special challenge modifier |
-| Forge | Shop for buying Catalysts |
-| Infusion | Post-phase reward |
-| Energy | Currency for the Forge |
+| Boost | Power-up modifier |
+| Stage | Game stage/level |
+| Hazard | Special challenge modifier |
+| Shop | Shop for buying Boosts |
+| Pick | Post-stage reward |
+| Energy | Currency for the Shop |
 | Output | Score |
 | Steps | Moves remaining |
 | Grid | 4×4 play field |
@@ -681,7 +681,7 @@ Phase End
 
 ---
 
-## Phase Structure
+## Stage Structure
 
 ```
 Phase 1: targetOutput=70,  steps=12
@@ -693,7 +693,7 @@ Phase 5: targetOutput=80,  steps=10
 Phase 6: targetOutput=55,  steps=8   [Anomaly: Collapse Field]
 ```
 
-All phase values are centralised in `src/core/config.ts` for easy tuning.
+All stage values are centralised in `src/core/config.ts` for easy tuning.
 
 ---
 
@@ -719,38 +719,38 @@ Sum of merged tile values in that move.
 - Highest tile merge (result exceeds prior max): ×1.2
 - Both conditions stack multiplicatively.
 
-### Catalyst Multipliers
-Applied from active Catalysts (see below).
+### Boost Multipliers
+Applied from active Boosts (see below).
 
 ### Global Multiplier
-Starts at 1.0. Increased by +0.1 for each Infusion multiplier choice taken.
+Starts at 1.0. Increased by +0.1 for each Pick multiplier choice taken.
 
 ---
 
-## Catalysts (catalogue-scale, max 6 active)
+## Boosts (catalogue-scale, max 6 active)
 
 | ID | Name | Rarity | Cost | Effect |
 |----|------|--------|------|--------|
 | corner_crown | Corner Crown | Rare | 5 | Corner merges × 2.0 Output |
 | twin_burst | Twin Burst | Common | 3 | ≥2 merges in a move × 1.5 Output |
 | lucky_seed | Lucky Seed | Common | 3 | Spawn: 75% 2, 25% 4 |
-| bankers_edge | Banker's Edge | Common | 3 | +2 Energy on phase clear |
-| reserve | Reserve | Rare | 5 | +20 Output per unused step on phase clear |
+| bankers_edge | Banker's Edge | Common | 3 | +2 Energy on stage clear |
+| reserve | Reserve | Rare | 5 | +20 Output per unused step on stage clear |
 | frozen_cell | Frozen Cell | Common | 3 | One cell (1,1) cannot spawn tiles |
 | combo_wire | Combo Wire | Rare | 5 | 3 consecutive scoring moves → × 1.3 Output |
 | high_tribute | High Tribute | Rare | 5 | Highest tile merge → × 1.4 Output |
 
 ---
 
-## Anomalies
+## Hazards
 
-### Entropy Tax (Phase 4)
+### Entropy Tax (Stage 4)
 - Before each move, 1 random empty cell is blocked from receiving a spawn tile.
 - The blocked cell is highlighted in the UI.
 
-### Collapse Field (Phase 6)
+### Collapse Field (Stage 6)
 - Every 4 valid moves, the highest tile on the grid is reduced by one level (value / 2).
-- Counter resets per phase.
+- Counter resets per stage.
 
 ---
 
@@ -758,11 +758,11 @@ Starts at 1.0. Increased by +0.1 for each Infusion multiplier choice taken.
 
 Introduced in Balance v2 (`balanceVersion: "v2"`, see `src/core/config.ts`).
 
-### Phase Target Reductions
+### Stage Target Reductions
 
-All phase `targetOutput` values were significantly reduced to make the game reachable for AI agents and human players. The original targets were unreachable for all tested agents.
+All stage `targetOutput` values were significantly reduced to make the game reachable for AI agents and human players. The original targets were unreachable for all tested agents.
 
-| Phase | Target v1 | Target v2 | Steps |
+| Stage | Target v1 | Target v2 | Steps |
 |-------|-----------|-----------|-------|
 | 1 | 120 | 70 | 12 |
 | 2 | 260 | 80 | 12 |
@@ -773,36 +773,36 @@ All phase `targetOutput` values were significantly reduced to make the game reac
 
 ### Collapse Field Period
 
-`COLLAPSE_FIELD_PERIOD` increased from 3 → 4 (every 4 scoring moves instead of 3), reducing the intensity of the Phase 6 anomaly.
+`COLLAPSE_FIELD_PERIOD` increased from 3 → 4 (every 4 scoring moves instead of 3), reducing the intensity of the Stage 6 hazard.
 
 ### Benchmark Runner Fixes
 
-- `autoInfusion`: now prefers a **catalyst** slot when under the `MAX_CATALYSTS` cap; at cap it prefers **+2 steps** → multiplier → energy (avoids wasting a slot on an unusable catalyst choice).
-- `autoForge`: after buying the cheapest affordable catalyst, now always calls `skipForge()` so the screen advances to `playing` (the previous version left the runner stuck on the forge screen when no purchase was made).
+- `autoInfusion`: now prefers a **boost** slot when under the `MAX_CATALYSTS` cap; at cap it prefers **+2 steps** → multiplier → energy (avoids wasting a slot on an unusable boost choice).
+- `autoForge`: after buying the cheapest affordable boost, now always calls `skipForge()` so the screen advances to `playing` (the previous version left the runner stuck on the shop screen when no purchase was made).
 
 ### Architecture: Single Source of Truth
 
-`src/core/phases.ts` no longer duplicates phase data. It now re-exports `PHASES` directly from `PHASE_CONFIG` in `src/core/config.ts`.
+`src/core/phases.ts` no longer duplicates stage data. It now re-exports `PHASES` directly from `PHASE_CONFIG` in `src/core/config.ts`.
 
 ---
 
-## Forge (Between Phase 3 and 4)
+## Shop (Between Stage 3 and 4)
 
-- 3 random Catalyst offers shown
+- 3 random Boost offers shown
 - Player may buy any (if affordable) or reroll
 - Reroll costs 1 Energy
-- If all 3 slots are full, player must choose which Catalyst to replace
-- Player may skip the Forge entirely at no cost
-- Grid resets (2 fresh tiles) when entering Phase 4
+- If all 3 slots are full, player must choose which Boost to replace
+- Player may skip the Shop entirely at no cost
+- Grid resets (2 fresh tiles) when entering Stage 4
 
 ---
 
-## Infusion (After Each Phase Clear)
+## Pick (After Each Stage Clear)
 
 Player chooses one of up to 4 options:
-1. **Gain a Catalyst** — add a random catalyst not already active (if < 3 slots)
+1. **Gain a Boost** — add a random boost not already active (if < 3 slots)
 2. **Gain 3 Energy** — adds 3 to energy reserve
-3. **Gain +2 Steps** — adds 2 steps to the next phase's step limit
+3. **Gain +2 Steps** — adds 2 steps to the next stage's step limit
 4. **+10% Global Multiplier** — increments globalMultiplier by 0.1
 
 ---
@@ -815,9 +815,9 @@ Each valid move records:
 - `gridBefore`, `gridAfter`: full grid snapshots
 - `merges`: list of merge events with positions and values
 - `spawn`: position of the newly spawned tile (or null)
-- `anomalyEffect`: description of any anomaly effect that fired
+- `anomalyEffect`: description of any hazard effect that fired
 - `base`, `multipliers`, `finalOutput`: scoring breakdown
-- `triggeredCatalysts`: list of catalyst IDs that activated
+- `triggeredCatalysts`: list of boost IDs that activated
 
 The UI displays the last 10 log entries.
 
@@ -848,7 +848,7 @@ src/
 `runSingle(opts)` in `src/benchmark/runner.ts`:
 1. Creates a game state with a fixed seed
 2. Calls `agent.nextAction(state)` each step
-3. Handles infusion/forge screens automatically
+3. Handles pick/shop screens automatically
 4. Collects `RunMetrics` at the end
 
 `runBatch(opts)` loops `runSingle` over N seeds.
@@ -860,9 +860,9 @@ Agents only depend on `src/core/` and `src/ai/`. They import no browser code.
 ## Balancing Philosophy
 
 - **Centralized config**: all tuning knobs live in `src/core/config.ts`
-- **Benchmark-driven tuning**: run `npm run balance` to check rounds cleared, catalyst stats, and pacing metrics
+- **Benchmark-driven tuning**: run `npm run balance` to check levels cleared, boost stats, and pacing metrics
 - **Agent distinction**: if HeuristicAgent and RandomAgent score similarly, the game lacks depth
-- **Phase ramp**: each phase should feel meaningfully harder, not just step-limited
+- **Stage ramp**: each stage should feel meaningfully harder, not just step-limited
 - See [balance.md](balance.md) for the full tuning guide
 
 ---
@@ -924,7 +924,7 @@ stateDiagram-v2
 
 ### Overview
 
-The meta progression layer transforms Merge Catalyst from a single-run prototype into a replayable, progression-based roguelike with three interlocking systems:
+The meta progression layer transforms Merge Boost from a single-run prototype into a replayable, progression-based roguelike with three interlocking systems:
 
 1. **Unlock System** — content unlocked over multiple runs
 2. **Difficulty System (Ascension)** — 9 scaling difficulty tiers (0–8)
@@ -950,9 +950,9 @@ interface ProfileState {
 ```
 
 The default profile (`DEFAULT_PROFILE` in `src/core/profile.ts`) unlocks only:
-- The 8 legacy catalysts
+- The 8 legacy boosts
 - `corner_protocol`
-- Both anomalies (always in play)
+- Both hazards (always in play)
 
 ### Persistence (localStorage)
 
@@ -971,7 +971,7 @@ On startup:
 ```
 
 This ensures:
-- **First visit / incognito mode** → only starter catalysts are unlocked
+- **First visit / incognito mode** → only starter boosts are unlocked
 - **Returning visit** → progress is restored from storage
 - **Corrupt data** → silently falls back to DEFAULT_PROFILE
 
@@ -982,27 +982,27 @@ This ensures:
 Unlocks are **intentional long-term gates**, not time gates.
 
 - **Why unlock?** To give experienced players access to more powerful and varied builds.
-- **What is locked by default?** All 16 advanced catalysts, 2 alternative protocols, all 4 signals.
+- **What is locked by default?** All 16 advanced boosts, 2 alternative rules, all 4 skills.
 - **How to unlock?** Spend Core Shards (`src/core/unlockConfig.ts`).
 
 | Content | Cost |
 |---------|------|
-| Common catalyst | 15 Core Shards |
-| Rare catalyst | 25 Core Shards |
-| Epic catalyst | 40 Core Shards |
-| Protocol | 30 Core Shards |
-| Signal | 20 Core Shards |
+| Common boost | 15 Core Shards |
+| Rare boost | 25 Core Shards |
+| Epic boost | 40 Core Shards |
+| Rule | 30 Core Shards |
+| Skill | 20 Core Shards |
 | Ascension level N | N × 20 Core Shards |
 
-The Forge and Infusion rewards only show catalysts the player has unlocked.
+The Shop and Pick rewards only show boosts the player has unlocked.
 Benchmark mode can bypass this restriction (`ignoreUnlocks: true`) for full-pool runs.
 
-#### Catalyst Unlock Rule
+#### Boost Unlock Rule
 
-A Catalyst is **permanently unlocked** the first time it is **acquired** in any run:
+A Boost is **permanently unlocked** the first time it is **acquired** in any run:
 
-- Acquired via the **Forge** (purchased with Energy), **or**
-- Acquired via **Infusion** (chosen as a phase-clear reward)
+- Acquired via the **Shop** (purchased with Energy), **or**
+- Acquired via **Pick** (chosen as a stage-clear reward)
 
 This immediately updates `ProfileState.unlockedCatalysts` and persists to
 `localStorage`, so the Collection view reflects the unlock without requiring a
@@ -1015,14 +1015,14 @@ Acquire Catalyst (forge or infusion)
         → persistProfile() → localStorage write
 ```
 
-**No duplicate entries**: `unlockCatalysts` uses `Set` merge so the same catalyst
+**No duplicate entries**: `unlockCatalysts` uses `Set` merge so the same boost
 id is never stored twice even if acquired multiple times across runs.
 
 ---
 
 ### Ascension Philosophy
 
-Ascension (0–8) is Merge Catalyst's difficulty scaling, inspired by Slay the Spire / Balatro stakes.
+Ascension (0–8) is Merge Boost's difficulty scaling, inspired by Slay the Spire / Balatro stakes.
 
 - **Level 0** = baseline (identical to pre-meta-progression behaviour).
 - **Levels 1–7** = each level adds one new penalty, stacking cumulatively.
@@ -1033,13 +1033,13 @@ Players unlock ascension levels with Core Shards. A fresh profile can only play 
 | Level | Cumulative Penalty |
 |-------|--------------------|
 | 0 | None (baseline) |
-| 1 | −1 Step per Phase |
-| 2 | +1 + Phase target output ×1.15 |
-| 3 | +2 + Anomalies trigger more frequently |
-| 4 | +3 + Forge catalyst cost +1 |
+| 1 | −1 Step per Stage |
+| 2 | +1 + Stage target output ×1.15 |
+| 3 | +2 + Hazards trigger more frequently |
+| 4 | +3 + Shop boost cost +1 |
 | 5 | +4 + Higher "4" spawn probability |
 | 6 | +5 + Starting Energy ×0.8 |
-| 7 | +6 + Fewer Infusion reward choices |
+| 7 | +6 + Fewer Pick reward choices |
 | 8 | All penalties at maximum intensity |
 
 All values are centralised in `src/core/ascensionModifiers.ts`.
@@ -1102,19 +1102,19 @@ flowchart TD
 
 ---
 
-## Round-End Reward System
+## Level-End Reward System
 
-When a player clears all 6 phases of a round, they see the **Round Complete** screen before entering the next round.
+When a player clears all 6 stages of a level, they see the **Level Complete** screen before entering the next level.
 
-### Round Complete Screen
-- Displays: **round number**, **round output** (output gained this round), **cumulative total output**, **best single-move output** this run
-- Shows **build summary**: active Catalysts (up to 4 shown) and active Synergies
-- Highlights: **MVP Catalyst** (highest rarity equipped) and **Strongest Synergy** (highest multiplier)
-- Shows animated **flavor text** (e.g. "System Stabilized", "Chain Reaction Amplified") that cycles per round
-- Displays the **Round Reward**: +3 Energy and +5% Global Multiplier
+### Level Complete Screen
+- Displays: **level number**, **level output** (output gained this level), **cumulative total output**, **best single-move output** this run
+- Shows **build summary**: active Boosts (up to 4 shown) and active Combos
+- Highlights: **MVP Boost** (highest rarity equipped) and **Strongest Combo** (highest multiplier)
+- Shows animated **flavor text** (e.g. "System Stabilized", "Chain Reaction Amplified") that cycles per level
+- Displays the **Level Reward**: +3 Energy and +5% Global Multiplier
 - Contains a pulsing **"Continue Run →"** button and a "New Run" exit button
 
-### Round Reward (config-driven)
+### Level Reward (config-driven)
 | Constant | Value | Effect |
 |---|---|---|
 | `ROUND_COMPLETE_ENERGY_BONUS` | 3 | +3 Energy granted immediately |
@@ -1130,7 +1130,7 @@ Milestones fire when the player crosses predefined thresholds, rewarding them wi
 | Category | Milestones | Reward |
 |---|---|---|
 | Output | 1k, 5k, 10k, 50k, 100k | Energy or +multiplier |
-| Round | Round 3, 5, 10 | Energy or +multiplier |
+| Level | Level 3, 5, 10 | Energy or +multiplier |
 | Max Tile | 256, 512, 1024, 2048 | Energy or +multiplier |
 
 Milestones are checked after every move via `checkMilestones()` in `src/core/milestones.ts`. Each milestone fires at most once per run. A toast notification slides in from the bottom-right and auto-dismisses after 3 seconds.
@@ -1155,7 +1155,7 @@ A **Streak** tracks consecutive high-output moves (output ≥ `STREAK_MIN_OUTPUT
 - Each qualifying move increments `streakCount`
 - Any move below the threshold resets the streak to 0
 - Every 5 consecutive qualifying moves grants +1 Energy (`STREAK_BONUS_THRESHOLD`, `STREAK_ENERGY_BONUS`)
-- `bestStreak` is the all-time best streak for the current run, never resets between rounds
+- `bestStreak` is the all-time best streak for the current run, never resets between levels
 
 ---
 
@@ -1166,12 +1166,12 @@ Challenge runs impose curated rule modifications for a more demanding experience
 ### Challenges
 | Challenge | Key Rule | Win Condition |
 |---|---|---|
-| **No Corners** | Corner bonuses disabled | Clear 3 rounds |
-| **Energy Starved** | Energy gain × 0.3 | Reach Round 3 |
-| **Chain Master** | Only chain-based scoring | Clear 3 rounds |
-| **Anomaly Storm** | Anomaly frequency × 2 | Survive 3 rounds |
+| **No Corners** | Corner bonuses disabled | Clear 3 levels |
+| **Energy Starved** | Energy gain × 0.3 | Reach Level 3 |
+| **Chain Master** | Only chain-based scoring | Clear 3 levels |
+| **Hazard Storm** | Hazard frequency × 2 | Survive 3 levels |
 
-Challenges are defined in `src/core/challenges.ts`. Each `ChallengeDef` includes a `baseProtocol`, `rules` list, `winCondition`, and `overrides` record. The `overrides` object contains flags that can be applied on top of the base protocol config.
+Challenges are defined in `src/core/challenges.ts`. Each `ChallengeDef` includes a `baseProtocol`, `rules` list, `winCondition`, and `overrides` record. The `overrides` object contains flags that can be applied on top of the base rule config.
 
 ### Challenge Selection Flow
 ```
@@ -1185,21 +1185,21 @@ Start Screen → "Challenge" button → ChallengeSelectScreen → Select challen
 Every day all players share the same seeded run, enabling comparison.
 
 - **Seed generation**: `getDailySeed(dateStr)` hashes the date string `YYYY-MM-DD` to a 32-bit integer
-- **Fixed sequence**: same seed → same phase sequence, catalyst pool, anomaly sequence
+- **Fixed sequence**: same seed → same stage sequence, boost pool, hazard sequence
 - **Local leaderboard** (MVP): persisted to `localStorage` under key `merge_catalyst_daily_runs`
-- **Records**: best output, best rounds reached, play count per day, kept for 30 days
+- **Records**: best output, best levels reached, play count per day, kept for 30 days
 - **UI**: "Daily Run" button on the Start Screen shows today's date and personal best
 
 
 ---
 
-## Catalyst Pool System
+## Boost Pool System
 
 ### Overview
 
-Each run maintains a **run-level Catalyst Pool** (`GameState.catalystPool`) that
-ensures each Catalyst appears **at most once per run**.  This enforces build
-diversity and prevents the same powerful Catalyst from dominating every session.
+Each run maintains a **run-level Boost Pool** (`GameState.catalystPool`) that
+ensures each Boost appears **at most once per run**.  This enforces build
+diversity and prevents the same powerful Boost from dominating every session.
 
 ### Initialisation
 
@@ -1211,31 +1211,31 @@ Run starts
 
 ### Pool Depletion
 
-Every time a Catalyst is **acquired** it is removed from `catalystPool`:
+Every time a Boost is **acquired** it is removed from `catalystPool`:
 
 | Action | Effect on pool |
 |--------|---------------|
-| Buy from Forge | Remove acquired catalyst id |
-| Choose Catalyst from Infusion | Remove acquired catalyst id |
+| Buy from Shop | Remove acquired boost id |
+| Choose Boost from Pick | Remove acquired boost id |
 
-Catalysts shown in the Forge or Infusion but **not selected** are **not**
+Boosts shown in the Shop or Pick but **not selected** are **not**
 removed — they remain available for future offers in the same run.
 
 ### Offer Generation
 
 Both `generateForgeOffers` and `generateInfusionOptions` draw from `catalystPool`
 (rather than the raw `unlockedCatalysts` list) and additionally filter out any
-catalysts already in `activeCatalysts`.  This gives two layers of de-duplication:
+boosts already in `activeCatalysts`.  This gives two layers of de-duplication:
 
 1. **Pool layer** — catalogue-level uniqueness across the run
 2. **Active layer** — never re-offer what's already equipped
 
 ### Pool Exhaustion
 
-If `catalystPool` is empty (all unlocked catalysts have been acquired in this
-run), `generateForgeOffers` returns an empty array.  The Forge UI gracefully
-handles this by showing no catalyst cards.  Infusion always offers the three
-non-catalyst options (Energy, Steps, Multiplier) regardless of pool state.
+If `catalystPool` is empty (all unlocked boosts have been acquired in this
+run), `generateForgeOffers` returns an empty array.  The Shop UI gracefully
+handles this by showing no boost cards.  Pick always offers the three
+non-boost options (Energy, Steps, Multiplier) regardless of pool state.
 
 ### Full-Pool Mode (Benchmark)
 
@@ -1245,19 +1245,19 @@ from the full catalogue.  Pool depletion tracking is skipped in this mode.
 
 ---
 
-## Phase Pacing (Balance v5)
+## Stage Pacing (Balance v5)
 
-Phase pacing was rebalanced in v5 to ensure each phase requires meaningful board
-development (target: **6–12 moves per phase**).
+Stage pacing was rebalanced in v5 to ensure each stage requires meaningful board
+development (target: **6–12 moves per stage**).
 
 ### Key Changes
 
 | Metric | Before (v4) | After (v5) |
 |--------|-------------|------------|
-| Phase 1 target (alpha) | 70 | 150 |
-| Phase steps (alpha P1) | 12 | 15 |
-| Anomaly phase target | 40–55 | 90–130 |
-| Anomaly phase steps | 8 | 11 |
+| Stage 1 target (alpha) | 70 | 150 |
+| Stage steps (alpha P1) | 12 | 15 |
+| Hazard stage target | 40–55 | 90–130 |
+| Hazard stage steps | 8 | 11 |
 | Gamma template max target | 120 | 260 |
 
 ### Rationale
@@ -1266,26 +1266,26 @@ development (target: **6–12 moves per phase**).
   targets in 2–3 moves, leaving the remaining steps trivially easy.
 - **Steps increased**: More steps give players time to develop the board,
   build tile combos, and express strategy.
-- **Anomaly phases proportionally increased**: Entropy Tax and Collapse Field
-  phases now have higher targets to stay challenging despite the anomaly penalty.
-- **Scaling preserved**: `ROUND_TARGET_SCALE = 0.12` per round still applies on
-  top of the new base values, keeping late-game rounds difficult.
+- **Hazard stages proportionally increased**: Entropy Tax and Collapse Field
+  stages now have higher targets to stay challenging despite the hazard penalty.
+- **Scaling preserved**: `ROUND_TARGET_SCALE = 0.12` per level still applies on
+  top of the new base values, keeping late-game levels difficult.
 
 All values are centralised in `ROUND_TEMPLATES` inside `src/core/config.ts`.
 
 ---
 
-## Phase Pacing — Build-Aware Scaling (v6)
+## Stage Pacing — Build-Aware Scaling (v6)
 
 ### Problem
 
-After v5, late-game phases (round 4+) could still be cleared in 2–3 moves
-because the flat 12% linear round scale was outpaced by the player's
-exponential build power (catalyst stacks, global multiplier, synergies).
+After v5, late-game stages (level 4+) could still be cleared in 2–3 moves
+because the flat 12% linear level scale was outpaced by the player's
+exponential build power (boost stacks, global multiplier, combos).
 
 ### Solution
 
-**Two-layer scaling** applied at every phase transition:
+**Two-layer scaling** applied at every stage transition:
 
 #### Layer 1: Segmented Composite Curve
 
@@ -1298,13 +1298,13 @@ smoothing = log(phaseIndex + roundIndex + 2)
 ```
 
 Implemented in `getPhasesForRound` using `SEGMENTED_GROWTH_SCALING` from
-`src/core/config.ts`. The phase index is segmented by phase bucket:
+`src/core/config.ts`. The stage index is segmented by stage bucket:
 - early (P1–P2)
 - mid (P3–P4)
 - late (P5–P6)
 
-The default round index is scaled (`roundIndexScale`) so early rounds remain
-accessible while late rounds ramp sharply.
+The default level index is scaled (`roundIndexScale`) so early levels remain
+accessible while late levels ramp sharply.
 
 #### Layer 2: Build-Aware Factor
 
@@ -1320,7 +1320,7 @@ Returns:
 min(1 + catalystCount × 0.12 + (globalMultiplier − 1.0) × 0.30, 3.0)
 ```
 
-Applied at each phase start using `state.activeCatalysts.length` and
+Applied at each stage start using `state.activeCatalysts.length` and
 `state.globalMultiplier` — the actual current build, not a static estimate.
 
 Controlled by:
@@ -1334,23 +1334,23 @@ All values live in `src/core/config.ts`.
 ### phaseTargetOutput in GameState
 
 `GameState.phaseTargetOutput` stores the fully-computed effective target for
-the current phase:
+the current stage:
 
 ```
 phaseTargetOutput = ceil(templateTarget × roundScaleFactor × ascensionScale × buildFactor)
 ```
 
 - Set in `createInitialState` (no build yet → buildFactor = 1.0)
-- Recomputed in `handlePhaseEnd` (advancing to the next phase)
-- Recomputed in `advanceRound` (first phase of the new round)
+- Recomputed in `handlePhaseEnd` (advancing to the next stage)
+- Recomputed in `advanceRound` (first stage of the new level)
 
 The engine success check (`output >= phaseTargetOutput`) and the UI progress
 display both read this field, ensuring they are always consistent.
 
 ### Design Constraints
 
-- Early game remains close to prior difficulty (segmented curve keeps round-1
-  early-phase scaling low)
+- Early game remains close to prior difficulty (segmented curve keeps level-1
+  early-stage scaling low)
 - Late-game targets scale meaningfully to avoid trivial 2–3 turn clears
 - Segmented steps:
   - early: **10–16**

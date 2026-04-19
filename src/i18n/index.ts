@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { Locale, TranslationMap } from './types';
 import en from './en';
 import zhCN from './zh-CN';
+import { applyTerminology } from './terminology';
 
 // ─── Translation maps ────────────────────────────────────────────────────────
 
@@ -53,7 +54,7 @@ export function createT(locale: Locale) {
         str = str.replace(`{${k}}`, String(v));
       }
     }
-    return str;
+    return applyTerminology(locale, str);
   };
 }
 

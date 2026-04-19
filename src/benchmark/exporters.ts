@@ -6,8 +6,10 @@ import * as path from 'path';
 import { SuiteResult } from './suites';
 import { RunMetrics, SuiteMetrics } from './metrics';
 import { BalanceReport } from './analysis';
+import { applyTerminology } from '../i18n/terminology';
 
 const ARTIFACTS_DIR = path.resolve(process.cwd(), 'artifacts', 'benchmark', 'latest');
+const term = (text: string): string => applyTerminology('en', text);
 
 function ensureDir(dir: string): void {
   fs.mkdirSync(dir, { recursive: true });
@@ -89,14 +91,14 @@ export function exportRunsCSV(results: SuiteResult[]): void {
 
 export function exportComparisonMd(results: SuiteResult[], report: BalanceReport): void {
   const lines: string[] = [
-    '# Merge Catalyst — Benchmark Comparison Report',
+    term('# Merge Catalyst — Benchmark Comparison Report'),
     '',
     `> Generated: ${report.generatedAt}`,
     `> Suites: ${report.suiteNames.join(', ')}`,
     '',
-    '## Agent Performance Summary',
+    term('## Agent Performance Summary'),
     '',
-    '| Agent | Mean Output | Median | P90 | Avg Rounds | Median Rounds | P90 Rounds | Avg Steps | Anomaly Survival |',
+    term('| Agent | Mean Output | Median | P90 | Avg Rounds | Median Rounds | P90 Rounds | Avg Steps | Anomaly Survival |'),
     '|-------|-------------|--------|-----|-----------|---------------|------------|-----------|-----------------|',
   ];
 
@@ -106,30 +108,30 @@ export function exportComparisonMd(results: SuiteResult[], report: BalanceReport
     );
   }
 
-  lines.push('', '## Balance Findings', '');
+  lines.push('', term('## Balance Findings'), '');
   for (const f of report.findings) {
     const icon = f.severity === 'critical' ? '🔴' : f.severity === 'warn' ? '🟡' : '🟢';
-    lines.push(`- ${icon} **[${f.category}]** ${f.message}`);
+    lines.push(`- ${icon} **[${f.category}]** ${term(f.message)}`);
   }
 
-  lines.push('', '## Recommendations', '');
+  lines.push('', term('## Recommendations'), '');
   if (report.recommendations.length === 0) {
     lines.push('_No recommendations at this time._');
   } else {
     for (const rec of report.recommendations) {
-      lines.push(`- ${rec}`);
+      lines.push(`- ${term(rec)}`);
     }
   }
 
-  lines.push('', '## Catalyst Stats', '');
-  lines.push('| Catalyst | Pick Rate | Avg Rounds Cleared | Mean Output |');
+  lines.push('', term('## Catalyst Stats'), '');
+  lines.push(term('| Catalyst | Pick Rate | Avg Rounds Cleared | Mean Output |'));
   lines.push('|----------|-----------|--------------------|-------------|');
   for (const cs of report.catalystStats) {
     lines.push(`| ${cs.id} | ${(cs.pickRate * 100).toFixed(1)}% | ${cs.avgRoundsCleared.toFixed(2)} | ${cs.meanOutput.toFixed(0)} |`);
   }
 
-  lines.push('', '## Pacing Metrics', '');
-  lines.push('| Agent | Avg Moves / Phase | Avg Max Tile | Late-Game Clear Turns (R4+) |');
+  lines.push('', term('## Pacing Metrics'), '');
+  lines.push(term('| Agent | Avg Moves / Phase | Avg Max Tile | Late-Game Clear Turns (R4+) |'));
   lines.push('|-------|-------------------:|-------------:|------------------------------:|');
   for (const [agent, m] of Object.entries(report.agentSummary)) {
     lines.push(
@@ -137,8 +139,8 @@ export function exportComparisonMd(results: SuiteResult[], report: BalanceReport
     );
   }
 
-  lines.push('', '## Failure Distribution', '');
-  lines.push('Failure count by round number (where runs most commonly ended):');
+  lines.push('', term('## Failure Distribution'), '');
+  lines.push(term('Failure count by round number (where runs most commonly ended):'));
   lines.push('');
   for (const [agent, m] of Object.entries(report.agentSummary)) {
     lines.push(`**${agent}**`);
@@ -146,7 +148,7 @@ export function exportComparisonMd(results: SuiteResult[], report: BalanceReport
     if (Object.keys(dist).length === 0) {
       lines.push('_No failure data (all runs reached maxRounds)_');
     } else {
-      lines.push('| Round | Failures |');
+      lines.push(term('| Round | Failures |'));
       lines.push('|-------|---------|');
       for (const round of Object.keys(dist).map(Number).sort((a, b) => a - b)) {
         lines.push(`| ${round} | ${dist[round]} |`);
@@ -170,11 +172,11 @@ export function exportBuildStats(report: BalanceReport): void {
 
 export function exportBalanceReport(report: BalanceReport): void {
   const lines: string[] = [
-    '# Merge Catalyst — Balance Report',
+    term('# Merge Catalyst — Balance Report'),
     '',
     `> Generated: ${report.generatedAt}`,
     '',
-    '## Summary Findings',
+    term('## Summary Findings'),
     '',
   ];
 
@@ -184,29 +186,29 @@ export function exportBalanceReport(report: BalanceReport): void {
 
   if (critical.length) {
     lines.push('### 🔴 Critical');
-    critical.forEach(f => lines.push(`- **[${f.category}]** ${f.message}`));
+    critical.forEach(f => lines.push(`- **[${f.category}]** ${term(f.message)}`));
     lines.push('');
   }
   if (warn.length) {
     lines.push('### 🟡 Warnings');
-    warn.forEach(f => lines.push(`- **[${f.category}]** ${f.message}`));
+    warn.forEach(f => lines.push(`- **[${f.category}]** ${term(f.message)}`));
     lines.push('');
   }
   if (info.length) {
     lines.push('### 🟢 Info');
-    info.forEach(f => lines.push(`- **[${f.category}]** ${f.message}`));
+    info.forEach(f => lines.push(`- **[${f.category}]** ${term(f.message)}`));
     lines.push('');
   }
 
-  lines.push('## Recommendations', '');
+  lines.push(term('## Recommendations'), '');
   if (report.recommendations.length === 0) {
     lines.push('_No specific recommendations._');
   } else {
-    report.recommendations.forEach(r => lines.push(`- ${r}`));
+    report.recommendations.forEach(r => lines.push(`- ${term(r)}`));
   }
 
-  lines.push('', '## Catalyst Analysis', '');
-  lines.push('| Catalyst | Pick Rate | Avg Rounds Cleared | Mean Output |');
+  lines.push('', term('## Catalyst Analysis'), '');
+  lines.push(term('| Catalyst | Pick Rate | Avg Rounds Cleared | Mean Output |'));
   lines.push('|----------|-----------|--------------------|-------------|');
   for (const cs of report.catalystStats) {
     lines.push(`| \`${cs.id}\` | ${(cs.pickRate * 100).toFixed(1)}% | ${cs.avgRoundsCleared.toFixed(2)} | ${cs.meanOutput.toFixed(0)} |`);

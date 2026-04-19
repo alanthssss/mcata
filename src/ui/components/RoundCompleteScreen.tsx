@@ -19,7 +19,7 @@ interface RoundCompleteScreenProps {
 const ROUND_FLAVORS = [
   'System Stabilized',
   'Chain Reaction Amplified',
-  'Catalyst Surge Complete',
+  'Boost Surge Complete',
   'Reaction Loop Closed',
   'Output Cascade Locked',
 ];
@@ -99,7 +99,7 @@ export const RoundCompleteScreen: React.FC<RoundCompleteScreenProps> = ({
                 const def = CATALYST_DEFS[id];
                 return (
                   <span key={id} className={`catalyst-badge catalyst-badge--${def?.rarity ?? 'common'}`}>
-                    {def?.name ?? id}
+                    {def ? t(`catalyst.${def.id}.name`) : id}
                   </span>
                 );
               })}
@@ -117,7 +117,7 @@ export const RoundCompleteScreen: React.FC<RoundCompleteScreenProps> = ({
             <h3 className="round-complete-section__title">{t('ui.active_synergies_label')}</h3>
             <div className="round-complete-synergies">
               {activeSynergies.map(id => (
-                <span key={id} className="synergy-badge">{SYNERGY_DEFS[id].name}</span>
+                <span key={id} className="synergy-badge">{t(`synergy.${id}.name`)}</span>
               ))}
             </div>
           </div>
@@ -128,14 +128,14 @@ export const RoundCompleteScreen: React.FC<RoundCompleteScreenProps> = ({
             <div className="round-complete-highlight round-complete-highlight--mvp">
               <span className="highlight-icon">🏆</span>
               <span className="highlight-label">{t('ui.mvp_catalyst')}</span>
-              <span className="highlight-value">{CATALYST_DEFS[mvpCatalyst].name}</span>
+              <span className="highlight-value">{t(`catalyst.${mvpCatalyst}.name`)}</span>
             </div>
           )}
           {strongestSynergy && (
             <div className="round-complete-highlight round-complete-highlight--synergy">
               <span className="highlight-icon">⚡</span>
               <span className="highlight-label">{t('ui.strongest_synergy')}</span>
-              <span className="highlight-value">{SYNERGY_DEFS[strongestSynergy].name}</span>
+              <span className="highlight-value">{t(`synergy.${strongestSynergy}.name`)}</span>
             </div>
           )}
         </div>

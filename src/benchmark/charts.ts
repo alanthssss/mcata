@@ -5,6 +5,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { SuiteMetrics } from './metrics';
+import { applyTerminology } from '../i18n/terminology';
 
 const CHARTS_DIR = path.resolve(process.cwd(), 'artifacts', 'benchmark', 'latest', 'charts');
 
@@ -15,6 +16,8 @@ function write(file: string, content: string) {
   fs.writeFileSync(path.join(CHARTS_DIR, file), content, 'utf-8');
   console.log(`  Wrote charts/${file}`);
 }
+
+const term = (text: string): string => applyTerminology('en', text);
 
 // ─── Colour palette ───────────────────────────────────────────────────────────
 const COLORS = ['#4e79a7','#f28e2b','#e15759','#76b7b2','#59a14f','#edc948'];
@@ -55,14 +58,14 @@ function barChart(
 export function generateRoundsClearedChart(metrics: Record<string, SuiteMetrics>): void {
   const labels = Object.keys(metrics);
   const values = labels.map(k => metrics[k].avgRoundsCleared);
-  write('rounds_cleared.svg', barChart('Avg Rounds Cleared by Agent', labels, values, 'Avg Rounds'));
+  write('rounds_cleared.svg', barChart(term('Avg Rounds Cleared by Agent'), labels, values, term('Avg Rounds')));
 }
 
 // ─── Mean output chart ────────────────────────────────────────────────────────
 export function generateOutputDistChart(metrics: Record<string, SuiteMetrics>): void {
   const labels = Object.keys(metrics);
   const values = labels.map(k => metrics[k].meanOutput);
-  write('output_distribution.svg', barChart('Mean Final Output by Agent', labels, values, 'Mean Output'));
+  write('output_distribution.svg', barChart(term('Mean Final Output by Agent'), labels, values, term('Mean Output')));
 }
 
 // ─── Phase clear chart ────────────────────────────────────────────────────────
@@ -74,7 +77,7 @@ export function generatePhaseClearChart(metrics: Record<string, SuiteMetrics>): 
     const weighted = Object.entries(dist).reduce((s, [ph, cnt]) => s + Number(ph) * cnt, 0);
     return total > 0 ? weighted / total : 0;
   });
-  write('phase_clear.svg', barChart('Avg Phases Cleared by Agent', labels, values, 'Avg Phases'));
+  write('phase_clear.svg', barChart(term('Avg Phases Cleared by Agent'), labels, values, term('Avg Phases')));
 }
 
 // ─── Max tile chart ───────────────────────────────────────────────────────────
@@ -86,7 +89,7 @@ export function generateMaxTileChart(metrics: Record<string, SuiteMetrics>): voi
     const weighted = Object.entries(dist).reduce((s, [t, cnt]) => s + Number(t) * cnt, 0);
     return total > 0 ? weighted / total : 0;
   });
-  write('max_tile.svg', barChart('Avg Max Tile by Agent', labels, values, 'Avg Max Tile'));
+  write('max_tile.svg', barChart(term('Avg Max Tile by Agent'), labels, values, term('Avg Max Tile')));
 }
 
 // ─── Output growth by round chart ────────────────────────────────────────────
@@ -103,7 +106,7 @@ export function generateOutputGrowthChart(metrics: Record<string, SuiteMetrics>)
   if (rounds.length === 0) return;
   const labels = rounds.map(r => `R${r}`);
   const values = rounds.map(r => growth[r]);
-  write('output_growth.svg', barChart(`Output Growth by Round (${firstAgent})`, labels, values, 'Mean Output'));
+  write('output_growth.svg', barChart(term(`Output Growth by Round (${firstAgent})`), labels, values, term('Mean Output')));
 }
 
 // ─── Failure distribution chart ───────────────────────────────────────────────
@@ -123,7 +126,7 @@ export function generateFailureDistChart(metrics: Record<string, SuiteMetrics>):
   if (rounds.length === 0) return;
   const labels = rounds.map(r => `R${r}`);
   const values = rounds.map(r => combined[r]);
-  write('failure_distribution.svg', barChart('Failure Distribution by Round (all agents)', labels, values, 'Run Count'));
+  write('failure_distribution.svg', barChart(term('Failure Distribution by Round (all agents)'), labels, values, term('Run Count')));
 }
 
 // ─── Generate all charts ──────────────────────────────────────────────────────

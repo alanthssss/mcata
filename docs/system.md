@@ -1,25 +1,58 @@
-# Merge Catalyst — System Reference
+# Merge Boost — System Reference
 
 > **Audience:** contributors and modders who want to understand or extend the
 > core game systems.
 
 ---
 
-## 1. Protocol System
+## Simplified Naming Plan
 
-Protocols are **per-run rule modifiers** chosen on the Start Screen before a
+The goal is to keep every player-facing label short, literal, and easy to guess.
+Internal identifiers remain unchanged for compatibility.
+
+| Old | New | Current meaning | Why it is confusing |
+|---|---|---|---|
+| Catalyst | Boost | Passive modifier item | Theme-heavy and not instantly functional |
+| Signal | Skill | One-use tactical action | Sounds like telemetry/system data |
+| Pattern | Style | Run-wide build path | Abstract and non-specific |
+| Protocol | Rule | Run-start ruleset | Technical wording increases cognitive load |
+| Synergy | Combo | Pair bonus between items | Design jargon instead of plain gameplay wording |
+| Momentum | Streak | Consecutive-score multiplier | Physics term, not immediate gameplay action |
+| Forge | Shop | Buy/sell screen | Flavor-first naming hides function |
+| Infusion | Pick | Post-clear reward choice | Meaning is unclear without tutorial context |
+| Phase | Stage | Single gameplay segment | Abstract progression term |
+| Round | Level | Group of 6 stages | Can be confused with turns/steps |
+| Anomaly | Hazard | Special challenge modifier | Lore-first naming over gameplay meaning |
+
+### Naming rationale
+
+- Use short, common words that explain function directly.
+- Keep style concrete: nouns players already know from other games.
+- Prefer consistency (`Shop` + `Pick`, `Stage` + `Level`, `Boost` + `Combo`).
+
+### Risky replacements
+
+- **Momentum → Streak**: `streak` is also a statistic label in some contexts.
+- **Pattern → Style**: can read as cosmetic if not paired with effect text.
+- **Round → Level**: may imply finite campaign progression.
+
+---
+
+## 1. Rule System
+
+Rules are **per-run rule modifiers** chosen on the Start Screen before a
 run begins.  They affect fundamental game parameters rather than individual
-catalyst interactions.
+boost interactions.
 
-### Available Protocols
+### Available Rules
 
-| Protocol | Corner Bonus | Start Tiles | Spawn Factor | Output Scale | Steps Reduction |
+| Rule | Corner Bonus | Start Tiles | Spawn Factor | Output Scale | Steps Reduction |
 |---|---|---|---|---|---|
 | `corner_protocol` | ×1.5 | 2 | ×1.0 | ×1.0 | 0 |
 | `sparse_protocol` | ×1.0 | 1 | ×2.0 (less frequent) | ×1.2 | 0 |
 | `overload_protocol` | ×1.0 | 2 | ×1.0 | ×1.4 | −2 |
 
-### How to Add a Protocol
+### How to Add a Rule
 
 1. Add a new `ProtocolId` literal to `src/core/types.ts`.
 2. Add the `ProtocolDef` entry to `PROTOCOL_DEFS` in `src/core/protocols.ts`.
@@ -27,7 +60,7 @@ catalyst interactions.
    - `protocol.<id>.name`
    - `protocol.<id>.description`
 4. Add the icon and difficulty mapping in `src/ui/components/StartScreen.tsx`.
-5. The new protocol is automatically shown on the Start Screen selection grid.
+5. The new rule is automatically shown on the Start Screen selection grid.
 
 ### State Flow
 
@@ -47,13 +80,13 @@ GameState.protocol = protocol
 
 ---
 
-## 2. Catalyst System
+## 2. Boost System
 
-Catalysts are **passive build modifiers** equipped during a run. Up to 6 can be
-active simultaneously. Forge is the unified post-phase acquisition path.
-Forge also supports selling Catalysts, Pattern, and Signals for partial refunds.
+Boosts are **passive build modifiers** equipped during a run. Up to 6 can be
+active simultaneously. Shop is the unified post-stage acquisition path.
+Shop also supports selling Boosts, Style, and Skills for partial refunds.
 
-### Catalyst Schema (`CatalystDef`)
+### Boost Schema (`CatalystDef`)
 
 | Field | Type | Description |
 |---|---|---|
@@ -61,9 +94,9 @@ Forge also supports selling Catalysts, Pattern, and Signals for partial refunds.
 | `name` | `string` | Display name |
 | `description` | `string` | Effect summary |
 | `rarity` | `common` \| `rare` \| `epic` | Affects unlock cost |
-| `cost` | `number` | Energy cost to purchase in Forge |
+| `cost` | `number` | Energy cost to purchase in Shop |
 | `category` | `amplifier` \| `stabilizer` \| `generator` \| `modifier` \| `legacy` | Functional group |
-| `trigger` | `CatalystTrigger` | When the catalyst fires |
+| `trigger` | `CatalystTrigger` | When the boost fires |
 | `effectParams` | `CatalystEffectParams` | Numeric parameters |
 | `tags` | `CatalystTag[]` | Semantic tags for filtering |
 | `flavorText` | `string?` | Optional lore text |
@@ -75,9 +108,9 @@ Forge also supports selling Catalysts, Pattern, and Signals for partial refunds.
 - **stabilizer** — board control (e.g. Buffer Zone, Merge Shield)
 - **generator** — resource / spawn economy (e.g. Rich Merge, Energy Loop)
 - **modifier** — rule changes (e.g. Diagonal Merge, Inversion Field)
-- **legacy** — original 8 catalysts, always available
+- **legacy** — original 8 boosts, always available
 
-### Adding a New Catalyst
+### Adding a New Boost
 
 1. Add the `CatalystId` literal to `src/core/types.ts`.
 2. Add the `CatalystDef` entry to `CATALYST_DEFS` in `src/core/catalysts.ts`.
@@ -87,31 +120,31 @@ Forge also supports selling Catalysts, Pattern, and Signals for partial refunds.
 
 ---
 
-## 2.1 Pattern System (Run Archetype Growth)
+## 2.1 Style System (Run Archetype Growth)
 
-Patterns are a separate run-level progression layer from Catalysts and Signals.
-Pattern purchases are sourced from Forge and strengthen one archetype
+Styles are a separate run-level progression layer from Boosts and Skills.
+Style purchases are sourced from Shop and strengthen one archetype
 for the rest of the run (`corner`, `chain`, `empty_space`, `high_tier`,
 `economy`, `survival`).
 
 Player-facing flow:
-- Acquisition: buy a Pattern in Forge
-- Canonical source: Forge is the acquisition path
-- Replacement/upgrade: one active Pattern at a time — same Pattern upgrades level, different Pattern replaces active Pattern at Lv.1
-- Active display: Pattern panel in the run HUD shows active pattern + level
-- Empty-state visibility: Signal/Pattern/Catalyst/Synergy/Momentum/Protocol panels remain visible with compact localized placeholders even before acquisition
-- Effect visibility: move logs/output panel include Pattern multiplier entries
+- Acquisition: buy a Style in Shop
+- Canonical source: Shop is the acquisition path
+- Replacement/upgrade: one active Style at a time — same Style upgrades level, different Style replaces active Style at Lv.1
+- Active display: Style panel in the run HUD shows active style + level
+- Empty-state visibility: Skill/Style/Boost/Combo/Streak/Rule panels remain visible with compact localized placeholders even before acquisition
+- Effect visibility: move logs/output panel include Style multiplier entries
 
 ---
 
-## 3. Phase System
+## 3. Stage System
 
-A run consists of 6 phases.  Each phase has a target output, step budget,
-optional anomaly, and benchmark data.
+A run consists of 6 stages.  Each stage has a target output, step budget,
+optional hazard, and benchmark data.
 
-### Phase Structure
+### Stage Structure
 
-| Phase | Target | Steps | Challenge Tier | Anomaly |
+| Stage | Target | Steps | Challenge Tier | Hazard |
 |---|---|---|---|---|
 | 1 | 170+ | 20+ | small | — |
 | 2 | 205+ | 21+ | big | — |
@@ -122,14 +155,14 @@ optional anomaly, and benchmark data.
 
 ### Challenge Tiers
 
-- **small** — warm-up phase, players should clear with ease
+- **small** — warm-up stage, players should clear with ease
 - **big** — primary challenge of the section; typical win rate gate
 - **boss** — carries a rule modifier; requires adaptation
 
-### Extending the Phase System
+### Extending the Stage System
 
-All phase configuration lives in `src/core/config.ts` → `PHASE_CONFIG`.  To
-add a phase or change targets, edit that array.  The engine reads it via
+All stage configuration lives in `src/core/config.ts` → `PHASE_CONFIG`.  To
+add a stage or change targets, edit that array.  The engine reads it via
 `src/core/phases.ts`.
 
 The type definition lives in `src/core/types.ts` → `PhaseDef`.  New fields
@@ -137,33 +170,33 @@ added there should be optional to avoid breaking existing serialised runs.
 
 ---
 
-## 4. Synergy System
+## 4. Combo System
 
-Certain catalyst pairs unlock **synergy bonuses** when both are equipped.
+Certain boost pairs unlock **combo bonuses** when both are equipped.
 
-Synergies are defined in `src/core/synergies.ts`.  Each `SynergyDef` requires:
+Combos are defined in `src/core/synergies.ts`.  Each `SynergyDef` requires:
 - `catalysts: [CatalystId, CatalystId]` — the triggering pair
 - `multiplier: number` — the output bonus multiplier
 
-Synergy multipliers are tuned in `src/core/config.ts` → `SYNERGY_MULTIPLIERS`.
+Combo multipliers are tuned in `src/core/config.ts` → `SYNERGY_MULTIPLIERS`.
 
 ---
 
-## 5. Signal System
+## 5. Skill System
 
-Signals are **one-use tactical abilities** held between moves (max 2).  They
+Skills are **one-use tactical abilities** held between moves (max 2).  They
 are defined in `src/core/signals.ts` and queued via `queueSignal()`.
 
 UI behavior:
-- queued signal shows an armed state
+- queued skill shows an armed state
 - trigger shows immediate feedback (log + toast text)
 - consumed state is visible after use
 
 ---
 
-## 6. Momentum System
+## 6. Streak System
 
-Consecutive scoring moves build the momentum multiplier (up to ×2.0).  A
+Consecutive scoring moves build the streak multiplier (up to ×2.0).  A
 non-scoring move resets it.  Tuning lives in `src/core/config.ts` →
 `MOMENTUM_CONFIG`.
 
@@ -175,8 +208,8 @@ Player progress is persisted via `useProfileStore` in
 `src/store/profileStore.ts`.
 
 - **Storage key:** `merge_catalyst_progress`
-- **Default state:** `DEFAULT_PROFILE` (8 legacy catalysts + corner_protocol)
+- **Default state:** `DEFAULT_PROFILE` (8 legacy boosts + corner_protocol)
 - **Debug mode:** add `?debug=unlock_all` to the URL to unlock everything
 
 On first visit (or incognito), the store falls back to `DEFAULT_PROFILE`,
-ensuring new players start with a restricted catalyst pool.
+ensuring new players start with a restricted boost pool.

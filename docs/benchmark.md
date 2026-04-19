@@ -1,13 +1,13 @@
-# Merge Catalyst — Benchmark Guide
+# Merge Boost — Benchmark Guide
 
 ## Goals
 
 The benchmark framework lets you:
 - Tune pacing, economy, and board growth with a stable high-performing strategy
-- Identify which phases or rounds are too hard or too easy
-- Detect overpowered or underpowered Catalysts and Synergies
-- Track score-chasing progression and build growth across rounds
-- Measure pacing (moves per phase), late-game pressure, and survival depth
+- Identify which stages or levels are too hard or too easy
+- Detect overpowered or underpowered Boosts and Combos
+- Track score-chasing progression and build growth across levels
+- Measure pacing (moves per stage), late-game pressure, and survival depth
 - Produce reproducible, comparable numbers across code changes
 
 Default balance suites are now **Heuristic-first**; multi-agent comparison is optional debug-only.
@@ -21,17 +21,17 @@ Default balance suites are now **Heuristic-first**; multi-agent comparison is op
 
 ---
 
-## Game Architecture: Endless Rounds
+## Game Architecture: Endless Levels
 
-The standard game is an **endless-round roguelike loop**:
+The standard game is an **endless-level roguelike loop**:
 
-- Every **6 phases** form one **round**
-- After completing a round the game continues into Round N+1 (no fixed win state)
-- The game ends when a phase target is not met within the step limit → `game_over`
-- Rounds scale in difficulty automatically via compound target scaling
+- Every **6 stages** form one **level**
+- After completing a level the game continues into Level N+1 (no fixed win state)
+- The game ends when a stage target is not met within the step limit → `game_over`
+- Levels scale in difficulty automatically via compound target scaling
 
 The benchmark **does not** measure "win rate" for the standard mode.  Instead it
-measures **rounds cleared**, **output growth**, **failure depth**, and **pacing**.
+measures **levels cleared**, **output growth**, **failure depth**, and **pacing**.
 Win rate only applies to finite challenge / legacy modes with an explicit win condition.
 
 ---
@@ -42,7 +42,7 @@ Win rate only applies to finite challenge / legacy modes with an explicit win co
 |-------|----------|-------|
 | RandomAgent | Uniform random from legal moves | Baseline lower bound |
 | GreedyAgent | Best immediate heuristic (output, empty, corner) | Fast, no lookahead |
-| HeuristicAgent | Weighted multi-factor evaluation (empty/mono/smooth/corner/merge/anomaly) | Configurable weights |
+| HeuristicAgent | Weighted multi-factor evaluation (empty/mono/smooth/corner/merge/hazard) | Configurable weights |
 | BeamSearchAgent | Beam search, configurable depth and width | Lookahead without full tree |
 | MCTSAgent | Monte Carlo Tree Search with random rollouts | Best-effort quality |
 
@@ -72,39 +72,39 @@ flowchart LR
 
 | Metric | Description |
 |--------|-------------|
-| `roundsCleared` | Complete rounds finished in this run |
-| `highestRound` | Highest round number reached (= roundsCleared + 1 if failed mid-round) |
-| `failureRound` | Round number where the run ended with `game_over` (undefined if truncated at maxRounds) |
-| `failurePhaseIndex` | Phase index (0–5) within the failure round (undefined if not failed) |
-| `phasesCleared` | Total phases cleared across all rounds |
-| `finalOutput` | Total Output accumulated across all phases |
+| `roundsCleared` | Complete levels finished in this run |
+| `highestRound` | Highest level number reached (= roundsCleared + 1 if failed mid-level) |
+| `failureRound` | Level number where the run ended with `game_over` (undefined if truncated at maxRounds) |
+| `failurePhaseIndex` | Stage index (0–5) within the failure level (undefined if not failed) |
+| `phasesCleared` | Total stages cleared across all levels |
+| `finalOutput` | Total Output accumulated across all stages |
 
 #### Pacing & Board Metrics
 
 | Metric | Description |
 |--------|-------------|
 | `avgOutputPerMove` | finalOutput / totalSteps |
-| `avgMovesPerPhase` | Average moves spent per completed phase |
+| `avgMovesPerPhase` | Average moves spent per completed stage |
 | `maxTile` | Highest tile value reached |
-| `uniqueCatalystsAcquired` | Number of distinct catalyst IDs acquired |
-| `anomalySurvivalRate` | Fraction of anomaly phases survived (0–1) |
+| `uniqueCatalystsAcquired` | Number of distinct boost IDs acquired |
+| `anomalySurvivalRate` | Fraction of hazard stages survived (0–1) |
 | `avgMergesPerMove` | Average merges per step |
 | `avgEmptyCells` | Average empty cells across all steps |
 | `moveDiversity` | Normalised entropy of action distribution (0=one direction, 1=uniform) |
 
-#### Per-Phase Granular Records (`phaseHistory`)
+#### Per-Stage Granular Records (`phaseHistory`)
 
-Each cleared or failed phase is recorded as a `PhaseRecord`:
+Each cleared or failed stage is recorded as a `PhaseRecord`:
 
 | Field | Description |
 |-------|-------------|
-| `round` | Round number |
-| `phaseIndex` | Phase index within the round (0–5) |
-| `movesUsed` | Steps spent in this phase |
+| `round` | Level number |
+| `phaseIndex` | Stage index within the level (0–5) |
+| `movesUsed` | Steps spent in this stage |
 | `targetOutput` | Effective target (including build-aware factor) |
 | `actualOutput` | Output achieved |
-| `maxTile` | Highest board tile when the phase ended |
-| `cleared` | Whether the phase was successfully cleared |
+| `maxTile` | Highest board tile when the stage ended |
+| `cleared` | Whether the stage was successfully cleared |
 
 #### Meta Progression
 
@@ -112,14 +112,14 @@ Each cleared or failed phase is recorded as a `PhaseRecord`:
 |--------|-------------|
 | `ascensionLevel` | Ascension level used for this run |
 | `coreShards` | Meta currency earned this run |
-| `totalCatalysts` | How many catalysts were held at the end |
-| `catalystReplacements` | How many times a catalyst was replaced |
+| `totalCatalysts` | How many boosts were held at the end |
+| `catalystReplacements` | How many times a boost was replaced |
 | `totalEnergyEarned` | Proxy for energy economy |
-| `forgeOfferRarityCounts` | Per-run Forge offer distribution by rarity |
-| `acquiredRarityCounts` | Per-run Catalyst acquisition distribution by rarity |
-| `firstRareRound` | Round of first Rare acquisition (if any) |
-| `firstEpicRound` | Round of first Epic acquisition (if any) |
-| `selectedPattern` | Pattern archetype active at run end |
+| `forgeOfferRarityCounts` | Per-run Shop offer distribution by rarity |
+| `acquiredRarityCounts` | Per-run Boost acquisition distribution by rarity |
+| `firstRareRound` | Level of first Rare acquisition (if any) |
+| `firstEpicRound` | Level of first Epic acquisition (if any) |
+| `selectedPattern` | Style archetype active at run end |
 
 ---
 
@@ -129,14 +129,14 @@ Each cleared or failed phase is recorded as a `PhaseRecord`:
 
 | Metric | Description |
 |--------|-------------|
-| `avgRoundsCleared` | Mean complete rounds cleared per run |
-| `medianRoundsCleared` | Median complete rounds cleared per run |
-| `p90RoundsCleared` | 90th-percentile complete rounds cleared |
-| `meanHighestRound` | Mean highest round number reached |
-| `maxRoundReached` | Highest round number reached across all runs |
-| `outputGrowthByRound` | Mean finalOutput of runs that reached each round |
-| `failureDistributionByRound` | Count of runs ending in each round (where difficulty wall is) |
-| `failureDistributionByPhaseIndex` | Count of failures by phase index (0–5) |
+| `avgRoundsCleared` | Mean complete levels cleared per run |
+| `medianRoundsCleared` | Median complete levels cleared per run |
+| `p90RoundsCleared` | 90th-percentile complete levels cleared |
+| `meanHighestRound` | Mean highest level number reached |
+| `maxRoundReached` | Highest level number reached across all runs |
+| `outputGrowthByRound` | Mean finalOutput of runs that reached each level |
+| `failureDistributionByRound` | Count of runs ending in each level (where difficulty wall is) |
+| `failureDistributionByPhaseIndex` | Count of failures by stage index (0–5) |
 
 #### Output Metrics
 
@@ -153,73 +153,73 @@ Each cleared or failed phase is recorded as a `PhaseRecord`:
 
 | Metric | Description |
 |--------|-------------|
-| `avgMovesPerPhase` | Mean moves per completed phase |
-| `avgMovesPerPhaseByRound` | Moves per phase broken down by round number |
-| `lateGameClearTurns` | Avg moves to clear phases in round 4+ |
-| `shortClearRate` | Fraction of cleared phases completed in ≤3 moves |
-| `lateGameShortClearRate` | Same, restricted to round 4+ |
+| `avgMovesPerPhase` | Mean moves per completed stage |
+| `avgMovesPerPhaseByRound` | Moves per stage broken down by level number |
+| `lateGameClearTurns` | Avg moves to clear stages in level 4+ |
+| `shortClearRate` | Fraction of cleared stages completed in ≤3 moves |
+| `lateGameShortClearRate` | Same, restricted to level 4+ |
 | `avgMaxTile` | Average of each run's maxTile value |
-| `avgHighestTierPerPhase` | Mean log2(maxTile) across cleared phases |
-| `avgHighestTierPerRound` | Mean highest tier grouped by round |
+| `avgHighestTierPerPhase` | Mean log2(maxTile) across cleared stages |
+| `avgHighestTierPerRound` | Mean highest tier grouped by level |
 | `highTierReachDistribution` | Distribution of highest tiers reached per run |
-| `energyIncomePerRound` | Mean positive energy change per round |
-| `energySpentPerRound` | Mean energy spent per round |
-| `forgeAffordabilityRate` | Affordable Forge offers / total offers |
-| `buildMaturityByRound` | Mean active catalyst count per round |
-| `lateGameClearSpeed` | Late-game moves per phase alias for pacing checks |
+| `energyIncomePerRound` | Mean positive energy change per level |
+| `energySpentPerRound` | Mean energy spent per level |
+| `forgeAffordabilityRate` | Affordable Shop offers / total offers |
+| `buildMaturityByRound` | Mean active boost count per level |
+| `lateGameClearSpeed` | Late-game moves per stage alias for pacing checks |
 
 #### Other
 
 | Metric | Description |
 |--------|-------------|
 | `avgStepsSurvived` | Mean total steps |
-| `avgCatalystCount` | Mean catalysts held |
-| `anomalySuccessRate` | Mean anomaly survival rate |
+| `avgCatalystCount` | Mean boosts held |
+| `anomalySuccessRate` | Mean hazard survival rate |
 | `maxTileDistribution` | Histogram of max tile values |
-| `phaseClearDist` | Histogram of total phases cleared |
-| `avgUniqueCatalysts` | Mean distinct catalyst IDs acquired per run |
-| `offerDistributionByRarity` | Suite-level Forge rarity distribution |
+| `phaseClearDist` | Histogram of total stages cleared |
+| `avgUniqueCatalysts` | Mean distinct boost IDs acquired per run |
+| `offerDistributionByRarity` | Suite-level Shop rarity distribution |
 | `acquisitionDistributionByRarity` | Suite-level acquisition rarity distribution |
-| `avgFirstRareRound` | Mean round of first Rare acquisition |
-| `avgFirstEpicRound` | Mean round of first Epic acquisition |
-| `patternOutcomeByPattern` | Runs + avgRoundsCleared by pattern archetype |
+| `avgFirstRareRound` | Mean level of first Rare acquisition |
+| `avgFirstEpicRound` | Mean level of first Epic acquisition |
+| `patternOutcomeByPattern` | Runs + avgRoundsCleared by style archetype |
 
 ---
 
-### Catalyst Metrics (`catalyst_stats.json`)
+### Boost Metrics (`catalyst_stats.json`)
 
 | Field | Description |
 |-------|-------------|
-| `pickRate` | Fraction of runs where this catalyst was held at end |
-| `avgRoundsCleared` | Average rounds cleared in runs that held this catalyst |
-| `meanOutput` | Average final output when catalyst was held |
-| `avgOutputContribution` | Average output-per-move when catalyst was held |
+| `pickRate` | Fraction of runs where this boost was held at end |
+| `avgRoundsCleared` | Average levels cleared in runs that held this boost |
+| `meanOutput` | Average final output when boost was held |
+| `avgOutputContribution` | Average output-per-move when boost was held |
 
-### Synergy Metrics (`synergy_stats.json`)
+### Combo Metrics (`synergy_stats.json`)
 
 | Field | Description |
 |-------|-------------|
-| `triggerRate` | Fraction of runs that had both synergy catalysts active |
-| `avgRoundsCleared` | Avg rounds cleared when this synergy was active |
-| `meanOutput` | Average final output when synergy was active |
+| `triggerRate` | Fraction of runs that had both combo boosts active |
+| `avgRoundsCleared` | Avg levels cleared when this combo was active |
+| `meanOutput` | Average final output when combo was active |
 
 ### Build Metrics (`build_stats.json`)
 
-Top 10 most common catalyst combinations, sorted by frequency.
+Top 10 most common boost combinations, sorted by frequency.
 
 | Field | Description |
 |-------|-------------|
-| `catalysts` | List of catalyst IDs in the build |
+| `catalysts` | List of boost IDs in the build |
 | `frequency` | Fraction of runs with this exact combo |
-| `avgRoundsCleared` | Average rounds cleared with this build |
+| `avgRoundsCleared` | Average levels cleared with this build |
 | `meanOutput` | Average final output for this build |
 
 ### Highlighting Dominant / Weak Builds
 
 The analysis engine flags:
-- **OP catalyst**: pick rate > 10% AND avgRoundsCleared > 1.5× global
-- **Weak catalyst**: pick rate < 5% (in run count > 20)
-- **OP synergy**: trigger rate > 5% AND avgRoundsCleared > 2× global
+- **OP boost**: pick rate > 10% AND avgRoundsCleared > 1.5× global
+- **Weak boost**: pick rate < 5% (in run count > 20)
+- **OP combo**: trigger rate > 5% AND avgRoundsCleared > 2× global
 
 ---
 
@@ -230,9 +230,9 @@ The analysis engine flags:
 | `smoke` | All 5 | 5 | Quick sanity — verify runs complete and artifacts generate |
 | `baseline` | Heuristic | 40 | Default tuning baseline for pacing/economy/board growth |
 | `long` | Heuristic | 120 | Higher-confidence Heuristic tuning validation |
-| `balance` | Heuristic | 35 | Economy tightness + catalyst/build maturity probe |
-| `pacing` | Heuristic | 30 | Moves per phase, late-game clear speed, tier growth |
-| `round_stress` | Heuristic | 30 | Later-round failure patterns and pressure checks |
+| `balance` | Heuristic | 35 | Economy tightness + boost/build maturity probe |
+| `pacing` | Heuristic | 30 | Moves per stage, late-game clear speed, tier growth |
+| `round_stress` | Heuristic | 30 | Later-level failure styles and pressure checks |
 | `debug_agents` | All 5 | 20 | Optional debug comparison (not in default tuning flow) |
 
 ---
@@ -241,12 +241,12 @@ The analysis engine flags:
 
 | File | Description |
 |------|-------------|
-| `rounds_cleared.svg` | Avg rounds cleared by agent |
+| `rounds_cleared.svg` | Avg levels cleared by agent |
 | `output_distribution.svg` | Mean final output by agent |
-| `phase_clear.svg` | Avg phases cleared by agent |
+| `phase_clear.svg` | Avg stages cleared by agent |
 | `max_tile.svg` | Avg max tile by agent |
-| `output_growth.svg` | Output growth by round (first agent) |
-| `failure_distribution.svg` | Failure count by round number (all agents) |
+| `output_growth.svg` | Output growth by level (first agent) |
+| `failure_distribution.svg` | Failure count by level number (all agents) |
 
 ---
 
@@ -290,16 +290,16 @@ npx tsx src/scripts/runBenchmark.ts --suite debug_agents
 
 | Observation | Interpretation |
 |-------------|---------------|
-| `avgRoundsCleared < 1` for HeuristicAgent | Game too hard — reduce early phase targets |
+| `avgRoundsCleared < 1` for HeuristicAgent | Game too hard — reduce early stage targets |
 | `avgRoundsCleared > 8` for MCTS | Game too easy — increase targets or reduce steps |
-| All agents clear same number of rounds | Game lacks strategic depth |
-| `lateGameShortClearRate > 10%` | Build power is outpacing target curve in late rounds |
-| `failureDistributionByRound` spikes at Round 1 | Early game is the difficulty wall |
-| `failureDistributionByRound` spikes at Round 3–4 | Mid-game scaling is the difficulty wall |
-| Anomaly survival < 30% | Entropy Tax / Collapse Field too punishing |
-| Catalyst pick rate < 5% | Catalyst too expensive or too weak |
-| Catalyst `avgRoundsCleared` >> global | Catalyst potentially overpowered |
-| Synergy `avgRoundsCleared` >> global | Synergy potentially overpowered |
+| All agents clear same number of levels | Game lacks strategic depth |
+| `lateGameShortClearRate > 10%` | Build power is outpacing target curve in late levels |
+| `failureDistributionByRound` spikes at Level 1 | Early game is the difficulty wall |
+| `failureDistributionByRound` spikes at Level 3–4 | Mid-game scaling is the difficulty wall |
+| Hazard survival < 30% | Entropy Tax / Collapse Field too punishing |
+| Boost pick rate < 5% | Boost too expensive or too weak |
+| Boost `avgRoundsCleared` >> global | Boost potentially overpowered |
+| Combo `avgRoundsCleared` >> global | Combo potentially overpowered |
 | High score variance | Game is swingy (possibly by design) |
 | Dominant build > 30% of runs | Build diversity too low |
 
@@ -308,15 +308,15 @@ npx tsx src/scripts/runBenchmark.ts --suite debug_agents
 ## What "Good Benchmark Results" Look Like
 
 - **Agent distinction**: HeuristicAgent and MCTS clearly outperform RandomAgent
-- **Rounds cleared**: best agent averages 2–5 rounds cleared
-- **Failure distribution**: most failures in rounds 2–4 (not round 1 or very late)
-- **Pacing**: `avgMovesPerPhase` 6–12 across all rounds; no round averages < 4
-- **Late-game**: `lateGameShortClearRate` < 10%; phases don't trivially clear in 1–2 moves
-- **Anomaly challenge**: anomaly phases cause a measurable survival drop
-- **Catalyst usage**: at least 3–5 catalysts see > 10% pick rate
-- **Synergy spread**: no single synergy accounts for > 50% of deep runs
+- **Levels cleared**: best agent averages 2–5 levels cleared
+- **Failure distribution**: most failures in levels 2–4 (not level 1 or very late)
+- **Pacing**: `avgMovesPerPhase` 6–12 across all levels; no level averages < 4
+- **Late-game**: `lateGameShortClearRate` < 10%; stages don't trivially clear in 1–2 moves
+- **Hazard challenge**: hazard stages cause a measurable survival drop
+- **Boost usage**: at least 3–5 boosts see > 10% pick rate
+- **Combo spread**: no single combo accounts for > 50% of deep runs
 - **Build diversity**: top build frequency < 30%
-- **Output growth**: `outputGrowthByRound` increases meaningfully each round
+- **Output growth**: `outputGrowthByRound` increases meaningfully each level
 - **Reproducibility**: running the same suite twice gives < 5% difference in `avgRoundsCleared`
 
 ---
@@ -327,7 +327,7 @@ The `benchmark:meta` script (`src/scripts/runMetaBenchmark.ts`) adds three analy
 
 ### 1. Ascension Level Sweep (`--mode ascension`)
 
-Runs the same agents across all 9 Ascension levels (0–8) and reports per-level rounds cleared.
+Runs the same agents across all 9 Ascension levels (0–8) and reports per-level levels cleared.
 
 ```
 npm run benchmark:meta -- --mode ascension
@@ -344,15 +344,15 @@ A2    | +15% target output             |                  0.80 |             1.5
 A8    | Combined penalties             |                  0.00 |             0.10
 ```
 
-A healthy difficulty curve shows a steady drop in rounds cleared across levels.
+A healthy difficulty curve shows a steady drop in levels cleared across levels.
 
 ---
 
 ### 2. Unlock Pool Comparison (`--mode unlock`)
 
 Compares agent performance with:
-- **Base pool** — only the 8 legacy catalysts (fresh profile restriction)
-- **Full pool** — all 24 catalysts (no unlock restrictions)
+- **Base pool** — only the 8 legacy boosts (fresh profile restriction)
+- **Full pool** — all 24 boosts (no unlock restrictions)
 
 ```
 npm run benchmark:meta -- --mode unlock
@@ -365,8 +365,8 @@ npm run benchmark:meta -- --mode unlock
 | Base (8 legacy only) | 1.5–3.0 |
 | Full (all 24) | 3.0–5.0 |
 
-A gap of ~1.5–2 rounds validates that unlocks provide real progression power.
-If the gap is < 0.5, the advanced catalysts may be too weak.
+A gap of ~1.5–2 levels validates that unlocks provide real progression power.
+If the gap is < 0.5, the advanced boosts may be too weak.
 If > 4, the base experience may be too punishing for new players.
 
 ---
@@ -395,44 +395,44 @@ Run | Shards | Total | Phases | Rounds
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
 | `ascensionLevel` | `0–8` | `0` | Ascension level for the run |
-| `protocol` | `ProtocolId` | `corner_protocol` | Protocol to use |
-| `maxRounds` | `number` | `10` | Maximum rounds to simulate (caps endless runs for benchmark) |
-| `unlockedCatalysts` | `CatalystId[] \| undefined` | `undefined` (full pool) | Restricts Forge catalyst pool |
+| `protocol` | `ProtocolId` | `corner_protocol` | Rule to use |
+| `maxRounds` | `number` | `10` | Maximum levels to simulate (caps endless runs for benchmark) |
+| `unlockedCatalysts` | `CatalystId[] \| undefined` | `undefined` (full pool) | Restricts Shop boost pool |
 
 ---
 
-## Phase Pacing Benchmark (v6)
+## Stage Pacing Benchmark (v6)
 
 ### PhaseRecord Tracking
 
-Every cleared (and failed) phase is recorded with:
+Every cleared (and failed) stage is recorded with:
 
 | Field | Description |
 |-------|-------------|
-| `round` | Round number |
-| `phaseIndex` | Phase index within the round (0–5) |
-| `movesUsed` | Steps spent in this phase |
+| `round` | Level number |
+| `phaseIndex` | Stage index within the level (0–5) |
+| `movesUsed` | Steps spent in this stage |
 | `targetOutput` | Effective target (including build-aware factor) |
 | `actualOutput` | Output achieved |
-| `maxTile` | Highest board tile when the phase ended |
-| `cleared` | Whether the phase was successfully cleared |
+| `maxTile` | Highest board tile when the stage ended |
+| `cleared` | Whether the stage was successfully cleared |
 
 ### v6 Benchmark Targets (HeuristicAgent, Ascension 0, 50 runs)
 
 | Metric | Expected Range |
 |--------|---------------|
-| Avg moves per phase | 6–12 |
+| Avg moves per stage | 6–12 |
 | Short-clear rate | < 10 % |
-| Late-game short-clear rate (round 4+) | < 5 % |
-| Avg rounds cleared (median) | 2–4 |
+| Late-game short-clear rate (level 4+) | < 5 % |
+| Avg levels cleared (median) | 2–4 |
 
 ### Detecting Regressions
 
 - **Short-clear rate above 10 %**: build power is outpacing target curve
   → increase `BUILD_AWARE_SCALING.catalystWeight` or `multiplierWeight`
-- **Late-game short-clear rate above 5 %**: compound scaling insufficient for high rounds
+- **Late-game short-clear rate above 5 %**: compound scaling insufficient for high levels
   → increase `ROUND_TARGET_SCALE` or reduce `maxFactor`
 - **avgRoundsCleared drops below 1** for HeuristicAgent: early-game overtightened
-  → reduce base targets in `PHASE_CONFIG` (phase 1–3)
-- **Avg moves per phase > 15**: targets are too high for typical builds
+  → reduce base targets in `PHASE_CONFIG` (stage 1–3)
+- **Avg moves per stage > 15**: targets are too high for typical builds
   → reduce `BUILD_AWARE_SCALING.maxFactor` or `catalystWeight`
