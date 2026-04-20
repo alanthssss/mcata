@@ -25,6 +25,7 @@ describe('unified forge flow', () => {
       stepsRemaining: 1,
       output: 9999,
       phaseTargetOutput: 1,
+      forgeVisitCount: 0,
       grid: [
         [null, null, null, null],
         [null, null, null, null],
@@ -34,8 +35,68 @@ describe('unified forge flow', () => {
     };
     state = processMoveAction(state, 'up');
     expect(state.screen).toBe('forge');
-    expect(state.forgeItems.length).toBeGreaterThan(0);
-    expect(state.forgeItems.some(i => i.type !== 'catalyst')).toBe(true);
+    // First forge visit (forgeVisitCount was 0): exactly 3 items — 2 catalysts + 1 signal.
+    // This is the onboarding-simplified shop shown in the screenshot (Stage 3 background,
+    // all panels empty). Before the fix this returned 6 items regardless of visit index.
+    expect(state.forgeItems).toHaveLength(3);
+    expect(state.forgeItems.filter(i => i.type === 'catalyst')).toHaveLength(2);
+    expect(state.forgeItems.filter(i => i.type === 'signal')).toHaveLength(1);
+    expect(state.forgeItems.some(i => i.type === 'pattern')).toBe(false);
+    expect(state.forgeItems.some(i => i.type === 'utility')).toBe(false);
+    // forgeVisitCount is incremented to 1 when the forge screen is entered
+    expect(state.forgeVisitCount).toBe(1);
+  });
+
+  it('second forge visit produces 4 items: 2 catalysts + 1 signal + 1 pattern, no utility', () => {
+    const base = createInitialState(1);
+    let state: GameState = {
+      ...base,
+      screen: 'playing',
+      phaseIndex: 1,
+      stepsRemaining: 1,
+      output: 9999,
+      phaseTargetOutput: 1,
+      forgeVisitCount: 1,   // already visited once
+      grid: [
+        [null, null, null, null],
+        [null, null, null, null],
+        [{ id: 1, value: 2, merged: false }, null, null, null],
+        [null, null, null, null],
+      ],
+    };
+    state = processMoveAction(state, 'up');
+    expect(state.screen).toBe('forge');
+    expect(state.forgeItems.filter(i => i.type === 'catalyst')).toHaveLength(2);
+    expect(state.forgeItems.filter(i => i.type === 'signal')).toHaveLength(1);
+    expect(state.forgeItems.filter(i => i.type === 'pattern')).toHaveLength(1);
+    expect(state.forgeItems.some(i => i.type === 'utility')).toBe(false);
+    expect(state.forgeVisitCount).toBe(2);
+  });
+
+  it('full-shop visit (forgeVisitCount >= 3) produces 6 items including a utility', () => {
+    const base = createInitialState(1);
+    let state: GameState = {
+      ...base,
+      screen: 'playing',
+      phaseIndex: 1,
+      stepsRemaining: 1,
+      output: 9999,
+      phaseTargetOutput: 1,
+      forgeVisitCount: 3,   // visit index 3 → full shop
+      grid: [
+        [null, null, null, null],
+        [null, null, null, null],
+        [{ id: 1, value: 2, merged: false }, null, null, null],
+        [null, null, null, null],
+      ],
+    };
+    state = processMoveAction(state, 'up');
+    expect(state.screen).toBe('forge');
+    expect(state.forgeItems).toHaveLength(6);
+    expect(state.forgeItems.filter(i => i.type === 'catalyst')).toHaveLength(3);
+    expect(state.forgeItems.filter(i => i.type === 'pattern')).toHaveLength(1);
+    expect(state.forgeItems.filter(i => i.type === 'signal')).toHaveLength(1);
+    expect(state.forgeItems.filter(i => i.type === 'utility')).toHaveLength(1);
   });
 
   it('first phase clear skips forge to keep onboarding focused', () => {
