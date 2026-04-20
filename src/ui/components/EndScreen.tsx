@@ -30,7 +30,7 @@ export const EndScreen: React.FC<EndScreenProps> = ({ isVictory, totalOutput, on
           <div className="stat-big">{formatScore(totalOutput)}</div>
         </div>
       </div>
-      <button className="start-btn" onClick={onRestart}>{t('ui.new_round')}</button>
+      <button className="start-btn" onClick={onRestart}>{t('ui.new_run')}</button>
       {showExport && (
         <div className="debug-export-row">
           <button className="debug-export-btn" onClick={() => downloadRunLogs()}>
