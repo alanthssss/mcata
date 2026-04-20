@@ -291,6 +291,24 @@ export interface ReactionLogEntry {
   signalEffect: LocalizedText | null;
 }
 
+/** A slimmed-down reaction entry used for run-log persistence (grid snapshots omitted). */
+export type SlimReactionEntry = Omit<ReactionLogEntry, 'gridBefore' | 'gridAfter'>;
+
+/** Per-phase snapshot accumulated during a run for run-log persistence. */
+export interface PhaseLog {
+  round: number;
+  phaseIndex: number;
+  targetOutput: number;
+  actualOutput: number;
+  stepsUsed: number;
+  cleared: boolean;
+  activeCatalysts: CatalystId[];
+  activePattern: PatternId | null;
+  patternLevel: number;
+  globalMultiplier: number;
+  entries: SlimReactionEntry[];
+}
+
 export interface LocalizedText {
   key: string;
   params?: Record<string, string | number>;
@@ -394,4 +412,9 @@ export interface GameState {
    *  ascension modifier, and build-aware factor.  Used by both the engine
    *  (success check) and the UI (progress display). */
   phaseTargetOutput: number;
+  // Run-log persistence
+  /** All entries for the current in-progress phase (no truncation; grids stripped). */
+  currentPhaseEntries: SlimReactionEntry[];
+  /** Completed-phase snapshots accumulated during this run, persisted at run end. */
+  phaseLogBuffer: PhaseLog[];
 }
