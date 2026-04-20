@@ -17,6 +17,10 @@ type ForgeOfferCounts = {
   utilities: number;
 };
 
+// On the first Forge visit, prioritize beginner-friendly picks with immediate impact:
+// - empty_amplifier: next merge gets visible score scaling from board state
+// - rich_merge: next merge grants visible +Energy
+// - grid_clean: one-tap board control skill with obvious tile removal
 const FIRST_FORGE_BOOST_IDS: CatalystId[] = ['empty_amplifier', 'rich_merge'];
 const FIRST_FORGE_SKILL_ID: SignalId = 'grid_clean';
 const EARLY_FORGE_ITEM_COUNTS: ForgeOfferCounts = {
@@ -142,7 +146,9 @@ function generateFirstForgeItems(
   const pickedCatalysts: CatalystDef[] = [];
   for (const id of FIRST_FORGE_BOOST_IDS) {
     const found = ALL_CATALYSTS.find(c => c.id === id);
-    if (!found) continue;
+    if (!found) {
+      throw new Error(`Missing first-forge catalyst definition: ${id}`);
+    }
     if (activeCatalysts.includes(id)) continue;
     if (catalystPool !== undefined && !catalystPool.includes(id)) continue;
     pickedCatalysts.push(found);

@@ -647,6 +647,28 @@ describe('skipForge', () => {
     const result = skipForge(state);
     expect(result.lastIntermissionMessage?.key).toBe('ui.forge_boost_ready');
   });
+
+  it('clears intermission feedback after the next valid move', () => {
+    const state = {
+      ...playingState(),
+      screen: 'forge' as const,
+      lastIntermissionMessage: { key: 'ui.forge_boost_ready', params: { name: 'empty_amplifier' } },
+    };
+    const afterSkip = skipForge(state);
+    const playable = withGrid({
+      ...afterSkip,
+      stepsRemaining: 3,
+      output: 0,
+      phaseTargetOutput: 9999,
+    }, makeGrid([
+      [2, 2, 0, 0],
+      [0, 0, 0, 0],
+      [0, 0, 0, 0],
+      [0, 0, 0, 0],
+    ]));
+    const next = processMoveAction(playable, 'left');
+    expect(next.lastIntermissionMessage).toBeNull();
+  });
 });
 
 describe('buyForgeItem feedback', () => {

@@ -820,6 +820,9 @@ export function rerollForge(state: GameState): GameState {
     rng.next.bind(rng),
     state.catalystPool,
     state.roundNumber,
+    // Keep rerolls in the same Forge visit band (first/early/full):
+    // forgeVisitCount is incremented when entering Forge, so current visit index
+    // is (forgeVisitCount - 1).
     Math.max(state.forgeVisitCount - 1, 0),
   );
   return {
