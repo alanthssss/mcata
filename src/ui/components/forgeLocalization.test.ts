@@ -119,6 +119,7 @@ function renderFullShop(
     activeCatalysts: (overrides.activeCatalysts as any) ?? [],
     activePattern: null,
     activePatternLevel: 0,
+    reactionLog: [],
     signals: [],
     energy: overrides.energy ?? 10,
     lastIntermissionMessage: null,
@@ -285,6 +286,7 @@ describe('Shop modal simplified tags', () => {
       activeCatalysts: [],
       activePattern: null,
       activePatternLevel: 0,
+      reactionLog: [],
       signals: [],
       energy: 10,
       lastIntermissionMessage: null,
@@ -298,6 +300,35 @@ describe('Shop modal simplified tags', () => {
     expect(html).toContain('Score');
     expect(html).toContain('Energy');
     expect(html).toContain('Control');
+    expect(html).toContain('Creates a new build direction');
+  });
+
+  it('shows build-direction tags (Chain / Hybrid / High-Tier when applicable)', () => {
+    const html = renderFullShop({
+      items: [{
+        id: 'cat:phase_resonance',
+        type: 'catalyst',
+        category: 'amplifier',
+        price: 7,
+        name: 'Phase Resonance',
+        description: '...',
+        catalyst: {
+          id: 'phase_resonance',
+          name: 'Phase Resonance',
+          description: '...',
+          rarity: 'epic',
+          cost: 7,
+          category: 'amplifier',
+          trigger: 'on_merge',
+          effectParams: {},
+          tags: ['phase'],
+          flavorText: '',
+          unlockCondition: '',
+        },
+      }],
+      activeCatalysts: ['high_tribute'] as any,
+    });
+    expect(html).toContain('High-Tier');
   });
 
   it('generator catalyst gets Energy tag', () => {
@@ -446,6 +477,10 @@ describe('Shop modal simplified tags', () => {
     }];
     const html = renderFullShop({ items });
     expect(html).toContain('Score');
+  });
+
+  it('keeps localization for fit-state copy in zh-CN', () => {
+    expect(createT('zh-CN')('ui.shop_creates_direction')).toBe('可开启新构筑方向');
   });
 
   it('utility energy item gets Energy tag', () => {

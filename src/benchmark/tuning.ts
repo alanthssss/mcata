@@ -1,5 +1,10 @@
 import { BenchmarkTuningOverrides } from './runner';
 import { SuiteMetrics } from './metrics';
+import {
+  BENCHMARK_TUNING_BASELINE_CANDIDATE,
+  BENCHMARK_TUNING_BOUNDS,
+  BENCHMARK_TUNING_TARGETS,
+} from '../core/config';
 
 export interface TuningCandidate extends Required<BenchmarkTuningOverrides> {}
 
@@ -18,28 +23,15 @@ export interface TuningTargets {
 }
 
 export const BASELINE_TUNING_CANDIDATE: TuningCandidate = {
-  stepsMultiplier: 1.0,
-  targetOutputMultiplier: 1.0,
-  roundScaleMultiplier: 1.0,
-  startingEnergy: 10,
-  energyIncomeMultiplier: 1.0,
+  ...BENCHMARK_TUNING_BASELINE_CANDIDATE,
 };
 
 export const TUNING_BOUNDS: Record<keyof TuningCandidate, [number, number]> = {
-  stepsMultiplier: [0.9, 1.4],
-  targetOutputMultiplier: [0.9, 1.5],
-  roundScaleMultiplier: [0.95, 1.2],
-  startingEnergy: [6, 12],
-  energyIncomeMultiplier: [0.6, 1.1],
+  ...BENCHMARK_TUNING_BOUNDS,
 };
 
 export const HEURISTIC_TUNING_TARGETS: TuningTargets = {
-  avgMovesPerPhase: { min: 8.5, max: 14 },
-  avgHighestTierPerPhase: { min: 4.9 },
-  lateGameClearSpeed: { min: 6 },
-  energyIncomePerRound: { min: 2.5, max: 6.5 },
-  forgeAffordabilityRate: { min: 0.3, max: 0.75 },
-  buildMaturityRound3: { min: 2.5 },
+  ...BENCHMARK_TUNING_TARGETS,
 };
 
 export function clampCandidate(candidate: TuningCandidate): TuningCandidate {

@@ -10,7 +10,9 @@
 src/
 ├── core/          Pure TypeScript — no browser APIs, fully testable
 │   ├── types.ts          All shared type definitions
-│   ├── config.ts         Centralised tuning constants
+│   ├── config.ts         Runtime exports from generated YAML config
+│   ├── gameConfigSchema.ts Typed validation schema for config/game.yaml
+│   ├── generatedGameConfig.ts Auto-generated from YAML (do not hand-edit)
 │   ├── engine.ts         Game state machine (createInitialState, processMoveAction, …)
 │   ├── score.ts          Scoring formula
 │   ├── catalysts.ts      Catalyst definitions
@@ -219,15 +221,15 @@ npm run docs:assets    # generate Mermaid diagram SVGs
 `npm run balance` is self-contained and writes outputs to `artifacts/benchmark/latest/`.
 
 Typical loop:
-1. Tune constants in `src/core/config.ts`
+1. Tune values in `config/game.yaml`
 2. Run `npm run balance`
 3. Review `artifacts/benchmark/latest/balance_report.md` and charts
 4. Compare with previous benchmark artifacts before committing tuning changes
 
 Auto-tuning loop:
 1. Run `npm run balance:tune`
-2. Review `tuning_summary.md`, `before_vs_after.md`, and `best_config.json`
-3. Apply accepted recommendations to core balance constants when validated
+2. Review `tuning_summary.md`, `before_vs_after.md`, `best_config.json`, and `best_config.yaml`
+3. Apply accepted recommendations back into `config/game.yaml`
 
 ---
 
@@ -244,7 +246,7 @@ Auto-tuning loop:
 ## Code Conventions
 
 - **Pure engine** — `src/core/` has zero browser API dependencies.
-- **One source of truth** — all tuning constants in `src/core/config.ts`.
+- **One source of truth** — numeric tuning lives in `config/game.yaml`.
 - **Immutable state** — every engine function returns a new state object.
 - **i18n everywhere** — all user-facing strings use `useT()` / `t()`.
-- **No magic numbers** — reference named constants from `config.ts`.
+- **No magic numbers** — reference named constants from `config.ts` (YAML-derived).

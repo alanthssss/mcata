@@ -1,11 +1,12 @@
 import React from 'react';
 import { formatScore } from '../scoreDisplay';
 import { useT } from '../../i18n';
-import { CatalystId, SynergyId } from '../../core/types';
+import { CatalystId, PatternId, ReactionLogEntry, SynergyId } from '../../core/types';
 import { CATALYST_DEFS } from '../../core/catalysts';
 import { LocaleSwitcher } from './LocaleSwitcher';
 import { SYNERGY_DEFS, getActiveSynergies } from '../../core/synergies';
 import { ROUND_COMPLETE_ENERGY_BONUS, ROUND_COMPLETE_MULTIPLIER_BONUS } from '../../core/config';
+import { deriveBuildIdentity } from '../../core/buildIdentity';
 
 interface RoundCompleteScreenProps {
   roundNumber: number;
@@ -13,6 +14,9 @@ interface RoundCompleteScreenProps {
   totalOutput: number;
   bestMoveOutput: number;
   activeCatalysts: CatalystId[];
+  activePattern: PatternId | null;
+  reactionLog: ReactionLogEntry[];
+  energy: number;
   onContinue: () => void;
   onQuit: () => void;
 }
@@ -51,6 +55,9 @@ export const RoundCompleteScreen: React.FC<RoundCompleteScreenProps> = ({
   totalOutput,
   bestMoveOutput,
   activeCatalysts,
+  activePattern,
+  reactionLog,
+  energy,
   onContinue,
   onQuit,
 }) => {
@@ -60,6 +67,7 @@ export const RoundCompleteScreen: React.FC<RoundCompleteScreenProps> = ({
   const activeSynergies = getActiveSynergies(activeCatalysts);
   const mvpCatalyst = getBestCatalyst(activeCatalysts);
   const strongestSynergy = getBestSynergy(activeCatalysts);
+  const buildIdentity = deriveBuildIdentity({ activeCatalysts, activePattern, reactionLog, energy });
 
   return (
     <div className="screen end-screen">
@@ -88,6 +96,11 @@ export const RoundCompleteScreen: React.FC<RoundCompleteScreenProps> = ({
       </div>
 
       <div className="round-complete-build">
+        <div className="round-complete-section">
+          <h3 className="round-complete-section__title">{t('ui.build_identity')}</h3>
+          <div className="round-complete-build-label">{t(buildIdentity.labelKey)}</div>
+          <div className="round-complete-none">{t(buildIdentity.summaryKey)}</div>
+        </div>
         <div className="round-complete-section">
           <h3 className="round-complete-section__title">{t('ui.build_summary')}</h3>
           {activeCatalysts.length > 0 ? (

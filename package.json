@@ -3,21 +3,23 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
+    "sync:config": "tsx src/scripts/syncYamlConfig.ts",
+    "dev": "npm run sync:config && vite",
+    "build": "npm run sync:config && tsc && vite build",
     "preview": "vite preview",
-    "test": "vitest run",
+    "test": "npm run sync:config && vitest run",
     "test:watch": "vitest",
-    "benchmark": "tsx src/scripts/runBenchmark.ts --suite baseline",
-    "benchmark:long": "tsx src/scripts/runBenchmark.ts --suite long",
-    "benchmark:meta": "tsx src/scripts/runMetaBenchmark.ts",
-    "balance": "tsx src/scripts/runBalanceCheck.ts",
-    "balance:tune": "tsx src/scripts/runAutoTuneBalance.ts",
+    "benchmark": "npm run sync:config && tsx src/scripts/runBenchmark.ts --suite baseline",
+    "benchmark:long": "npm run sync:config && tsx src/scripts/runBenchmark.ts --suite long",
+    "benchmark:meta": "npm run sync:config && tsx src/scripts/runMetaBenchmark.ts",
+    "balance": "npm run sync:config && tsx src/scripts/runBalanceCheck.ts",
+    "balance:tune": "npm run sync:config && tsx src/scripts/runAutoTuneBalance.ts",
     "docs:assets": "tsx src/scripts/generateDocsAssets.ts"
   },
   "dependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "yaml": "^2.8.3",
     "zustand": "^4.5.2"
   },
   "devDependencies": {

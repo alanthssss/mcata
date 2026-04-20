@@ -53,6 +53,24 @@ function write(fileName: string, content: string) {
   fs.writeFileSync(path.join(OUTPUT_DIR, fileName), content, 'utf-8');
 }
 
+function toSimpleYaml(value: unknown, indent = 0): string {
+  const pad = '  '.repeat(indent);
+  if (Array.isArray(value)) {
+    return value.map(item => `${pad}- ${toSimpleYaml(item, indent + 1).trimStart()}`).join('\n');
+  }
+  if (value && typeof value === 'object') {
+    return Object.entries(value as Record<string, unknown>)
+      .map(([key, child]) => {
+        if (child && typeof child === 'object') {
+          return `${pad}${key}:\n${toSimpleYaml(child, indent + 1)}`;
+        }
+        return `${pad}${key}: ${child}`;
+      })
+      .join('\n');
+  }
+  return `${pad}${String(value)}`;
+}
+
 function runCandidate(candidate: TuningCandidate, iteration: number): IterationResult {
   const runs = runBatch({
     agent: new HeuristicAgent(),
@@ -150,6 +168,7 @@ const rejected = history.filter(h => h.iteration !== best.iteration).map(h => ({
 
 write('tuning_history.json', JSON.stringify(history, null, 2));
 write('best_config.json', JSON.stringify(best.candidate, null, 2));
+write('best_config.yaml', `${toSimpleYaml(best.candidate)}\n`);
 write('tuning_rejected_configs.json', JSON.stringify(rejected, null, 2));
 write(
   'tuning_summary.md',

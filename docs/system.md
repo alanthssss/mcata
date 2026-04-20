@@ -171,8 +171,8 @@ optional hazard, and benchmark data.
 
 ### Extending the Stage System
 
-All stage configuration lives in `src/core/config.ts` → `PHASE_CONFIG`.  To
-add a stage or change targets, edit that array.  The engine reads it via
+All stage configuration is authored in `config/game.yaml` (`phaseConfig`).
+Run `npm run sync:config` to validate and regenerate runtime exports consumed by
 `src/core/phases.ts`.
 
 The type definition lives in `src/core/types.ts` → `PhaseDef`.  New fields
@@ -188,7 +188,7 @@ Combos are defined in `src/core/synergies.ts`.  Each `SynergyDef` requires:
 - `catalysts: [CatalystId, CatalystId]` — the triggering pair
 - `multiplier: number` — the output bonus multiplier
 
-Combo multipliers are tuned in `src/core/config.ts` → `SYNERGY_MULTIPLIERS`.
+Combo multipliers are tuned in `config/game.yaml` (`synergyMultipliers`).
 
 ---
 
@@ -207,8 +207,8 @@ UI behavior:
 ## 6. Streak System
 
 Consecutive scoring moves build the streak multiplier (up to ×2.0).  A
-non-scoring move resets it.  Tuning lives in `src/core/config.ts` →
-`MOMENTUM_CONFIG`.
+non-scoring move resets it.  Tuning lives in `config/game.yaml` (`momentumConfig`)
+and is exported via `src/core/config.ts`.
 
 ---
 
@@ -222,6 +222,10 @@ Gameplay/system cards use a unified compact-first presentation:
   click close, and keyboard focus behavior.
 - Last Move Breakdown and Reaction Log panels are collapsible from the right
   column to keep the default gameplay view compact.
+- Build Identity panel summarizes current run direction (Score/Chain/Control/Energy/Hybrid),
+  shows confidence, and provides drill-down score reasons.
+- Shop cards include category + build-direction tags and fit-state hints
+  (fits current build / creates direction / low synergy).
 
 ---
 

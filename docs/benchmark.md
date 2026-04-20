@@ -286,6 +286,16 @@ npx tsx src/scripts/runBenchmark.ts --suite debug_agents
 
 ---
 
+`npm run sync:config` runs automatically before benchmark scripts. Numeric tuning
+inputs come from `config/game.yaml` (validated and synced to generated runtime config).
+
+`npm run balance:tune` writes:
+- `tuning_history.json`
+- `best_config.json`
+- `best_config.yaml`
+- `tuning_summary.md`
+- `before_vs_after.md`
+
 ## How to Interpret Results
 
 | Observation | Interpretation |

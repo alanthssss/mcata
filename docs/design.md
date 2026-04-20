@@ -164,7 +164,7 @@ Archetypes:
 | `finalOutput` / `rawOutput` | Internal score value (unchanged) | Engine, benchmark, AI agents |
 | `displayOutput` | `rawOutput × DISPLAY_SCORE_SCALE` | UI panels, end screen |
 
-`DISPLAY_SCORE_SCALE` (default 10, defined in `src/core/config.ts`) makes numbers feel more rewarding without touching game mechanics.  Benchmark reports always reference raw output.
+`DISPLAY_SCORE_SCALE` (default 10, authored in `config/game.yaml`) makes numbers feel more rewarding without touching game mechanics.  Benchmark reports always reference raw output.
 
 ### Theme Registry
 
@@ -583,12 +583,13 @@ The React UI renders the game state from the Zustand store. Key panels:
 | `MomentumBar` | Left column | Visual streak multiplier meter + on-demand detail |
 | `CatalystPanel` | Left column | Active Boost compact cards (name + tag) |
 | `SynergyPanel` | Left column | Active Combo compact cards (name + tag) |
+| `BuildIdentityPanel` | Left column | Current build label + confidence + contributor chips + explanation |
 | `SignalPanel` | Left column | Available Skills compact cards + Use buttons |
 | `OutputPanel` | Right column | Last move score breakdown (collapsible) |
 | `GridView` | Center | 4×4 game board |
 | `ControlPad` | Center | On-screen arrow controls |
 | `LogPanel` | Right column | Reaction log (last 10 moves, collapsible) |
-| `ForgeModal` | Overlay | Boost shop with category tags and combo hints |
+| `ForgeModal` | Overlay | Boost shop with category tags, build-direction tags, and fit-state hints |
 | `InfusionModal` | Overlay | Post-stage reward choice with playstyle tags |
 | `HelpOverlay` | Overlay | In-game help (systems explanation) |
 | `LocaleSwitcher` | Header | Toggle EN / 中文 |
@@ -859,7 +860,7 @@ Agents only depend on `src/core/` and `src/ai/`. They import no browser code.
 
 ## Balancing Philosophy
 
-- **Centralized config**: all tuning knobs live in `src/core/config.ts`
+- **Centralized config**: all numeric tuning knobs live in `config/game.yaml`
 - **Benchmark-driven tuning**: run `npm run balance` to check levels cleared, boost stats, and pacing metrics
 - **Agent distinction**: if HeuristicAgent and RandomAgent score similarly, the game lacks depth
 - **Stage ramp**: each stage should feel meaningfully harder, not just step-limited

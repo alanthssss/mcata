@@ -9,7 +9,7 @@ import {
 import { applyEntropyTax, applyCollapseField } from './anomalies';
 import { getPhasesForRound, PHASES_PER_ROUND, getBuildAwareTargetScale } from './phases';
 import { generateForgeItems } from './forge';
-import { ReactionLogEntry } from './types';
+import { ReactionLogEntry, SlimReactionEntry, PhaseLog } from './types';
 import { PROTOCOL_DEFS, DEFAULT_PROTOCOL } from './protocols';
 import { ASCENSION_MODIFIER_DEFS } from './ascensionModifiers';
 import {
@@ -42,6 +42,32 @@ const SECOND_MERGE_FEEDBACK_MULTIPLIER = 1.1;
 // Distinct from other offsets (+200 forge, +500 reroll) to keep onboarding phase-clear
 // board reseeding deterministic without colliding with existing RNG branches.
 const ONBOARDING_SEED_OFFSET = 600;
+
+/** Strip grid snapshots from a log entry to produce a slim, persistable version. */
+function toSlimEntry(entry: ReactionLogEntry): SlimReactionEntry {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { gridBefore: _gb, gridAfter: _ga, ...slim } = entry;
+  return slim;
+}
+
+/** Build a PhaseLog snapshot from the current engine state. */
+function buildPhaseLog(state: GameState, cleared: boolean): PhaseLog {
+  return {
+    round: state.roundNumber,
+    phaseIndex: state.phaseIndex,
+    targetOutput: state.phaseTargetOutput,
+    actualOutput: state.output,
+    stepsUsed: state.stepsRemaining >= 0
+      ? getPhasesForRound(state.roundNumber)[state.phaseIndex].steps - state.stepsRemaining
+      : getPhasesForRound(state.roundNumber)[state.phaseIndex].steps,
+    cleared,
+    activeCatalysts: [...state.activeCatalysts],
+    activePattern: state.activePattern,
+    patternLevel: state.activePattern ? state.patternLevels[state.activePattern] : 0,
+    globalMultiplier: state.globalMultiplier,
+    entries: [...state.currentPhaseEntries],
+  };
+}
 
 function makeOnboardingGrid(): { grid: Grid; idCounter: number } {
   // Centered 2x2 identical tiles guarantees immediate horizontal+vertical merge
@@ -136,6 +162,8 @@ export function createInitialState(
     challengeId: null,
     isDailyRun: false,
     phaseTargetOutput: initialPhaseTargetOutput,
+    currentPhaseEntries: [],
+    phaseLogBuffer: [],
   };
 }
 
@@ -462,6 +490,7 @@ export function processMoveAction(state: GameState, dir: Direction): GameState {
     collapseFieldCounter: newCollapseCounter,
     entropyBlockedCell,
     reactionLog: newLog,
+    currentPhaseEntries: [...state.currentPhaseEntries, toSlimEntry(logEntry)],
     tileIdCounter: newIdCounter,
     rngSeed: state.rngSeed + 1,
     consecutiveValidMoves: newConsecutiveValidMoves,
@@ -561,9 +590,22 @@ function handlePhaseEnd(state: GameState): GameState {
   // Use the pre-computed effective target stored in state (includes build-aware factor)
   const succeeded = output >= state.phaseTargetOutput;
 
+  const failedPhaseLog = succeeded ? null : buildPhaseLog({ ...state, output }, false);
+
   if (!succeeded) {
-    return { ...state, screen: 'game_over', output, energy };
+    return {
+      ...state,
+      screen: 'game_over',
+      output,
+      energy,
+      phaseLogBuffer: failedPhaseLog
+        ? [...state.phaseLogBuffer, failedPhaseLog]
+        : state.phaseLogBuffer,
+    };
   }
+
+  const clearedPhaseLog = buildPhaseLog({ ...state, output }, true);
+  const nextPhaseLogBuffer = [...state.phaseLogBuffer, clearedPhaseLog];
 
   // Last phase of the round cleared — transition to round_complete
   if (state.phaseIndex >= PHASES_PER_ROUND - 1) {
@@ -575,6 +617,8 @@ function handlePhaseEnd(state: GameState): GameState {
       output,
       energy: roundCompleteEnergy,
       globalMultiplier: roundCompleteMultiplier,
+      phaseLogBuffer: nextPhaseLogBuffer,
+      currentPhaseEntries: [],
     };
   }
 
@@ -620,6 +664,8 @@ function handlePhaseEnd(state: GameState): GameState {
       momentumMultiplier: 1.0,
       stabilityCount: 0,
       lastIntermissionMessage: null,
+      phaseLogBuffer: nextPhaseLogBuffer,
+      currentPhaseEntries: [],
     };
   }
 
@@ -646,6 +692,8 @@ function handlePhaseEnd(state: GameState): GameState {
     stepsRemaining: nextSteps,
     phaseTargetOutput: nextPhaseTargetOutput,
     lastIntermissionMessage: null,
+    phaseLogBuffer: nextPhaseLogBuffer,
+    currentPhaseEntries: [],
   };
 }
 
@@ -913,6 +961,7 @@ export function skipForge(state: GameState): GameState {
     consecutiveValidMoves: 0,
     momentumMultiplier: 1.0,
     stabilityCount: 0,
+    currentPhaseEntries: [],
   };
 }
 
@@ -975,6 +1024,7 @@ export function advanceRound(state: GameState): GameState {
     streakCount: 0,
     phaseTargetOutput: nextPhaseTargetOutput,
     lastIntermissionMessage: null,
+    currentPhaseEntries: [],
   };
 }
 
