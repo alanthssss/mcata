@@ -373,6 +373,7 @@ export interface GameState {
   // Run-level catalyst pool — starts as unlockedCatalysts, shrinks as catalysts are acquired
   // undefined = full pool (mirrors unlockedCatalysts); empty array = pool exhausted
   catalystPool: CatalystId[] | undefined;
+  forgeVisitCount: number;
   // Round progression
   roundNumber: number;                         // current round (starts at 1)
   // Round stats

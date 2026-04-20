@@ -47,6 +47,27 @@ const CATEGORY_ICON: Record<string, string> = {
   legacy: '⚙',
 };
 
+const CATALYST_TAG_BY_CATEGORY: Record<string, 'tag.scoring' | 'tag.energy' | 'tag.control'> = {
+  generator: 'tag.energy',
+  stabilizer: 'tag.control',
+  modifier: 'tag.control',
+  amplifier: 'tag.scoring',
+  legacy: 'tag.scoring',
+};
+
+const SIGNAL_TAG_BY_ID: Record<SignalId, 'tag.scoring' | 'tag.control'> = {
+  pulse_boost: 'tag.scoring',
+  chain_trigger: 'tag.scoring',
+  grid_clean: 'tag.control',
+  freeze_step: 'tag.control',
+};
+
+const UTILITY_TAG_BY_TYPE: Record<'energy' | 'steps' | 'multiplier', 'tag.scoring' | 'tag.energy' | 'tag.control'> = {
+  energy: 'tag.energy',
+  steps: 'tag.control',
+  multiplier: 'tag.scoring',
+};
+
 /** Return the synergy partner name if equipping this catalyst would activate a synergy */
 function getSynergyHint(catalystId: CatalystId, activeCatalysts: CatalystId[]): CatalystId | null {
   for (const synergy of ALL_SYNERGIES) {
@@ -63,8 +84,27 @@ export const ForgeModal: React.FC<ForgeModalProps> = ({
 }) => {
   const t = useT();
   const [pendingCatalyst, setPendingCatalyst] = useState<ForgeShopItem | null>(null);
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+
+  const getItemTagKey = (item: ForgeShopItem): 'tag.scoring' | 'tag.energy' | 'tag.control' => {
+    if (item.type === 'catalyst') {
+      return CATALYST_TAG_BY_CATEGORY[item.catalyst.category] ?? 'tag.scoring';
+    }
+    if (item.type === 'utility') {
+      return UTILITY_TAG_BY_TYPE[item.utility];
+    }
+    if (item.type === 'pattern') return 'tag.control';
+    return SIGNAL_TAG_BY_ID[item.signal];
+  };
+
+  const getTagClassName = (tagKey: 'tag.scoring' | 'tag.energy' | 'tag.control'): string => {
+    if (tagKey === 'tag.scoring') return 'offer-tag offer-tag--simple offer-tag--score';
+    if (tagKey === 'tag.energy') return 'offer-tag offer-tag--simple offer-tag--energy';
+    return 'offer-tag offer-tag--simple offer-tag--control';
+  };
 
   const handleBuyClick = (item: ForgeShopItem) => {
+    setSelectedItemId(item.id);
     if (item.type === 'catalyst' && activeCatalysts.length >= 6) {
       setPendingCatalyst(item);
     } else {
@@ -81,11 +121,12 @@ export const ForgeModal: React.FC<ForgeModalProps> = ({
 
   return (
     <Modal title={t('ui.forge_title')}>
-      <p className="modal-subtitle">{t('ui.forge_subtitle')}</p>
       <div className="forge-offers">
         {items.map((item) => {
+          const blocked = energy < item.price;
+          const selected = selectedItemId === item.id;
+          const tagKey = getItemTagKey(item);
           if (item.type !== 'catalyst') {
-            const blocked = energy < item.price;
             const name = item.type === 'pattern'
               ? t(`pattern.${item.pattern}.name`)
               : item.type === 'signal'
@@ -94,11 +135,16 @@ export const ForgeModal: React.FC<ForgeModalProps> = ({
             const desc = item.type === 'pattern'
               ? t(`pattern.${item.pattern}.description`)
               : item.type === 'signal'
-                ? t(`signal.${item.signal}.description`)
+              ? t(`signal.${item.signal}.description`)
                 : t(`ui.forge_utility_${item.utility}_desc`, { value: item.amount });
             return (
-              <div key={item.id} className="forge-offer common">
+              <div key={item.id} className={`forge-offer common ${selected ? 'forge-offer--selected' : ''}`} title={`${name} — ${desc}`}>
                 <div className="offer-name">{name}</div>
+                <div className="offer-rarity-row">
+                  <span className={getTagClassName(tagKey)}>
+                    {t(tagKey)}
+                  </span>
+                </div>
                 <div className="offer-desc">{desc}</div>
                 <div className="offer-cost">⚡ {item.price} {t('ui.energy')}</div>
                 <button className="offer-btn" disabled={blocked} onClick={() => handleBuyClick(item)}>
@@ -110,29 +156,25 @@ export const ForgeModal: React.FC<ForgeModalProps> = ({
           const cat = item.catalyst;
           const synergyPartnerId = getSynergyHint(cat.id, activeCatalysts);
           const alreadyOwned = activeCatalysts.includes(cat.id);
-          const blocked = alreadyOwned || energy < item.price;
+          const buyBlocked = alreadyOwned || blocked;
           const tName = t(`catalyst.${cat.id}.name`);
           const tDesc = t(`catalyst.${cat.id}.description`);
-          const tagKey = `tag.${cat.category}`;
+          const hoverTooltip = synergyPartnerId
+            ? `${tName} — ${tDesc} (${t('ui.forge_synergy_hint', { partner: t(`catalyst.${synergyPartnerId}.name`) })})`
+            : `${tName} — ${tDesc}`;
           return (
-              <div key={item.id} className={`forge-offer ${cat.rarity}`}>
+              <div key={item.id} className={`forge-offer ${cat.rarity} ${selected ? 'forge-offer--selected' : ''}`} title={hoverTooltip}>
               <div className="offer-name">{tName}</div>
               <div className="offer-rarity-row">
-                <span className="offer-rarity">{cat.rarity}</span>
-                <span className={`offer-tag offer-tag--${cat.category}`}>
+                <span className={getTagClassName(tagKey)}>
                   {CATEGORY_ICON[cat.category]} {t(tagKey)}
                 </span>
               </div>
               <div className="offer-desc">{tDesc}</div>
-              {synergyPartnerId && (
-                <div className="offer-synergy-hint">
-                  {t('ui.forge_synergy_hint', { partner: t(`catalyst.${synergyPartnerId}.name`) })}
-                </div>
-              )}
               <div className="offer-cost">⚡ {item.price} {t('ui.energy')}</div>
               <button
                 className="offer-btn"
-                disabled={blocked}
+                disabled={buyBlocked}
                   onClick={() => handleBuyClick(item)}
                 >
                   {alreadyOwned ? t('ui.forge_owned') : energy < item.price ? t('ui.forge_not_enough') : t('ui.forge_equip')}

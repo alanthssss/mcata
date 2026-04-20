@@ -176,6 +176,9 @@ export const App: React.FC = () => {
   const signalToast = lastEntry?.signalUsed
     ? `${t(`signal.${lastEntry.signalUsed}.name`)} → ${lastEntry.signalEffect ? renderLocalized(lastEntry.signalEffect.key, lastEntry.signalEffect.params) : t('ui.signal_consumed')}`
     : null;
+  const intermissionToast = state.lastIntermissionMessage
+    ? renderLocalized(state.lastIntermissionMessage.key, state.lastIntermissionMessage.params)
+    : null;
 
   return (
     <div className="app">
@@ -293,6 +296,9 @@ export const App: React.FC = () => {
       )}
       {signalToast && (
         <div className="signal-pending">{signalToast}</div>
+      )}
+      {state.screen === 'playing' && intermissionToast && (
+        <div className="signal-pending">{intermissionToast}</div>
       )}
     </div>
   );

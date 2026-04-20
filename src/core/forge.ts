@@ -10,6 +10,26 @@ import {
 } from './config';
 import { SIGNAL_DEFS } from './signals';
 
+type ForgeOfferCounts = {
+  catalysts: number;
+  signals: number;
+  patterns: number;
+  utilities: number;
+};
+
+// On the first Forge visit, prioritize beginner-friendly picks with immediate impact:
+// - empty_amplifier: next merge gets visible score scaling from board state
+// - rich_merge: next merge grants visible +Energy
+// - grid_clean: one-tap board control skill with obvious tile removal
+const FIRST_FORGE_BOOST_IDS: CatalystId[] = ['empty_amplifier', 'rich_merge'];
+const FIRST_FORGE_SKILL_ID: SignalId = 'grid_clean';
+const EARLY_FORGE_ITEM_COUNTS: ForgeOfferCounts = {
+  catalysts: 2,
+  signals: 1,
+  patterns: 1,
+  utilities: 0,
+};
+
 function pickWeightedIndex(weights: number[], rngFn: () => number): number {
   const total = weights.reduce((a, b) => a + b, 0);
   if (total <= 0) return -1;
@@ -106,6 +126,75 @@ function pickRandomItem<T>(items: T[], rngFn: () => number): T | null {
   return items[Math.floor(rngFn() * items.length)];
 }
 
+function getForgeItemCounts(forgeVisitIndex: number): ForgeOfferCounts {
+  if (forgeVisitIndex === 0) {
+    return { catalysts: 2, signals: 1, patterns: 0, utilities: 0 };
+  }
+  if (forgeVisitIndex <= 2) {
+    return EARLY_FORGE_ITEM_COUNTS;
+  }
+  return FORGE_ITEM_COUNTS;
+}
+
+function generateFirstForgeItems(
+  activeCatalysts: CatalystId[],
+  ownedSignals: SignalId[],
+  rngFn: () => number,
+  catalystPool: CatalystId[] | undefined,
+  roundNumber: number,
+): ForgeShopItem[] {
+  const pickedCatalysts: CatalystDef[] = [];
+  for (const id of FIRST_FORGE_BOOST_IDS) {
+    const found = ALL_CATALYSTS.find(c => c.id === id);
+    if (!found) {
+      throw new Error(`Missing first-forge catalyst definition: ${id}`);
+    }
+    if (activeCatalysts.includes(id)) continue;
+    if (catalystPool !== undefined && !catalystPool.includes(id)) continue;
+    pickedCatalysts.push(found);
+  }
+
+  if (pickedCatalysts.length < 2) {
+    const fallback = generateForgeOffers(
+      [...activeCatalysts, ...pickedCatalysts.map(c => c.id)],
+      2 - pickedCatalysts.length,
+      rngFn,
+      catalystPool,
+      roundNumber,
+    );
+    pickedCatalysts.push(...fallback);
+  }
+
+  const catalystItems = pickedCatalysts.slice(0, 2).map((catalyst): ForgeShopItem => ({
+    id: `cat:${catalyst.id}`,
+    type: 'catalyst',
+    category: catalyst.category,
+    price: catalyst.cost,
+    name: catalyst.name,
+    description: catalyst.description,
+    catalyst,
+  }));
+
+  const signalPool = ALL_SIGNALS.filter(s => !ownedSignals.includes(s));
+  const pickedSignal = signalPool.includes(FIRST_FORGE_SKILL_ID)
+    ? FIRST_FORGE_SKILL_ID
+    : pickRandomItem(signalPool, rngFn);
+
+  const signalItems: ForgeShopItem[] = pickedSignal
+    ? [{
+      id: `signal:${pickedSignal}`,
+      type: 'signal',
+      category: 'tactical',
+      price: FORGE_SIGNAL_PRICE,
+      name: SIGNAL_DEFS[pickedSignal].name,
+      description: SIGNAL_DEFS[pickedSignal].description,
+      signal: pickedSignal,
+    }]
+    : [];
+
+  return [...catalystItems, ...signalItems];
+}
+
 export function generateForgeItems(
   activeCatalysts: CatalystId[],
   activePattern: PatternId | null,
@@ -113,10 +202,16 @@ export function generateForgeItems(
   rngFn: () => number,
   catalystPool?: CatalystId[],
   roundNumber = 1,
+  forgeVisitIndex = 0,
 ): ForgeShopItem[] {
+  if (forgeVisitIndex === 0) {
+    return generateFirstForgeItems(activeCatalysts, ownedSignals, rngFn, catalystPool, roundNumber);
+  }
+
+  const itemCounts = getForgeItemCounts(forgeVisitIndex);
   const catalysts = generateForgeOffers(
     activeCatalysts,
-    FORGE_ITEM_COUNTS.catalysts,
+    itemCounts.catalysts,
     rngFn,
     catalystPool,
     roundNumber,
@@ -134,7 +229,7 @@ export function generateForgeItems(
     ? ALL_PATTERNS.filter(p => p !== activePattern)
     : ALL_PATTERNS;
   const patternItems: ForgeShopItem[] = [];
-  for (let i = 0; i < FORGE_ITEM_COUNTS.patterns; i++) {
+  for (let i = 0; i < itemCounts.patterns; i++) {
     const picked = pickRandomItem(patternPool, rngFn);
     if (!picked) break;
     patternItems.push({
@@ -150,7 +245,7 @@ export function generateForgeItems(
 
   const signalPool = ALL_SIGNALS.filter(s => !ownedSignals.includes(s));
   const signalItems: ForgeShopItem[] = [];
-  for (let i = 0; i < FORGE_ITEM_COUNTS.signals; i++) {
+  for (let i = 0; i < itemCounts.signals; i++) {
     const picked = pickRandomItem(signalPool, rngFn);
     if (!picked) break;
     signalItems.push({
@@ -170,7 +265,7 @@ export function generateForgeItems(
     { key: 'multiplier', label: 'multiplier' },
   ];
   const utilityItems: ForgeShopItem[] = [];
-  for (let i = 0; i < FORGE_ITEM_COUNTS.utilities; i++) {
+  for (let i = 0; i < itemCounts.utilities; i++) {
     const picked = pickRandomItem(utilityPool, rngFn);
     if (!picked) break;
     utilityItems.push({
