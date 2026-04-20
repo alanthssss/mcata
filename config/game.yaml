@@ -1,39 +1,65 @@
+# ------------------------------------------------------------------------------
+# 版本标记 / Balance version tag
+# 每次对数值做破坏性调整时递增，方便存档兼容性排查。
+# Increment when making breaking balance changes, to aid save-compatibility checks.
+# ------------------------------------------------------------------------------
 balanceVersion: v7
 
+
+# ==============================================================================
+# 阶段配置 / Phase configuration
+# 每局游戏共 6 个阶段（Stage），每个阶段有独立目标产出、步数预算和挑战等级。
+# A run has 6 phases; each phase has its own output target, step budget, and tier.
+# ==============================================================================
 phaseConfig:
-  - phaseNumber: 1
-    targetOutput: 170
-    steps: 20
-    expectedOutput: 225
-    highSkillOutput: 320
-    challengeTier: small
+
+  # ── 阶段 1 / Phase 1 ──────────────────────────────────────────────────────
+  - phaseNumber: 1        # 阶段编号（1-indexed）/ Phase number (1-indexed)
+    targetOutput: 170     # 通关最低产出 / Minimum output required to clear the phase
+    steps: 20             # 本阶段步数预算 / Step budget for this phase
+    expectedOutput: 225   # 普通玩家预期产出（设计参考，不影响游戏逻辑）/ Expected output for an average player (design reference only, no runtime effect)
+    highSkillOutput: 320  # 高技术玩家上限参考（设计参考，不影响游戏逻辑）/ High-skill ceiling reference (design reference only, no runtime effect)
+    challengeTier: small  # 挑战等级: small=热身 / big=主挑战 / boss=BOSS关
+                          # Challenge tier: small=warm-up, big=main gate, boss=modifier stage
+
+  # ── 阶段 2 / Phase 2 ──────────────────────────────────────────────────────
   - phaseNumber: 2
     targetOutput: 205
     steps: 20
     expectedOutput: 280
     highSkillOutput: 410
-    challengeTier: big
+    challengeTier: big    # big：本节的核心难度关 / Primary difficulty gate of this section
+
+  # ── 阶段 3 / Phase 3 ──────────────────────────────────────────────────────
   - phaseNumber: 3
     targetOutput: 190
     steps: 18
     expectedOutput: 255
     highSkillOutput: 380
     challengeTier: boss
+    # modifier: 本阶段特殊规则文本（玩家可见）/ Human-readable modifier shown to the player
     modifier: Corner bonus disabled — chain merges are your only edge
+
+  # ── 阶段 4 / Phase 4 ──────────────────────────────────────────────────────
   - phaseNumber: 4
     targetOutput: 165
     steps: 17
-    anomaly: entropy_tax
+    anomaly: entropy_tax  # 异常类型: entropy_tax=每步锁定一格 / collapse_field=每4次得分移除最低方块
+                          # Anomaly type: entropy_tax=one cell blocked per move, collapse_field=remove lowest tile every 4 scoring moves
     expectedOutput: 220
     highSkillOutput: 320
     challengeTier: small
     modifier: 'Entropy Tax: one cell blocked each move'
+
+  # ── 阶段 5 / Phase 5 ──────────────────────────────────────────────────────
   - phaseNumber: 5
     targetOutput: 235
     steps: 19
     expectedOutput: 320
     highSkillOutput: 470
     challengeTier: big
+
+  # ── 阶段 6 / Phase 6 ──────────────────────────────────────────────────────
   - phaseNumber: 6
     targetOutput: 220
     steps: 19
@@ -43,176 +69,370 @@ phaseConfig:
     challengeTier: boss
     modifier: 'Collapse Field: every 4 scoring moves removes the lowest tile'
 
+
+# ==============================================================================
+# 进度缩放（加法叠加）/ Progression scaling (additive)
+# 步数和目标产出会随阶段序号与轮次线性增长。
+# Steps and target output grow linearly with both phase index and round number.
+# 公式 / Formula:
+#   steps  = base + stepPhaseScale  × phaseIndex + stepRoundScale  × (round − 1)
+#   target = base + targetPhaseScale × phaseIndex + targetRoundScale × (round − 1)
+# ==============================================================================
 progressionScaling:
-  stepPhaseScale: 1
-  stepRoundScale: 1
-  targetPhaseScale: 12
-  targetRoundScale: 20
+  stepPhaseScale: 1     # 每个阶段步数增量 / Extra steps per phase index increase
+  stepRoundScale: 1     # 每轮步数增量 / Extra steps per round increase
+  targetPhaseScale: 12  # 每个阶段目标产出增量 / Extra target output per phase index increase
+  targetRoundScale: 20  # 每轮目标产出增量 / Extra target output per round increase
 
+
+# ==============================================================================
+# 分段增长缩放 / Segmented growth scaling
+# 通过轮次偏移和乘数控制后期曲线的分段形状。
+# Controls the segmented shape of late-game scaling via round offset and multiplier.
+# ==============================================================================
 segmentedGrowthScaling:
-  roundIndexOffset: 1
-  roundIndexScale: 1
+  roundIndexOffset: 1   # 轮次索引基准偏移 / Base offset applied to round index before scaling
+  roundIndexScale: 1    # 轮次索引缩放系数 / Multiplier applied to the adjusted round index
 
-roundTargetScale: 0
-roundScaleCompound: false
 
+# ==============================================================================
+# 旧版轮次缩放（已停用）/ Legacy round scaling (disabled)
+# roundTargetScale=0 时完全关闭，改为使用 segmentedGrowthScaling。
+# Set roundTargetScale=0 to disable; segmentedGrowthScaling takes over.
+# ==============================================================================
+roundTargetScale: 0         # 旧版线性目标缩放系数（0=禁用）/ Legacy linear target scale (0 = disabled)
+roundScaleCompound: false   # 是否使用复利增长（false=禁用）/ Whether to apply compound growth (false = disabled)
+
+
+# ==============================================================================
+# 构筑感知缩放 / Build-aware scaling
+# 根据玩家当前催化器数量和全局倍率动态调整阶段目标，防止后期一键清关。
+# Dynamically adjusts phase targets based on catalyst count and global multiplier
+# to prevent trivial late-game clears.
+# ==============================================================================
 buildAwareScaling:
-  enabled: true
-  catalystWeight: 0.12
-  multiplierWeight: 0.30
-  maxFactor: 3.0
+  enabled: true           # 是否启用构筑感知缩放 / Enable or disable build-aware scaling
+  catalystWeight: 0.12    # 每个催化器对目标的权重 / Weight per owned catalyst
+  multiplierWeight: 0.30  # 全局倍率对目标的权重 / Weight from global multiplier
+  maxFactor: 3.0          # 构筑感知系数上限，防止缩放过度 / Maximum scaling factor cap
 
-roundEconomyScale: 0.08
 
+# ==============================================================================
+# 经济轮次缩放 / Economy round scaling
+# 每轮能量收益的增幅比例，轻微改善后期经济。
+# Fractional increase in energy income per round to gently improve late-game economy.
+# ==============================================================================
+roundEconomyScale: 0.08  # 每轮能量加成比例（0.08 = +8%/轮）/ Energy bonus fraction per round (0.08 = +8% per round)
+
+
+# ==============================================================================
+# 催化器数值乘数 / Catalyst numeric multipliers
+# 每个键对应一个催化器效果的数值参数，修改这里即可调整催化器强度。
+# Each key maps to a numeric parameter used by the corresponding catalyst effect.
+# ==============================================================================
 catalystMultipliers:
-  corner_crown: 2.0
-  twin_burst: 1.5
-  combo_wire: 1.3
-  high_tribute: 1.4
-  reserve_bonus: 20
-  bankers_edge_energy: 1
-  lucky_seed_pct: 0.75
-  empty_amplifier_per_cell: 0.05
-  chain_reactor_extra: 0.2
-  echo_multiplier_carry: 0.2
-  threshold_surge_mult: 1.5
-  threshold_surge_value: 30
-  phase_resonance_per_phase: 0.1
-  gravity_well_mult: 1.1
-  stability_field_mult: 1.2
-  stability_field_period: 3
-  rich_merge_energy_per_merge: 1
-  energy_loop_fraction: 0.08
-  reserve_bank_energy_per_step: 1
-  double_spawn_probability: 0.25
-  delay_spawn_probability: 0.5
-  diagonal_merge_mult: 1.2
-  diagonal_merge_period: 4
-  inversion_field_mult: 1.15
-  anomaly_sync_mult: 1.3
+  corner_crown: 2.0               # 角落融合产出倍率 / Corner merge output multiplier
+  twin_burst: 1.5                 # 双融合触发时的产出倍率 / Output multiplier when ≥2 merges occur in one move
+  combo_wire: 1.3                 # 连击触发时的产出倍率 / Output multiplier on Combo Wire trigger
+  high_tribute: 1.4               # 最高方块融合时的产出倍率 / Output multiplier on highest-tile merge
+  reserve_bonus: 20               # 每剩余步数奖励的额外产出 / Bonus output per unused step on phase clear
+  bankers_edge_energy: 1          # 阶段通关时获得的额外能量 / Bonus energy on phase clear (Banker's Edge)
+  lucky_seed_pct: 0.75            # 幸运种子生成2时的概率 / Probability of spawning a 2 with Lucky Seed
+  empty_amplifier_per_cell: 0.05  # 每个空格的产出加成 / Output bonus fraction per empty cell (Empty Amplifier)
+  chain_reactor_extra: 0.2        # 链式反应的额外链节加成 / Extra chain bonus per link (Chain Reactor)
+  echo_multiplier_carry: 0.2      # 回声倍增器上一步的倍率携带比例 / Multiplier carry-over fraction (Echo Multiplier)
+  threshold_surge_mult: 1.5       # 阈值涌现触发时的倍率 / Multiplier on Threshold Surge trigger
+  threshold_surge_value: 30       # 触发阈值涌现所需的最低产出 / Minimum output to trigger Threshold Surge
+  phase_resonance_per_phase: 0.1  # 每个阶段索引增加的倍率 / Multiplier added per phase index (Phase Resonance)
+  gravity_well_mult: 1.1          # 重力井触发时的产出倍率 / Output multiplier for Gravity Well
+  stability_field_mult: 1.2       # 稳定场激活时的产出倍率 / Output multiplier while Stability Field is active
+  stability_field_period: 3       # 每多少步触发一次稳定场 / Steps between Stability Field activations
+  rich_merge_energy_per_merge: 1  # 每次融合获得的额外能量（富饶融合）/ Extra energy per merge (Rich Merge)
+  energy_loop_fraction: 0.08      # 产出转化为能量的比例（能量循环）/ Fraction of output converted to energy (Energy Loop)
+  reserve_bank_energy_per_step: 1 # 每消耗步数获得的能量（储备银行）/ Energy earned per step used (Reserve Bank)
+  double_spawn_probability: 0.25  # 双重生成触发的概率 / Probability of double tile spawn (Double Spawn)
+  delay_spawn_probability: 0.5    # 延迟生成触发的概率 / Probability of skipping tile spawn (Delay Spawn)
+  diagonal_merge_mult: 1.2        # 斜向融合的产出倍率 / Output multiplier for diagonal merges
+  diagonal_merge_period: 4        # 每多少步触发一次斜向融合加成 / Steps between diagonal merge bonus activations
+  inversion_field_mult: 1.15      # 反转场激活时的产出倍率 / Output multiplier while Inversion Field is active
+  anomaly_sync_mult: 1.3          # 异常同步触发时的产出倍率 / Output multiplier on Anomaly Sync trigger
 
+
+# ==============================================================================
+# 链式合并乘数 / Chain merge multipliers
+# 同一步骤内发生多次合并时，按链长给予不同倍率。
+# Different multipliers applied based on the chain length within a single move.
+# ==============================================================================
 chainMultipliers:
-  "1": 1.0
-  "2": 1.2
-  "3": 1.5
-chainMultiplier4Plus: 2.0
+  "1": 1.0  # 单次合并（无加成）/ Single merge — no bonus
+  "2": 1.2  # 2 次合并 / 2-merge chain
+  "3": 1.5  # 3 次合并 / 3-merge chain
+chainMultiplier4Plus: 2.0  # 4 次及以上合并的固定倍率 / Fixed multiplier for chains of 4 or more
 
+
+# ==============================================================================
+# 条件乘数 / Condition multipliers
+# 满足特定条件时叠加的额外产出倍率。
+# Extra output multipliers applied when specific board conditions are met.
+# ==============================================================================
 conditionMultipliers:
-  cornerMerge: 1.2
-  highestTile: 1.2
+  cornerMerge: 1.2   # 角落格发生融合时的倍率 / Multiplier when a merge occurs in a corner cell
+  highestTile: 1.2   # 融合了当前最高方块时的倍率 / Multiplier when the highest tile on the board is merged
 
+
+# ==============================================================================
+# 协同效应乘数 / Synergy multipliers
+# 同时装备特定催化器组合时触发的协同加成。
+# Bonus multipliers triggered when specific catalyst pairs are equipped together.
+# ==============================================================================
 synergyMultipliers:
-  corner_empire: 1.3
-  chain_echo: 1.4
-  generator_surplus: 1.25
-  amplified_stability: 1.35
-  phase_reactor: 1.3
+  corner_empire: 1.3        # 角落王朝（Corner Crown + 另一角落催化器）/ Corner Empire synergy
+  chain_echo: 1.4           # 链式回声（Chain Reactor + Echo Multiplier）/ Chain Echo synergy
+  generator_surplus: 1.25   # 生成盈余（Double Spawn + Rich Merge）/ Generator Surplus synergy
+  amplified_stability: 1.35 # 放大稳定（Stability Field + Threshold Surge）/ Amplified Stability synergy
+  phase_reactor: 1.3        # 阶段反应堆（Phase Resonance + Energy Loop）/ Phase Reactor synergy
 
+
+# ==============================================================================
+# 动量系统 / Momentum system
+# 连续有效得分动作会提升动量乘数（streak multiplier），无效动作重置为 1.0。
+# Consecutive valid scoring moves build the momentum multiplier; non-scoring moves reset it to 1.0.
+# ==============================================================================
 momentumConfig:
-  growthRate: 0.05
-  maxMultiplier: 2.0
-  validMoveMinOutput: 1
+  growthRate: 0.05         # 每次有效动作的动量增幅 / Momentum growth per valid scoring move
+  maxMultiplier: 2.0       # 动量最大值 / Maximum momentum multiplier cap
+  validMoveMinOutput: 1    # 被认定为"有效动作"的最低产出门槛 / Minimum output to count as a valid (streak-building) move
 
+
+# ==============================================================================
+# 信号（Skills）配置 / Signal (Skill) configuration
+# 可排队使用的一次性战术能力。
+# One-use tactical abilities that can be queued before a move.
+# ==============================================================================
 signalConfig:
-  capacity: 2
-  pulseBoostMult: 2.0
-  gridCleanCount: 2
+  capacity: 2         # 最多同时持有的信号数量 / Maximum signals held at once
+  pulseBoostMult: 2.0 # 脉冲强化（Pulse Boost）信号的产出倍率 / Output multiplier for the Pulse Boost signal
+  gridCleanCount: 2   # 棋盘清理（Grid Clean）信号移除的方块数量 / Number of tiles removed by the Grid Clean signal
 
+
+# ==============================================================================
+# 熔炉（Shop）配置 / Forge (Shop) configuration
+# 控制商店的定价、出售退款、提供数量等经济参数。
+# Controls shop pricing, sell refund rates, offer counts, and economy.
+# ==============================================================================
 forge:
-  rerollCost: 1
-  maxCatalysts: 6
-  itemCounts:
-    catalysts: 3
-    signals: 1
-    patterns: 1
-    utilities: 1
-  sellRefundByRarity:
-    common: 0.6
-    rare: 0.5
-    epic: 0.4
-  patternSellRefund: 0.5
-  signalSellRefund: 0.5
-  patternPrice: 4
-  signalPrice: 3
-  utilityPrices:
-    energy: 2
-    steps: 3
-    multiplier: 4
-  utilityValues:
-    energy: 2
-    steps: 2
-    multiplier: 0.08
+  rerollCost: 1     # 重掷商品时消耗的能量 / Energy cost to reroll shop offers
+  maxCatalysts: 6   # 每局最多装备的催化器数量 / Maximum catalysts equippable per run
 
+  # 每次进入熔炉时各类商品的提供数量
+  # Number of items of each type offered when entering the shop
+  itemCounts:
+    catalysts: 3    # 提供的催化器数量 / Catalyst offers per visit
+    signals: 1      # 提供的信号数量 / Signal offers per visit
+    patterns: 1     # 提供的模式数量 / Pattern offers per visit
+    utilities: 1    # 提供的实用道具数量（能量/步数/倍率）/ Utility offers per visit (energy/steps/multiplier)
+
+  # 出售催化器时按稀有度返还的能量比例
+  # Fraction of purchase price refunded when selling a catalyst, by rarity
+  sellRefundByRarity:
+    common: 0.6   # 普通稀有度退款率 / Common rarity sell refund ratio
+    rare: 0.5     # 稀有退款率 / Rare rarity sell refund ratio
+    epic: 0.4     # 史诗退款率 / Epic rarity sell refund ratio
+
+  patternSellRefund: 0.5  # 出售模式时的退款率 / Sell refund ratio for patterns
+  signalSellRefund: 0.5   # 出售信号时的退款率 / Sell refund ratio for signals
+
+  patternPrice: 4   # 购买模式的基础价格（能量）/ Base price to purchase a pattern (energy)
+  signalPrice: 3    # 购买信号的基础价格（能量）/ Base price to purchase a signal (energy)
+
+  # 实用道具的购买价格（能量）
+  # Purchase prices for utility items (energy)
+  utilityPrices:
+    energy: 2      # 购买能量道具的价格 / Price to buy an energy utility
+    steps: 3       # 购买步数道具的价格 / Price to buy a steps utility
+    multiplier: 4  # 购买倍率道具的价格 / Price to buy a multiplier utility
+
+  # 实用道具的实际数值效果
+  # Actual numeric values granted by utility items
+  utilityValues:
+    energy: 2        # 购买后立即获得的能量值 / Energy granted immediately on purchase
+    steps: 2         # 为当前阶段增加的步数 / Steps added to the current phase
+    multiplier: 0.08 # 增加全局倍率的比例（0.08 = +8%）/ Global multiplier increase (0.08 = +8%)
+
+
+# ==============================================================================
+# 按轮次划分的稀有度规则 / Rarity rules by round
+# 随游戏进程解锁更高稀有度的催化器，并限制每局最大出现次数。
+# Unlocks higher-rarity catalysts as the run progresses; caps per-run appearances.
+# ==============================================================================
 rarityRulesByRound:
-  - maxRound: 2
+  # 第 1–2 轮：早期经济，以普通为主
+  # Rounds 1–2: early economy, mostly common items
+  - maxRound: 2   # 此规则适用的最大轮次 / This rule applies up to this round number
     rules:
-      common: { offerWeight: 10, minRound: 1 }
-      rare: { offerWeight: 2, minRound: 2, perRunCap: 4 }
-      epic: { offerWeight: 0, minRound: 4, perRunCap: 1 }
+      common: { offerWeight: 10, minRound: 1 }              # 权重10，轮次1起出现 / Weight 10, available from round 1
+      rare:   { offerWeight: 2,  minRound: 2, perRunCap: 4 } # 权重2，轮次2解锁，每局最多4次 / Weight 2, unlocked round 2, cap 4 per run
+      epic:   { offerWeight: 0,  minRound: 4, perRunCap: 1 } # 权重0，尚未开放 / Weight 0, not yet available
+
+  # 第 3–4 轮：中期，稀有开始增多
+  # Rounds 3–4: mid-game, rare items become more common
   - maxRound: 4
     rules:
-      common: { offerWeight: 8, minRound: 1 }
-      rare: { offerWeight: 4, minRound: 2, perRunCap: 4 }
-      epic: { offerWeight: 0.8, minRound: 4, perRunCap: 1 }
-  - maxRound: 999999
+      common: { offerWeight: 8,   minRound: 1 }
+      rare:   { offerWeight: 4,   minRound: 2, perRunCap: 4 }
+      epic:   { offerWeight: 0.8, minRound: 4, perRunCap: 1 } # 史诗轮次4起解锁 / Epic unlocked from round 4
+
+  # 第 5 轮及以后：后期，高稀有度全面开放
+  # Round 5+: late-game, all rarities freely available
+  - maxRound: 999999  # 实际表示无限大 / Effectively infinity
     rules:
-      common: { offerWeight: 6, minRound: 1 }
-      rare: { offerWeight: 5, minRound: 2, perRunCap: 4 }
-      epic: { offerWeight: 1.2, minRound: 4, perRunCap: 2 }
+      common: { offerWeight: 6,   minRound: 1 }
+      rare:   { offerWeight: 5,   minRound: 2, perRunCap: 4 }
+      epic:   { offerWeight: 1.2, minRound: 4, perRunCap: 2 } # 史诗每局最多2次 / Epic capped at 2 per run
 
+
+# ==============================================================================
+# 模式（Style）等级加成 / Pattern (Style) bonus per level
+# 每升一级时增加的加成值（角落/链式等模式的比例加成，经济模式为绝对值）。
+# Bonus added per level-up for each pattern type.
+# Corner / chain / etc. are fractional bonuses; economy is an absolute energy bonus.
+# ==============================================================================
 patternBonusByLevel:
-  corner: 0.1
-  chain: 0.1
-  empty_space: 0.025
-  high_tier: 0.12
-  economy: 1
-  survival: 0.12
+  corner: 0.1        # 角落模式：每级 +10% 角落产出加成 / Corner pattern: +10% corner output bonus per level
+  chain: 0.1         # 链式模式：每级 +10% 链式加成 / Chain pattern: +10% chain output bonus per level
+  empty_space: 0.025 # 真空模式：每个空格 +2.5% 加成 / Vacuum pattern: +2.5% per empty cell per level
+  high_tier: 0.12    # 顶点模式：每级 +12% 高阶方块产出 / Apex pattern: +12% high-tier merge output per level
+  economy: 1         # 储备模式：每级 +1 能量（绝对值）/ Reserve pattern: +1 Energy per merge per level (absolute)
+  survival: 0.12     # 稳定模式：每级 +12% 低步数奖励 / Stability pattern: +12% clutch-move bonus per level
 
+
+# ==============================================================================
+# 单项数值参数 / Standalone numeric parameters
+# ==============================================================================
+
+# 真空模式（empty_space）产出加成的上限
+# Maximum output bonus cap for the Vacuum (empty_space) pattern
 patternEmptySpaceCap: 1.6
+
+# 崩塌场（Collapse Field）异常的触发周期：每 N 次得分动作移除一个最低方块
+# Period for the Collapse Field anomaly: removes the lowest tile every N scoring moves
 collapseFieldPeriod: 4
+
+# 普通生成逻辑下生成数字 4 的概率
+# Probability of spawning a tile with value 4 under normal spawn logic
 spawn4Probability: 0.10
+
+# 幸运种子（Lucky Seed）催化器激活时生成数字 4 的概率
+# Probability of spawning a tile with value 4 when Lucky Seed is active
 luckySeedSpawn4Probability: 0.25
+
+# 每局开始时的初始能量
+# Starting energy at the beginning of each run
 startingEnergy: 5
+
+# 界面显示分数的缩放比例（纯视觉，不影响内部计算）
+# Display score scale factor for the UI (cosmetic only — does not affect engine logic)
 displayScoreScale: 10
+
+# 方块显示模式: "label"（仅标签）/ "label+value"（标签+数值）/ "value-only"（仅数值）
+# Tile display mode: "label" | "label+value" | "value-only"
 tileDisplayMode: label+value
 
+
+# ==============================================================================
+# 连击奖励系统 / Streak bonus system
+# 连续高产出动作触发能量奖励，激励稳定输出。
+# Rewards consecutive high-output moves with bonus energy to incentivize consistent play.
+# ==============================================================================
 streak:
-  minOutput: 5
-  bonusThreshold: 5
-  energyBonus: 1
+  minOutput: 5      # 计入连击所需的最低产出 / Minimum output for a move to count toward a streak
+  bonusThreshold: 5 # 累计多少次连击后触发能量奖励 / Streak count needed to trigger an energy bonus
+  energyBonus: 1    # 连击达标时奖励的能量数量 / Energy awarded when the streak threshold is reached
 
+
+# ==============================================================================
+# 大奖系统 / Jackpot system
+# 以极低概率触发大奖，同时获得额外产出和能量。
+# Low-probability jackpot that grants a bonus output spike and extra energy.
+# ==============================================================================
 jackpot:
-  probability: 0.02
-  minOutput: 50
-  outputBonus: 100
-  energyBonus: 2
+  probability: 0.02  # 每次得分动作触发大奖的概率（2%）/ Probability of triggering a jackpot per scoring move (2%)
+  minOutput: 50      # 触发大奖所需的最低产出 / Minimum output required to trigger a jackpot
+  outputBonus: 100   # 大奖触发时获得的额外产出 / Bonus output granted when jackpot triggers
+  energyBonus: 2     # 大奖触发时获得的额外能量 / Bonus energy granted when jackpot triggers
 
+
+# ==============================================================================
+# 轮次完成奖励 / Round complete reward
+# 每完成一轮时给予玩家能量和倍率加成作为奖励。
+# Rewards given to the player upon completing a full round (all 6 phases).
+# ==============================================================================
 roundCompleteReward:
-  energyBonus: 2
-  multiplierBonus: 0.05
+  energyBonus: 2        # 轮次完成时获得的额外能量 / Bonus energy on round completion
+  multiplierBonus: 0.05 # 轮次完成时增加的全局倍率（0.05 = +5%）/ Global multiplier increase on round completion (0.05 = +5%)
 
+
+# ==============================================================================
+# 构筑身份识别配置 / Build Identity classification config
+# 控制 BuildIdentityPanel 如何判断和标注玩家当前的构筑方向。
+# Controls how BuildIdentityPanel classifies and labels the player's current build direction.
+# ==============================================================================
 buildIdentity:
-  minConfidenceForClear: 0.58
-  mixedThreshold: 0.16
-  minScoreForLabel: 2
+  minConfidenceForClear: 0.58  # 方向分数占比超过此值才显示明确标签（如"链式构筑"）
+                               # Confidence threshold above which a clear directional label is shown (e.g. "Chain Build")
+  mixedThreshold: 0.16         # 第一与第二方向差距低于此值时显示"混合构筑"
+                               # If dominant-to-second gap is below this, label shows "Mixed Build"
+  minScoreForLabel: 2          # 方向总分低于此值时显示"暂无明确构筑"
+                               # If total direction score is below this, label shows "No clear build yet"
 
+
+# ==============================================================================
+# 基准自动调参配置 / Benchmark auto-tuning configuration
+# `npm run balance:tune` 使用这里的基线、搜索边界和评估目标进行启发式调参。
+# Used by `npm run balance:tune` for heuristic-based numeric tuning.
+# ==============================================================================
 benchmarkTuning:
+
+  # 调参起始基线候选值 / Baseline candidate to start tuning from
   baselineCandidate:
-    stepsMultiplier: 1
-    targetOutputMultiplier: 1
-    roundScaleMultiplier: 1
-    startingEnergy: 5
-    energyIncomeMultiplier: 1
+    stepsMultiplier: 1            # 步数全局乘数（1.0 = 不缩放）/ Global steps multiplier (1.0 = no scaling)
+    targetOutputMultiplier: 1     # 目标产出全局乘数 / Global target output multiplier
+    roundScaleMultiplier: 1       # 轮次缩放系数乘数 / Round scale factor multiplier
+    startingEnergy: 5             # 起始能量（覆盖顶层 startingEnergy）/ Starting energy (overrides top-level startingEnergy)
+    energyIncomeMultiplier: 1     # 能量收入全局乘数 / Global energy income multiplier
+
+  # 各参数的搜索范围 [最小值, 最大值]
+  # Search bounds [min, max] for each parameter
   bounds:
     stepsMultiplier: [0.9, 1.4]
     targetOutputMultiplier: [0.9, 1.5]
     roundScaleMultiplier: [0.95, 1.2]
     startingEnergy: [4, 12]
     energyIncomeMultiplier: [0.6, 1.1]
+
+  # 启发式调参的目标区间，超出区间将产生惩罚分数
+  # Target ranges for the heuristic tuner; out-of-range values incur penalty scores
   heuristicTargets:
-    avgMovesPerPhase: { min: 8.5, max: 14 }
+    # 每阶段平均步数（过低=太难；过高=太简单）
+    # Average moves per phase (too low = too hard; too high = too easy)
+    avgMovesPerPhase:       { min: 8.5, max: 14 }
+
+    # 每阶段平均最高方块等级（log2 值，4.9 ≈ 方块值 29）
+    # Average highest tile tier per phase (log2 value; 4.9 ≈ tile value 29)
     avgHighestTierPerPhase: { min: 4.9 }
-    lateGameClearSpeed: { min: 6 }
-    energyIncomePerRound: { min: 2.5, max: 6.5 }
+
+    # 后期（4轮+）每阶段通关步数下限，防止一击通关
+    # Late-game moves per phase (round 4+) lower bound to prevent trivial one-move clears
+    lateGameClearSpeed:     { min: 6 }
+
+    # 每轮能量收入区间，防止过度通货膨胀或能量匮乏
+    # Per-round energy income bounds to prevent inflation or energy starvation
+    energyIncomePerRound:   { min: 2.5, max: 6.5 }
+
+    # 熔炉可负担率（玩家至少能买到一件商品的比例）
+    # Fraction of shop visits where the player can afford at least one item
     forgeAffordabilityRate: { min: 0.3, max: 0.75 }
-    buildMaturityRound3: { min: 2.5 }
+
+    # 第3轮时构筑成熟度评分下限，衡量玩家是否已建立清晰构筑方向
+    # Build maturity score at round 3 (measures whether a clear build direction has formed)
+    buildMaturityRound3:    { min: 2.5 }
