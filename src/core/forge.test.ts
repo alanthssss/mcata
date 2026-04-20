@@ -170,7 +170,7 @@ describe('generateForgeItems progression', () => {
 
 // ─── Full shop (visit 3+) ─────────────────────────────────────────────────────
 
-describe('generateForgeItems full shop (visit >= 3)', () => {
+describe('generateForgeItems full shop (forgeVisitIndex >= 3, i.e. fourth+ player visit)', () => {
   it('generates exactly 6 items: 3 catalysts + 1 pattern + 1 signal + 1 utility', () => {
     const rng = createRng(42);
     const items = generateForgeItems([], null, [], rng.next.bind(rng), undefined, 1, 3);

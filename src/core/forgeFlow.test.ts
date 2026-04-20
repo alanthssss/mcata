@@ -47,7 +47,7 @@ describe('unified forge flow', () => {
     expect(state.forgeVisitCount).toBe(1);
   });
 
-  it('second forge visit produces 4 items: 2 catalysts + 1 signal + 1 pattern, no utility', () => {
+  it('second forge visit (forgeVisitCount=1) produces 4 items: 2 catalysts + 1 signal + 1 pattern, no utility', () => {
     const base = createInitialState(1);
     let state: GameState = {
       ...base,
@@ -56,7 +56,7 @@ describe('unified forge flow', () => {
       stepsRemaining: 1,
       output: 9999,
       phaseTargetOutput: 1,
-      forgeVisitCount: 1,   // already visited once
+      forgeVisitCount: 1,   // forgeVisitIndex=1 → early shop
       grid: [
         [null, null, null, null],
         [null, null, null, null],
@@ -73,7 +73,9 @@ describe('unified forge flow', () => {
     expect(state.forgeVisitCount).toBe(2);
   });
 
-  it('full-shop visit (forgeVisitCount >= 3) produces 6 items including a utility', () => {
+  it('third forge visit (forgeVisitCount=2) is still early: same 4-item shape as second visit, no utility', () => {
+    // This is the scenario from the user screenshot: visit 3 is NOT the full shop —
+    // it looks identical to visit 2 (forgeVisitIndex <= 2 → EARLY_FORGE_ITEM_COUNTS).
     const base = createInitialState(1);
     let state: GameState = {
       ...base,
@@ -82,7 +84,36 @@ describe('unified forge flow', () => {
       stepsRemaining: 1,
       output: 9999,
       phaseTargetOutput: 1,
-      forgeVisitCount: 3,   // visit index 3 → full shop
+      forgeVisitCount: 2,   // forgeVisitIndex=2 → still early shop
+      grid: [
+        [null, null, null, null],
+        [null, null, null, null],
+        [{ id: 1, value: 2, merged: false }, null, null, null],
+        [null, null, null, null],
+      ],
+    };
+    state = processMoveAction(state, 'up');
+    expect(state.screen).toBe('forge');
+    // Same shape as second visit: 2 catalysts + 1 signal + 1 pattern = 4 items
+    expect(state.forgeItems.filter(i => i.type === 'catalyst')).toHaveLength(2);
+    expect(state.forgeItems.filter(i => i.type === 'signal')).toHaveLength(1);
+    expect(state.forgeItems.filter(i => i.type === 'pattern')).toHaveLength(1);
+    expect(state.forgeItems.some(i => i.type === 'utility')).toBe(false);
+    expect(state.forgeVisitCount).toBe(3);
+  });
+
+  it('fourth forge visit (forgeVisitCount=3) is the first full shop: 6 items including a utility', () => {
+    // First time forgeVisitIndex reaches 3, unlocking the complete shop layout:
+    // 3 catalysts + 1 pattern + 1 signal + 1 utility. Confirmed by user screenshot.
+    const base = createInitialState(1);
+    let state: GameState = {
+      ...base,
+      screen: 'playing',
+      phaseIndex: 1,
+      stepsRemaining: 1,
+      output: 9999,
+      phaseTargetOutput: 1,
+      forgeVisitCount: 3,   // forgeVisitIndex=3 → first full shop
       grid: [
         [null, null, null, null],
         [null, null, null, null],
@@ -97,6 +128,7 @@ describe('unified forge flow', () => {
     expect(state.forgeItems.filter(i => i.type === 'pattern')).toHaveLength(1);
     expect(state.forgeItems.filter(i => i.type === 'signal')).toHaveLength(1);
     expect(state.forgeItems.filter(i => i.type === 'utility')).toHaveLength(1);
+    expect(state.forgeVisitCount).toBe(4);
   });
 
   it('first phase clear skips forge to keep onboarding focused', () => {
