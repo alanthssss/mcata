@@ -82,7 +82,7 @@ progressionScaling:
   stepPhaseScale: 1     # 每个阶段步数增量 / Extra steps per phase index increase
   stepRoundScale: 1     # 每轮步数增量 / Extra steps per round increase
   targetPhaseScale: 12  # 每个阶段目标产出增量 / Extra target output per phase index increase
-  targetRoundScale: 20  # 每轮目标产出增量 / Extra target output per round increase
+  targetRoundScale: 50  # 每轮目标产出增量 / Extra target output per round increase
 
 
 # ==============================================================================
@@ -336,7 +336,8 @@ displayScoreScale: 10
 
 # 方块显示模式: "label"（仅标签）/ "label+value"（标签+数值）/ "value-only"（仅数值）
 # Tile display mode: "label" | "label+value" | "value-only"
-tileDisplayMode: label+value
+# tileDisplayMode: label+value
+tileDisplayMode: value-only
 
 
 # ==============================================================================

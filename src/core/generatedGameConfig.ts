@@ -62,7 +62,7 @@ export const GAME_CONFIG: GameConfig = {
     "stepPhaseScale": 1,
     "stepRoundScale": 1,
     "targetPhaseScale": 12,
-    "targetRoundScale": 20
+    "targetRoundScale": 50
   },
   "segmentedGrowthScaling": {
     "roundIndexOffset": 1,
@@ -233,7 +233,7 @@ export const GAME_CONFIG: GameConfig = {
   "luckySeedSpawn4Probability": 0.25,
   "startingEnergy": 5,
   "displayScoreScale": 10,
-  "tileDisplayMode": "label+value",
+  "tileDisplayMode": "value-only",
   "streak": {
     "minOutput": 5,
     "bonusThreshold": 5,
