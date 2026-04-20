@@ -2,6 +2,8 @@ import React from 'react';
 import { useT } from '../../i18n';
 import { formatScore } from '../scoreDisplay';
 import { LocaleSwitcher } from './LocaleSwitcher';
+import { isDebugExportLogs } from '../../store/runLogStore';
+import { downloadRunLogs, downloadRunLogsCsv } from '../../scripts/exportRunLogs';
 
 interface EndScreenProps {
   isVictory: boolean;
@@ -11,6 +13,7 @@ interface EndScreenProps {
 
 export const EndScreen: React.FC<EndScreenProps> = ({ isVictory, totalOutput, onRestart }) => {
   const t = useT();
+  const showExport = isDebugExportLogs();
 
   return (
     <div className="screen end-screen">
@@ -28,6 +31,16 @@ export const EndScreen: React.FC<EndScreenProps> = ({ isVictory, totalOutput, on
         </div>
       </div>
       <button className="start-btn" onClick={onRestart}>{t('ui.new_round')}</button>
+      {showExport && (
+        <div className="debug-export-row">
+          <button className="debug-export-btn" onClick={() => downloadRunLogs()}>
+            ⬇ Export Logs (JSON)
+          </button>
+          <button className="debug-export-btn" onClick={() => downloadRunLogsCsv()}>
+            ⬇ Export Logs (CSV)
+          </button>
+        </div>
+      )}
     </div>
   );
 };

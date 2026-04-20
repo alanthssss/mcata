@@ -2128,3 +2128,29 @@ button:not(:disabled):active {
   color: var(--success);
   font-weight: 600;
 }
+
+/* Debug export buttons */
+.debug-export-row {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.debug-export-btn {
+  background: #2a2a3a;
+  color: var(--text-muted);
+  border: 1px solid #444;
+  border-radius: var(--radius);
+  padding: 6px 16px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  opacity: 0.8;
+}
+
+.debug-export-btn:hover {
+  opacity: 1;
+  border-color: var(--accent);
+  color: var(--accent);
+}

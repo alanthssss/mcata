@@ -70,6 +70,15 @@ export function appendRunLog(log: RunLog): void {
   }
 }
 
+/** Returns true when the ?debug=export_logs URL parameter is present. */
+export function isDebugExportLogs(): boolean {
+  try {
+    return new URLSearchParams(window.location.search).get('debug') === 'export_logs';
+  } catch {
+    return false;
+  }
+}
+
 /** Remove all stored run logs. */
 export function clearRunLogs(): void {
   try {

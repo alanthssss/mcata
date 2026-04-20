@@ -4,6 +4,8 @@ import { ALL_PROTOCOLS, DEFAULT_PROTOCOL } from '../../core/protocols';
 import { useT } from '../../i18n';
 import { CompactDetail } from './CompactDetail';
 import { LocaleSwitcher } from './LocaleSwitcher';
+import { isDebugExportLogs } from '../../store/runLogStore';
+import { downloadRunLogs, downloadRunLogsCsv } from '../../scripts/exportRunLogs';
 
 interface StartScreenProps {
   onStart: (protocol: ProtocolId) => void;
@@ -12,6 +14,7 @@ interface StartScreenProps {
 export const StartScreen: React.FC<StartScreenProps> = ({ onStart }) => {
   const t = useT();
   const [selectedProtocol, setSelectedProtocol] = useState<ProtocolId>(DEFAULT_PROTOCOL);
+  const showExport = isDebugExportLogs();
 
   return (
     <div className="screen start-screen">
@@ -45,6 +48,17 @@ export const StartScreen: React.FC<StartScreenProps> = ({ onStart }) => {
       <div className="start-actions">
         <button className="start-btn" onClick={() => onStart(selectedProtocol)}>{t('ui.start_btn')}</button>
       </div>
+
+      {showExport && (
+        <div className="debug-export-row">
+          <button className="debug-export-btn" onClick={() => downloadRunLogs()}>
+            ⬇ Export All Logs (JSON)
+          </button>
+          <button className="debug-export-btn" onClick={() => downloadRunLogsCsv()}>
+            ⬇ Export All Logs (CSV)
+          </button>
+        </div>
+      )}
     </div>
   );
 };
