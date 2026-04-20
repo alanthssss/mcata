@@ -63,8 +63,27 @@ export const ForgeModal: React.FC<ForgeModalProps> = ({
 }) => {
   const t = useT();
   const [pendingCatalyst, setPendingCatalyst] = useState<ForgeShopItem | null>(null);
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+
+  const getSimpleTagKey = (item: ForgeShopItem): 'tag.scoring' | 'tag.energy' | 'tag.control' => {
+    if (item.type === 'catalyst') {
+      if (item.catalyst.category === 'generator') return 'tag.energy';
+      if (item.catalyst.category === 'stabilizer' || item.catalyst.category === 'modifier') return 'tag.control';
+      return 'tag.scoring';
+    }
+    if (item.type === 'utility') {
+      if (item.utility === 'energy') return 'tag.energy';
+      if (item.utility === 'steps') return 'tag.control';
+      return 'tag.scoring';
+    }
+    if (item.type === 'pattern') return 'tag.control';
+    if (item.signal === 'pulse_boost') return 'tag.scoring';
+    if (item.signal === 'chain_trigger') return 'tag.scoring';
+    return 'tag.control';
+  };
 
   const handleBuyClick = (item: ForgeShopItem) => {
+    setSelectedItemId(item.id);
     if (item.type === 'catalyst' && activeCatalysts.length >= 6) {
       setPendingCatalyst(item);
     } else {
@@ -81,11 +100,12 @@ export const ForgeModal: React.FC<ForgeModalProps> = ({
 
   return (
     <Modal title={t('ui.forge_title')}>
-      <p className="modal-subtitle">{t('ui.forge_subtitle')}</p>
       <div className="forge-offers">
         {items.map((item) => {
+          const blocked = energy < item.price;
+          const selected = selectedItemId === item.id;
+          const simpleTagKey = getSimpleTagKey(item);
           if (item.type !== 'catalyst') {
-            const blocked = energy < item.price;
             const name = item.type === 'pattern'
               ? t(`pattern.${item.pattern}.name`)
               : item.type === 'signal'
@@ -94,11 +114,16 @@ export const ForgeModal: React.FC<ForgeModalProps> = ({
             const desc = item.type === 'pattern'
               ? t(`pattern.${item.pattern}.description`)
               : item.type === 'signal'
-                ? t(`signal.${item.signal}.description`)
+              ? t(`signal.${item.signal}.description`)
                 : t(`ui.forge_utility_${item.utility}_desc`, { value: item.amount });
             return (
-              <div key={item.id} className="forge-offer common">
+              <div key={item.id} className={`forge-offer common ${selected ? 'forge-offer--selected' : ''}`} title={`${name} — ${desc}`}>
                 <div className="offer-name">{name}</div>
+                <div className="offer-rarity-row">
+                  <span className={`offer-tag offer-tag--simple ${simpleTagKey === 'tag.scoring' ? 'offer-tag--score' : simpleTagKey === 'tag.energy' ? 'offer-tag--energy' : 'offer-tag--control'}`}>
+                    {t(simpleTagKey)}
+                  </span>
+                </div>
                 <div className="offer-desc">{desc}</div>
                 <div className="offer-cost">⚡ {item.price} {t('ui.energy')}</div>
                 <button className="offer-btn" disabled={blocked} onClick={() => handleBuyClick(item)}>
@@ -110,29 +135,25 @@ export const ForgeModal: React.FC<ForgeModalProps> = ({
           const cat = item.catalyst;
           const synergyPartnerId = getSynergyHint(cat.id, activeCatalysts);
           const alreadyOwned = activeCatalysts.includes(cat.id);
-          const blocked = alreadyOwned || energy < item.price;
+          const buyBlocked = alreadyOwned || blocked;
           const tName = t(`catalyst.${cat.id}.name`);
           const tDesc = t(`catalyst.${cat.id}.description`);
-          const tagKey = `tag.${cat.category}`;
+          const hoverDetail = synergyPartnerId
+            ? `${tName} — ${tDesc} (${t('ui.forge_synergy_hint', { partner: t(`catalyst.${synergyPartnerId}.name`) })})`
+            : `${tName} — ${tDesc}`;
           return (
-              <div key={item.id} className={`forge-offer ${cat.rarity}`}>
+              <div key={item.id} className={`forge-offer ${cat.rarity} ${selected ? 'forge-offer--selected' : ''}`} title={hoverDetail}>
               <div className="offer-name">{tName}</div>
               <div className="offer-rarity-row">
-                <span className="offer-rarity">{cat.rarity}</span>
-                <span className={`offer-tag offer-tag--${cat.category}`}>
-                  {CATEGORY_ICON[cat.category]} {t(tagKey)}
+                <span className={`offer-tag offer-tag--simple ${simpleTagKey === 'tag.scoring' ? 'offer-tag--score' : simpleTagKey === 'tag.energy' ? 'offer-tag--energy' : 'offer-tag--control'}`}>
+                  {CATEGORY_ICON[cat.category]} {t(simpleTagKey)}
                 </span>
               </div>
               <div className="offer-desc">{tDesc}</div>
-              {synergyPartnerId && (
-                <div className="offer-synergy-hint">
-                  {t('ui.forge_synergy_hint', { partner: t(`catalyst.${synergyPartnerId}.name`) })}
-                </div>
-              )}
               <div className="offer-cost">⚡ {item.price} {t('ui.energy')}</div>
               <button
                 className="offer-btn"
-                disabled={blocked}
+                disabled={buyBlocked}
                   onClick={() => handleBuyClick(item)}
                 >
                   {alreadyOwned ? t('ui.forge_owned') : energy < item.price ? t('ui.forge_not_enough') : t('ui.forge_equip')}

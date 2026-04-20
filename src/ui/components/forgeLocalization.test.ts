@@ -1,7 +1,7 @@
 import React from 'react';
 import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { localizeIntermissionMessage } from './ForgeModal';
+import { ForgeModal, localizeIntermissionMessage } from './ForgeModal';
 import { PatternPanel } from './PatternPanel';
 import { SignalPanel } from './SignalPanel';
 import { createT, useLocaleStore } from '../../i18n';
@@ -60,5 +60,81 @@ describe('Forge intermission localization', () => {
     };
     const localized = localizeIntermissionMessage(message, createT('en'));
     expect(localized).toContain('Chain Style');
+  });
+});
+
+describe('Forge modal simplified tags', () => {
+  it('shows simple Score / Energy / Control tags for first-shop style offers', () => {
+    useLocaleStore.getState().setLocale('en');
+    const html = renderToStaticMarkup(React.createElement(ForgeModal, {
+      items: [
+        {
+          id: 'cat:empty_amplifier',
+          type: 'catalyst',
+          category: 'amplifier',
+          price: 5,
+          name: 'Empty Amplifier',
+          description: '+5% Output per empty cell on the board',
+          catalyst: {
+            id: 'empty_amplifier',
+            name: 'Empty Amplifier',
+            description: '+5% Output per empty cell on the board',
+            rarity: 'rare',
+            cost: 5,
+            category: 'amplifier',
+            trigger: 'on_merge',
+            effectParams: {},
+            tags: ['combo'],
+            flavorText: '',
+            unlockCondition: '',
+          },
+        },
+        {
+          id: 'cat:rich_merge',
+          type: 'catalyst',
+          category: 'generator',
+          price: 5,
+          name: 'Rich Merge',
+          description: 'Each merge generates +1 Energy',
+          catalyst: {
+            id: 'rich_merge',
+            name: 'Rich Merge',
+            description: 'Each merge generates +1 Energy',
+            rarity: 'rare',
+            cost: 5,
+            category: 'generator',
+            trigger: 'on_merge',
+            effectParams: {},
+            tags: ['energy'],
+            flavorText: '',
+            unlockCondition: '',
+          },
+        },
+        {
+          id: 'signal:grid_clean',
+          type: 'signal',
+          category: 'tactical',
+          price: 3,
+          name: 'Grid Clean',
+          description: 'Remove 2 lowest-value tiles from the board',
+          signal: 'grid_clean',
+        },
+      ],
+      activeCatalysts: [],
+      activePattern: null,
+      activePatternLevel: 0,
+      signals: [],
+      energy: 10,
+      lastIntermissionMessage: null,
+      onBuy: () => undefined,
+      onSell: () => undefined,
+      onSellPattern: () => undefined,
+      onSellSignal: () => undefined,
+      onReroll: () => undefined,
+      onSkip: () => undefined,
+    }));
+    expect(html).toContain('Score');
+    expect(html).toContain('Energy');
+    expect(html).toContain('Control');
   });
 });

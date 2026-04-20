@@ -641,6 +641,17 @@ button:not(:disabled):active {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  transition: border-color 0.14s ease, transform 0.14s ease, box-shadow 0.14s ease;
+}
+
+.forge-offer:hover {
+  border-color: var(--accent-2);
+}
+
+.forge-offer--selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px rgba(124, 109, 240, 0.45);
+  transform: translateY(-1px);
 }
 
 .forge-offer.rare {
@@ -675,6 +686,9 @@ button:not(:disabled):active {
   font-size: 0.78rem;
   color: var(--text-muted);
   flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .offer-cost {
@@ -1272,6 +1286,14 @@ button:not(:disabled):active {
   border: 1px solid rgba(124, 109, 240, 0.3);
   color: var(--accent);
 }
+
+.offer-tag--simple {
+  font-weight: 700;
+}
+
+.offer-tag--score { background: rgba(124, 109, 240, 0.15); border-color: rgba(124, 109, 240, 0.3); color: var(--accent); }
+.offer-tag--energy { background: rgba(240, 164, 74, 0.12); border-color: rgba(240, 164, 74, 0.3); color: var(--warning); }
+.offer-tag--control { background: rgba(106, 176, 224, 0.12); border-color: rgba(106, 176, 224, 0.3); color: var(--common); }
 
 .offer-tag--amplifier { background: rgba(124, 109, 240, 0.15); border-color: rgba(124, 109, 240, 0.3); color: var(--accent); }
 .offer-tag--stabilizer { background: rgba(106, 176, 224, 0.12); border-color: rgba(106, 176, 224, 0.3); color: var(--common); }

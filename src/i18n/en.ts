@@ -120,6 +120,8 @@ const en: TranslationMap = {
   'ui.forge_sold_catalyst': 'Sold {name} for +{energy} Energy',
   'ui.forge_sold_pattern': 'Sold Pattern {name} (Lv.{level}) for +{energy} Energy',
   'ui.forge_sold_signal': 'Sold Signal {name} for +{energy} Energy',
+  'ui.forge_boost_ready': 'Boost online: {name} affects your next merge.',
+  'ui.forge_signal_ready': 'Skill ready: {name} can be used on your next move.',
   'ui.forge_sell_pattern': 'Sell Pattern: {name} (Lv.{level})',
   'ui.forge_sell_signal': 'Sell Signal: {name}',
   'ui.forge_utility_energy': 'Recharge Pack',
@@ -172,15 +174,15 @@ const en: TranslationMap = {
   'ui.pattern_how_to_get_detail': 'Pattern is obtained through Forge purchases.',
 
   // ─── UI: Tags ──────────────────────────────────────────────────────────────
-  'tag.scoring': 'Scoring',
+  'tag.scoring': 'Score',
   'tag.control': 'Control',
-  'tag.energy': 'Economy',
+  'tag.energy': 'Energy',
   'tag.anomaly_defense': 'Defense',
   'tag.combo': 'Combo',
   'tag.amplification': 'Amplify',
   'tag.amplifier': 'Amplify',
   'tag.stabilizer': 'Control',
-  'tag.generator': 'Economy',
+  'tag.generator': 'Energy',
   'tag.modifier': 'Modifier',
   'tag.legacy': 'Classic',
 

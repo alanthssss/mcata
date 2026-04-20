@@ -124,6 +124,7 @@ export function createInitialState(
     ascensionLevel,
     unlockedCatalysts,
     catalystPool: unlockedCatalysts ? [...unlockedCatalysts] : undefined,
+    forgeVisitCount: 0,
     roundNumber,
     roundOutput: 0,
     bestMoveOutput: 0,
@@ -478,6 +479,7 @@ export function processMoveAction(state: GameState, dir: Direction): GameState {
     streakCount: newStreakCount,
     bestStreak: newBestStreak,
     jackpotTriggered,
+    lastIntermissionMessage: null,
   };
 
   if (newOutput >= state.phaseTargetOutput || newSteps <= 0) {
@@ -629,6 +631,7 @@ function handlePhaseEnd(state: GameState): GameState {
     rng.next.bind(rng),
     state.catalystPool,
     state.roundNumber,
+    state.forgeVisitCount,
   );
 
   return {
@@ -638,6 +641,7 @@ function handlePhaseEnd(state: GameState): GameState {
     energy,
     forgeOffers: forgeItems.filter(i => i.type === 'catalyst').map(i => i.catalyst),
     forgeItems,
+    forgeVisitCount: state.forgeVisitCount + 1,
     phaseIndex: nextPhaseIndex,
     stepsRemaining: nextSteps,
     phaseTargetOutput: nextPhaseTargetOutput,
@@ -692,6 +696,7 @@ export function selectInfusion(state: GameState, choice: InfusionChoice): GameSt
     rng.next.bind(rng),
     next.catalystPool,
     next.roundNumber,
+    next.forgeVisitCount,
   );
   return {
     ...next,
@@ -702,6 +707,7 @@ export function selectInfusion(state: GameState, choice: InfusionChoice): GameSt
     stabilityCount: 0,
     forgeOffers: forgeItems.filter(i => i.type === 'catalyst').map(i => i.catalyst),
     forgeItems,
+    forgeVisitCount: next.forgeVisitCount + 1,
   };
 }
 
@@ -717,6 +723,10 @@ export function buyForgeItem(state: GameState, item: ForgeShopItem, replaceIndex
         energy: state.energy - item.price,
         signals: [...state.signals, item.signal],
         forgeItems: state.forgeItems.filter(i => i.id !== item.id),
+        lastIntermissionMessage: {
+          key: 'ui.forge_signal_ready',
+          params: { name: item.signal },
+        },
       };
     case 'pattern': {
       const previousPattern = state.activePattern;
@@ -731,6 +741,10 @@ export function buyForgeItem(state: GameState, item: ForgeShopItem, replaceIndex
           [item.pattern]: nextLevel,
         },
         forgeItems: state.forgeItems.filter(i => i.id !== item.id),
+        lastIntermissionMessage: {
+          key: 'ui.infusion_pattern_growth',
+          params: { name: item.pattern, level: nextLevel },
+        },
       };
     }
     case 'utility': {
@@ -789,6 +803,10 @@ export function buyFromForge(state: GameState, catalyst: CatalystDef, replaceInd
     catalystPool,
     forgeOffers: state.forgeOffers.filter(c => c.id !== catalyst.id),
     forgeItems: state.forgeItems.filter(item => item.type !== 'catalyst' || item.catalyst.id !== catalyst.id),
+    lastIntermissionMessage: {
+      key: 'ui.forge_boost_ready',
+      params: { name: catalyst.id },
+    },
   };
 }
 
@@ -802,6 +820,7 @@ export function rerollForge(state: GameState): GameState {
     rng.next.bind(rng),
     state.catalystPool,
     state.roundNumber,
+    Math.max(state.forgeVisitCount - 1, 0),
   );
   return {
     ...state,
@@ -891,7 +910,6 @@ export function skipForge(state: GameState): GameState {
     consecutiveValidMoves: 0,
     momentumMultiplier: 1.0,
     stabilityCount: 0,
-    lastIntermissionMessage: null,
   };
 }
 

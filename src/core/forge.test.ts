@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { generateForgeOffers } from './forge';
+import { generateForgeItems, generateForgeOffers } from './forge';
 import { ALL_CATALYSTS } from './catalysts';
 import { createRng } from './rng';
 
@@ -103,5 +103,28 @@ describe('generateForgeOffers', () => {
     }
     expect(epic).toBeGreaterThan(0);
     expect(epic).toBeLessThan(300);
+  });
+});
+
+describe('generateForgeItems progression', () => {
+  it('first forge visit offers exactly 3 items (2 boosts + 1 skill)', () => {
+    const rng = createRng(11);
+    const items = generateForgeItems([], null, [], rng.next.bind(rng), undefined, 1, 0);
+    expect(items).toHaveLength(3);
+    expect(items.filter(i => i.type === 'catalyst')).toHaveLength(2);
+    expect(items.filter(i => i.type === 'signal')).toHaveLength(1);
+    expect(items.some(i => i.type === 'pattern')).toBe(false);
+    expect(items.some(i => i.type === 'utility')).toBe(false);
+  });
+
+  it('second and third forge visits introduce pattern offers', () => {
+    const rngA = createRng(12);
+    const second = generateForgeItems([], null, [], rngA.next.bind(rngA), undefined, 1, 1);
+    const rngB = createRng(13);
+    const third = generateForgeItems([], null, [], rngB.next.bind(rngB), undefined, 1, 2);
+    expect(second.some(i => i.type === 'pattern')).toBe(true);
+    expect(third.some(i => i.type === 'pattern')).toBe(true);
+    expect(second.some(i => i.type === 'utility')).toBe(false);
+    expect(third.some(i => i.type === 'utility')).toBe(false);
   });
 });

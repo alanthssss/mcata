@@ -4,6 +4,7 @@ import {
   startGame,
   processMoveAction,
   selectInfusion,
+  buyForgeItem,
   buyFromForge,
   rerollForge,
   skipForge,
@@ -57,6 +58,11 @@ describe('createInitialState', () => {
     const state = createInitialState(1);
     const occupied = state.grid.flat().filter(Boolean);
     expect(occupied.length).toBeGreaterThan(0);
+  });
+
+  it('starts forge progression counter at 0', () => {
+    const state = createInitialState(1);
+    expect(state.forgeVisitCount).toBe(0);
   });
 
   it('defaults to corner_protocol', () => {
@@ -569,6 +575,19 @@ describe('rerollForge', () => {
     const state = { ...playingState(), screen: 'forge' as const, energy: 0 };
     expect(rerollForge(state)).toBe(state);
   });
+
+  it('keeps first-forge offer shape during reroll', () => {
+    const state = {
+      ...playingState(),
+      screen: 'forge' as const,
+      energy: 5,
+      forgeVisitCount: 1,
+    };
+    const result = rerollForge(state);
+    expect(result.forgeItems).toHaveLength(3);
+    expect(result.forgeItems.filter(i => i.type === 'catalyst')).toHaveLength(2);
+    expect(result.forgeItems.filter(i => i.type === 'signal')).toHaveLength(1);
+  });
 });
 
 describe('sellCatalyst', () => {
@@ -617,6 +636,37 @@ describe('skipForge', () => {
     const result = skipForge(state);
     expect(result.consecutiveValidMoves).toBe(0);
     expect(result.momentumMultiplier).toBe(1.0);
+  });
+
+  it('keeps intermission feedback for immediate post-shop visibility', () => {
+    const state = {
+      ...playingState(),
+      screen: 'forge' as const,
+      lastIntermissionMessage: { key: 'ui.forge_boost_ready', params: { name: 'empty_amplifier' } },
+    };
+    const result = skipForge(state);
+    expect(result.lastIntermissionMessage?.key).toBe('ui.forge_boost_ready');
+  });
+});
+
+describe('buyForgeItem feedback', () => {
+  it('sets immediate skill-ready feedback when buying a signal', () => {
+    const state: GameState = {
+      ...playingState(),
+      screen: 'forge',
+      energy: 10,
+      forgeItems: [{
+        id: 'signal:grid_clean',
+        type: 'signal',
+        category: 'tactical',
+        price: 3,
+        name: 'Grid Clean',
+        description: 'Remove 2 lowest-value tiles from the board',
+        signal: 'grid_clean',
+      }],
+    };
+    const result = buyForgeItem(state, state.forgeItems[0]);
+    expect(result.lastIntermissionMessage?.key).toBe('ui.forge_signal_ready');
   });
 });
 
