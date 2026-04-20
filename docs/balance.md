@@ -49,6 +49,7 @@ Heuristic auto-tuning loop and generate:
 - `tuning_history.json`
 - `tuning_summary.md`
 - `best_config.json`
+- `best_config.yaml`
 - `before_vs_after.md`
 
 ---
@@ -98,7 +99,7 @@ To reduce difficulty without changing feel: increase `steps`.
 
 ## Key Tuning Knobs
 
-All tunable constants live in `src/core/config.ts`.
+All tunable constants are authored in `config/game.yaml` (then validated and synced to `src/core/generatedGameConfig.ts` via `npm run sync:config`).
 
 ### Stage Targets & Steps
 

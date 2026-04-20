@@ -1070,6 +1070,31 @@ button:not(:disabled):active {
   gap: 6px;
 }
 
+.build-identity-summary { display: flex; flex-direction: column; gap: 4px; }
+.build-identity-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--accent-2);
+}
+.build-identity-confidence {
+  margin-left: 6px;
+  font-size: 0.66rem;
+  color: var(--text-muted);
+}
+.build-identity-text { font-size: 0.72rem; color: var(--text-muted); }
+.build-identity-contributors { display: flex; flex-wrap: wrap; gap: 4px; }
+.build-identity-chip {
+  font-size: 0.66rem;
+  padding: 1px 6px;
+  border-radius: 8px;
+  border: 1px solid rgba(124, 109, 240, 0.3);
+  background: rgba(124, 109, 240, 0.12);
+}
+.build-identity-detail { display: flex; flex-direction: column; gap: 2px; }
+
 .build-identity-badge {
   margin-left: auto;
   background: rgba(79, 200, 228, 0.15);
@@ -1300,6 +1325,16 @@ button:not(:disabled):active {
 .offer-tag--generator { background: rgba(240, 164, 74, 0.12); border-color: rgba(240, 164, 74, 0.3); color: var(--warning); }
 .offer-tag--modifier { background: rgba(199, 126, 240, 0.12); border-color: rgba(199, 126, 240, 0.3); color: var(--rare); }
 .offer-tag--legacy { background: rgba(120, 120, 140, 0.1); border-color: rgba(120, 120, 140, 0.25); color: var(--text-muted); }
+.offer-tag--direction { background: rgba(76, 175, 125, 0.12); border-color: rgba(76, 175, 125, 0.35); color: var(--success); }
+
+.offer-fit {
+  font-size: 0.68rem;
+  margin-top: 2px;
+  margin-bottom: 4px;
+}
+.offer-fit--fits_current { color: var(--success); }
+.offer-fit--creates_direction { color: var(--accent-2); }
+.offer-fit--low_synergy { color: var(--text-muted); }
 
 .offer-synergy-hint {
   font-size: 0.72rem;
@@ -1921,6 +1956,13 @@ button:not(:disabled):active {
 .highlight-value { font-weight: 700; color: var(--text); }
 
 .round-complete-none { color: var(--text-muted); font-size: 0.85rem; }
+.round-complete-build-label {
+  display: inline-block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--accent-2);
+  margin-bottom: 4px;
+}
 
 .round-complete-reward {
   background: rgba(124, 109, 240, 0.1);

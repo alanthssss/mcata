@@ -19,6 +19,7 @@ import { MomentumBar } from './components/MomentumBar';
 import { SynergyPanel } from './components/SynergyPanel';
 import { PatternPanel } from './components/PatternPanel';
 import { CatalystCollectionView } from './components/CatalystCollectionView';
+import { BuildIdentityPanel } from './components/BuildIdentityPanel';
 import { useT } from '../i18n';
 import { ENABLE_SECONDARY_MODES } from '../core/features';
 import './style.css';
@@ -133,15 +134,18 @@ export const App: React.FC = () => {
 
   if (state.screen === 'round_complete') {
     return (
-      <RoundCompleteScreen
-        roundNumber={state.roundNumber}
-        roundOutput={state.roundOutput}
-        totalOutput={state.totalOutput}
-        bestMoveOutput={state.bestMoveOutput}
-        activeCatalysts={state.activeCatalysts}
-        onContinue={() => state.nextRound()}
-        onQuit={() => state.initGame()}
-      />
+        <RoundCompleteScreen
+          roundNumber={state.roundNumber}
+          roundOutput={state.roundOutput}
+          totalOutput={state.totalOutput}
+          bestMoveOutput={state.bestMoveOutput}
+          activeCatalysts={state.activeCatalysts}
+          activePattern={state.activePattern}
+          reactionLog={state.reactionLog}
+          energy={state.energy}
+          onContinue={() => state.nextRound()}
+          onQuit={() => state.initGame()}
+        />
     );
   }
 
@@ -211,6 +215,12 @@ export const App: React.FC = () => {
                 activeCatalysts={state.activeCatalysts}
                 lastTriggeredSynergies={lastTriggeredSynergies}
               />
+              <BuildIdentityPanel
+                activeCatalysts={state.activeCatalysts}
+                activePattern={state.activePattern}
+                reactionLog={state.reactionLog}
+                energy={state.energy}
+              />
               <SignalPanel
                 signals={state.signals}
                 pendingSignal={state.pendingSignal}
@@ -266,6 +276,7 @@ export const App: React.FC = () => {
           activeCatalysts={state.activeCatalysts}
           activePattern={state.activePattern}
           activePatternLevel={state.activePattern ? state.patternLevels[state.activePattern] : 0}
+          reactionLog={state.reactionLog}
           signals={state.signals}
           energy={state.energy}
           lastIntermissionMessage={state.lastIntermissionMessage}

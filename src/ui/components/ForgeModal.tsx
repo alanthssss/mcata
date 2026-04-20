@@ -1,14 +1,21 @@
 import React, { useState } from 'react';
-import { CatalystId, ForgeShopItem, LocalizedText, PatternId, SignalId } from '../../core/types';
+import { CatalystId, ForgeShopItem, LocalizedText, PatternId, ReactionLogEntry, SignalId } from '../../core/types';
 import { ALL_SYNERGIES } from '../../core/synergies';
 import { Modal } from './Modal';
 import { useT } from '../../i18n';
+import {
+  buildDirectionToTagKey,
+  deriveBuildIdentity,
+  getBuildDirectionsForShopItem,
+  getShopBuildFitState,
+} from '../../core/buildIdentity';
 
 interface ForgeModalProps {
   items: ForgeShopItem[];
   activeCatalysts: CatalystId[];
   activePattern: PatternId | null;
   activePatternLevel: number;
+  reactionLog: ReactionLogEntry[];
   signals: SignalId[];
   energy: number;
   lastIntermissionMessage: LocalizedText | null;
@@ -79,12 +86,13 @@ function getSynergyHint(catalystId: CatalystId, activeCatalysts: CatalystId[]): 
 }
 
 export const ForgeModal: React.FC<ForgeModalProps> = ({
-  items, activeCatalysts, activePattern, activePatternLevel, signals, energy,
+  items, activeCatalysts, activePattern, activePatternLevel, reactionLog, signals, energy,
   lastIntermissionMessage, onBuy, onSell, onSellPattern, onSellSignal, onReroll, onSkip
 }) => {
   const t = useT();
   const [pendingCatalyst, setPendingCatalyst] = useState<ForgeShopItem | null>(null);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const currentBuild = deriveBuildIdentity({ activeCatalysts, activePattern, reactionLog, energy });
 
   const getItemTagKey = (item: ForgeShopItem): 'tag.scoring' | 'tag.energy' | 'tag.control' => {
     if (item.type === 'catalyst') {
@@ -126,6 +134,18 @@ export const ForgeModal: React.FC<ForgeModalProps> = ({
           const blocked = energy < item.price;
           const selected = selectedItemId === item.id;
           const tagKey = getItemTagKey(item);
+          const directions = getBuildDirectionsForShopItem(item);
+          const directionTagKey = directions.includes('high_tier')
+            ? 'tag.build_high_tier'
+            : directions.length > 1
+              ? 'tag.build_hybrid'
+              : buildDirectionToTagKey(directions[0]);
+          const fitState = getShopBuildFitState(directions, currentBuild.label);
+          const fitStateKey = fitState === 'fits_current'
+            ? 'ui.shop_fit_current'
+            : fitState === 'creates_direction'
+              ? 'ui.shop_creates_direction'
+              : 'ui.shop_low_synergy';
           if (item.type !== 'catalyst') {
             const name = item.type === 'pattern'
               ? t(`pattern.${item.pattern}.name`)
@@ -144,8 +164,10 @@ export const ForgeModal: React.FC<ForgeModalProps> = ({
                   <span className={getTagClassName(tagKey)}>
                     {t(tagKey)}
                   </span>
+                  <span className="offer-tag offer-tag--simple offer-tag--direction">{t(directionTagKey)}</span>
                 </div>
                 <div className="offer-desc">{desc}</div>
+                <div className={`offer-fit offer-fit--${fitState}`}>{t(fitStateKey)}</div>
                 <div className="offer-cost">⚡ {item.price} {t('ui.energy')}</div>
                 <button className="offer-btn" disabled={blocked} onClick={() => handleBuyClick(item)}>
                   {blocked ? t('ui.forge_not_enough') : t('ui.forge_buy')}
@@ -169,8 +191,10 @@ export const ForgeModal: React.FC<ForgeModalProps> = ({
                 <span className={getTagClassName(tagKey)}>
                   {CATEGORY_ICON[cat.category]} {t(tagKey)}
                 </span>
+                <span className="offer-tag offer-tag--simple offer-tag--direction">{t(directionTagKey)}</span>
               </div>
               <div className="offer-desc">{tDesc}</div>
+              <div className={`offer-fit offer-fit--${fitState}`}>{t(fitStateKey)}</div>
               <div className="offer-cost">⚡ {item.price} {t('ui.energy')}</div>
               <button
                 className="offer-btn"

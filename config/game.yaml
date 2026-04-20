@@ -1,0 +1,217 @@
+balanceVersion: v7
+
+phaseConfig:
+  - phaseNumber: 1
+    targetOutput: 170
+    steps: 20
+    expectedOutput: 225
+    highSkillOutput: 320
+    challengeTier: small
+  - phaseNumber: 2
+    targetOutput: 205
+    steps: 20
+    expectedOutput: 280
+    highSkillOutput: 410
+    challengeTier: big
+  - phaseNumber: 3
+    targetOutput: 190
+    steps: 18
+    expectedOutput: 255
+    highSkillOutput: 380
+    challengeTier: boss
+    modifier: Corner bonus disabled — chain merges are your only edge
+  - phaseNumber: 4
+    targetOutput: 165
+    steps: 17
+    anomaly: entropy_tax
+    expectedOutput: 220
+    highSkillOutput: 320
+    challengeTier: small
+    modifier: 'Entropy Tax: one cell blocked each move'
+  - phaseNumber: 5
+    targetOutput: 235
+    steps: 19
+    expectedOutput: 320
+    highSkillOutput: 470
+    challengeTier: big
+  - phaseNumber: 6
+    targetOutput: 220
+    steps: 19
+    anomaly: collapse_field
+    expectedOutput: 295
+    highSkillOutput: 430
+    challengeTier: boss
+    modifier: 'Collapse Field: every 4 scoring moves removes the lowest tile'
+
+progressionScaling:
+  stepPhaseScale: 1
+  stepRoundScale: 1
+  targetPhaseScale: 12
+  targetRoundScale: 20
+
+segmentedGrowthScaling:
+  roundIndexOffset: 1
+  roundIndexScale: 1
+
+roundTargetScale: 0
+roundScaleCompound: false
+
+buildAwareScaling:
+  enabled: true
+  catalystWeight: 0.12
+  multiplierWeight: 0.30
+  maxFactor: 3.0
+
+roundEconomyScale: 0.08
+
+catalystMultipliers:
+  corner_crown: 2.0
+  twin_burst: 1.5
+  combo_wire: 1.3
+  high_tribute: 1.4
+  reserve_bonus: 20
+  bankers_edge_energy: 1
+  lucky_seed_pct: 0.75
+  empty_amplifier_per_cell: 0.05
+  chain_reactor_extra: 0.2
+  echo_multiplier_carry: 0.2
+  threshold_surge_mult: 1.5
+  threshold_surge_value: 30
+  phase_resonance_per_phase: 0.1
+  gravity_well_mult: 1.1
+  stability_field_mult: 1.2
+  stability_field_period: 3
+  rich_merge_energy_per_merge: 1
+  energy_loop_fraction: 0.08
+  reserve_bank_energy_per_step: 1
+  double_spawn_probability: 0.25
+  delay_spawn_probability: 0.5
+  diagonal_merge_mult: 1.2
+  diagonal_merge_period: 4
+  inversion_field_mult: 1.15
+  anomaly_sync_mult: 1.3
+
+chainMultipliers:
+  "1": 1.0
+  "2": 1.2
+  "3": 1.5
+chainMultiplier4Plus: 2.0
+
+conditionMultipliers:
+  cornerMerge: 1.2
+  highestTile: 1.2
+
+synergyMultipliers:
+  corner_empire: 1.3
+  chain_echo: 1.4
+  generator_surplus: 1.25
+  amplified_stability: 1.35
+  phase_reactor: 1.3
+
+momentumConfig:
+  growthRate: 0.05
+  maxMultiplier: 2.0
+  validMoveMinOutput: 1
+
+signalConfig:
+  capacity: 2
+  pulseBoostMult: 2.0
+  gridCleanCount: 2
+
+forge:
+  rerollCost: 1
+  maxCatalysts: 6
+  itemCounts:
+    catalysts: 3
+    signals: 1
+    patterns: 1
+    utilities: 1
+  sellRefundByRarity:
+    common: 0.6
+    rare: 0.5
+    epic: 0.4
+  patternSellRefund: 0.5
+  signalSellRefund: 0.5
+  patternPrice: 4
+  signalPrice: 3
+  utilityPrices:
+    energy: 2
+    steps: 3
+    multiplier: 4
+  utilityValues:
+    energy: 2
+    steps: 2
+    multiplier: 0.08
+
+rarityRulesByRound:
+  - maxRound: 2
+    rules:
+      common: { offerWeight: 10, minRound: 1 }
+      rare: { offerWeight: 2, minRound: 2, perRunCap: 4 }
+      epic: { offerWeight: 0, minRound: 4, perRunCap: 1 }
+  - maxRound: 4
+    rules:
+      common: { offerWeight: 8, minRound: 1 }
+      rare: { offerWeight: 4, minRound: 2, perRunCap: 4 }
+      epic: { offerWeight: 0.8, minRound: 4, perRunCap: 1 }
+  - maxRound: 999999
+    rules:
+      common: { offerWeight: 6, minRound: 1 }
+      rare: { offerWeight: 5, minRound: 2, perRunCap: 4 }
+      epic: { offerWeight: 1.2, minRound: 4, perRunCap: 2 }
+
+patternBonusByLevel:
+  corner: 0.1
+  chain: 0.1
+  empty_space: 0.025
+  high_tier: 0.12
+  economy: 1
+  survival: 0.12
+
+patternEmptySpaceCap: 1.6
+collapseFieldPeriod: 4
+spawn4Probability: 0.10
+luckySeedSpawn4Probability: 0.25
+startingEnergy: 5
+displayScoreScale: 10
+tileDisplayMode: label+value
+
+streak:
+  minOutput: 5
+  bonusThreshold: 5
+  energyBonus: 1
+
+jackpot:
+  probability: 0.02
+  minOutput: 50
+  outputBonus: 100
+  energyBonus: 2
+
+roundCompleteReward:
+  energyBonus: 2
+  multiplierBonus: 0.05
+
+buildIdentity:
+  minConfidenceForClear: 0.58
+  mixedThreshold: 0.16
+
+benchmarkTuning:
+  baselineCandidate:
+    stepsMultiplier: 1
+    targetOutputMultiplier: 1
+    roundScaleMultiplier: 1
+    startingEnergy: 5
+    energyIncomeMultiplier: 1
+  bounds:
+    stepsMultiplier: [0.9, 1.4]
+    targetOutputMultiplier: [0.9, 1.5]
+    roundScaleMultiplier: [0.95, 1.2]
+    startingEnergy: [4, 12]
+    energyIncomeMultiplier: [0.6, 1.1]
+  heuristicTargets:
+    avgMovesPerPhase: { min: 8.5, max: 14 }
+    avgHighestTierPerPhase: { min: 4.9 }
+    lateGameClearSpeed: { min: 6 }
+    energyIncomePerRound: { min: 2.5, max: 6.5 }
+    forgeAffordabilityRate: { min: 0.3, max: 0.75 }
+    buildMaturityRound3: { min: 2.5 }

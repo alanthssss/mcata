@@ -32,6 +32,8 @@ npm run preview
 - Grow one **Style** archetype (Corner / Chain / Empty-space / High-tier / Economy / Survival) from the **Shop** for run-long scaling
 - Style rules: one active Style at a time; picking the same Style upgrades it, picking a different Style replaces it
 - Sell Boosts in Shop to recover partial Energy and pivot builds safely
+- Build Identity panel (left HUD) shows current run label, confidence, and top contributors
+- Shop cards now show both category tags and build-direction fit hints
 
 ## Rules
 
@@ -254,6 +256,8 @@ artifacts/benchmark/latest/
   summary.json, per_agent.json, runs.csv
   catalyst_stats.json, anomaly_stats.json
   comparison.md, balance_report.md
+  tuning_history.json, tuning_summary.md
+  best_config.json, best_config.yaml, before_vs_after.md
   charts/  (SVG bar charts)
 ```
 
@@ -266,6 +270,12 @@ artifacts/benchmark/latest/
 - [docs/benchmark.md](docs/benchmark.md)
 - [docs/balance.md](docs/balance.md)
 - [docs/ai.md](docs/ai.md)
+
+## Numeric Tuning Config
+
+- Source of truth: `config/game.yaml`
+- `npm run sync:config` validates YAML and regenerates `src/core/generatedGameConfig.ts`
+- All gameplay, economy, rarity, build-identity thresholds, and benchmark tuning baselines read from this YAML-derived config.
 
 ## Localization (i18n)
 
