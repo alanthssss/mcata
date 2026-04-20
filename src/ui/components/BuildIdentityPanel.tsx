@@ -26,8 +26,10 @@ export const BuildIdentityPanel: React.FC<BuildIdentityPanelProps> = ({
       <CompactDetail
         summary={(
           <div className="build-identity-summary">
-            <span className="build-identity-label">{t(identity.labelKey)}</span>
-            <span className="build-identity-confidence">{Math.round(identity.confidence * 100)}%</span>
+            <div className="build-identity-headline">
+              <span className="build-identity-label">{t(identity.labelKey)}</span>
+              <span className="build-identity-confidence">{Math.round(identity.confidence * 100)}%</span>
+            </div>
             <div className="build-identity-text">{t(identity.summaryKey)}</div>
             <div className="build-identity-contributors">
               {identity.topContributors.map((entry, index) => {

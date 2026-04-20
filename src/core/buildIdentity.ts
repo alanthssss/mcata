@@ -168,7 +168,7 @@ export function deriveBuildIdentity(params: {
   const dominance = topScore > 0 ? (topScore - secondScore) / topScore : 0;
 
   let label: BuildLabel = topAxis;
-  if (topScore < 2) {
+  if (topScore < BUILD_IDENTITY_CONFIG.minScoreForLabel) {
     label = 'none';
   } else if (dominance < BUILD_IDENTITY_CONFIG.mixedThreshold) {
     label = 'mixed';

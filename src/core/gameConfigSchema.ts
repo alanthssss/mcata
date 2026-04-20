@@ -115,6 +115,7 @@ export interface GameConfig {
   buildIdentity: {
     minConfidenceForClear: number;
     mixedThreshold: number;
+    minScoreForLabel: number;
   };
   benchmarkTuning: BenchmarkTuningConfig;
 }
@@ -349,6 +350,7 @@ export function validateGameConfig(raw: unknown): GameConfig {
     buildIdentity: {
       minConfidenceForClear: assertNumber(buildIdentityObj.minConfidenceForClear, 'buildIdentity.minConfidenceForClear'),
       mixedThreshold: assertNumber(buildIdentityObj.mixedThreshold, 'buildIdentity.mixedThreshold'),
+      minScoreForLabel: assertNumber(buildIdentityObj.minScoreForLabel, 'buildIdentity.minScoreForLabel'),
     },
     benchmarkTuning: {
       baselineCandidate: {

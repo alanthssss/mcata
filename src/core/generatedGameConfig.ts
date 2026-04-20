@@ -251,7 +251,8 @@ export const GAME_CONFIG: GameConfig = {
   },
   "buildIdentity": {
     "minConfidenceForClear": 0.58,
-    "mixedThreshold": 0.16
+    "mixedThreshold": 0.16,
+    "minScoreForLabel": 2
   },
   "benchmarkTuning": {
     "baselineCandidate": {

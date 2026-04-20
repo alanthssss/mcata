@@ -194,6 +194,7 @@ roundCompleteReward:
 buildIdentity:
   minConfidenceForClear: 0.58
   mixedThreshold: 0.16
+  minScoreForLabel: 2
 
 benchmarkTuning:
   baselineCandidate:
