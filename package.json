@@ -17,6 +17,7 @@
     "runlog:analyze": "npm run sync:config && tsx src/scripts/analyzeRunLogExports.ts",
     "report:run": "npm run sync:config && tsx src/scripts/generateRunReport.ts run",
     "report:compare": "npm run sync:config && tsx src/scripts/generateRunReport.ts compare",
+    "report:meta": "npm run sync:config && tsx src/scripts/metaHealthAnalysis.ts",
     "docs:assets": "tsx src/scripts/generateDocsAssets.ts"
   },
   "dependencies": {

@@ -215,6 +215,7 @@ npm run balance        # run balance + pacing + round-stress suites, generate re
 npm run balance:tune   # run heuristic-driven auto-tuning loop + tuning artifacts
 npm run report:run -- artifacts/run.json [out.md]      # single-run Markdown + HTML report
 npm run report:compare -- artifacts/before.json artifacts/after.json [out.md]  # comparison report
+npm run report:meta -- artifacts/run.json [out.md]     # meta-health build ecosystem report
 npm run docs:assets    # generate Mermaid diagram SVGs
 ```
 
@@ -301,6 +302,34 @@ Comparison reports additionally include:
 - Side-by-side metric diff table with % changes
 - Config diff (when bundle config snapshots differ)
 - Automated pacing, economy, and tier-growth interpretation
+
+### Meta-Health Detection
+
+Detect dominant, dead, trap, niche, and healthy build identities across a collection of runs:
+
+```bash
+# Meta-health report (prints to stdout)
+npm run report:meta -- artifacts/my_run.json
+
+# Meta-health report from multiple bundles, written to file (+ .html)
+npm run report:meta -- artifacts/run_a.json artifacts/run_b.json artifacts/meta.md
+```
+
+The meta-health report:
+- Aggregates stats per build identity (pick rate, avg output, rounds cleared, tier, moves/stage, energy)
+- Classifies each build as **dominant** 🔴, **healthy** 🟢, **niche** 🔵, **dead** ⚫, or **trap** 🟡
+- Raises ecosystem-level flags (dominant centralisation, many dead builds, trap choices)
+- Provides actionable suggestions (price/rarity/multiplier adjustments) for each non-healthy build
+
+Classification thresholds (see `src/scripts/metaHealthAnalysis.ts`):
+
+| Class | Condition |
+|---|---|
+| Dominant | pick rate ≥ 30% AND avg output ≥ 1.30× global average |
+| Dead | pick rate < 10% AND avg output < 0.80× global average |
+| Trap | pick rate ≥ ~8.5% AND avg output < 0.85× global average |
+| Niche | pick rate < 10% AND avg output ≥ global average |
+| Healthy | everything else |
 
 ---
 

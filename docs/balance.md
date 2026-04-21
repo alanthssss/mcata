@@ -198,6 +198,29 @@ The before-vs-after report answers:
 - Did economy become tighter?
 - Did late-game speed-clears reduce?
 
+### Meta-Health Analysis
+
+Identify dominant, dead, and trap build identities across a set of exported run logs:
+
+```bash
+npm run report:meta -- artifacts/runlog_all.json artifacts/meta_health.md
+```
+
+**Build classifications:**
+
+| Class | Definition |
+|---|---|
+| 🔴 Dominant | High pick rate (≥ 30%) + significantly above-average output (≥ 1.30×). Nerf candidates. |
+| 🟢 Healthy | Moderate presence and competitive performance. No action needed. |
+| 🔵 Niche | Low pick rate but adequate performance. May need discoverability help. |
+| ⚫ Dead | Low pick rate (< 10%) + below-average output (< 0.80×). Buff candidates. |
+| 🟡 Trap | Present in runs but consistently underperforms (< 0.85× global). Misleading to players. |
+
+**Actionable suggestions are included per build:**
+- Dominant: raise shop price, reduce rarity weight or multiplier, add counter-mechanic
+- Dead: lower shop price, buff combo/synergy payoff, improve availability
+- Trap: buff core output, reduce phase targets for this build style, add hint text
+
 ---
 
 ## Balance Version History
