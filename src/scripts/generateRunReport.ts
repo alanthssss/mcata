@@ -589,11 +589,29 @@ async function main(): Promise<void> {
   }
 
   if (mode === 'run') {
-    const [inputPath, outputPath] = rest;
+    const [rawInput, outputPath] = rest;
+    let inputPath = rawInput;
     if (!inputPath) {
-      console.error('Error: provide an export JSON path.');
-      process.exitCode = 1;
-      return;
+      // Auto-detect the most recently written file in artifacts/runs/
+      const runsDir = path.resolve('artifacts', 'runs');
+      try {
+        const entries = await fs.readdir(runsDir, { withFileTypes: true });
+        const jsonFiles = entries
+          .filter(e => e.isFile() && e.name.endsWith('.json'))
+          .map(e => e.name)
+          .sort(); // filenames are prefixed with timestamp → sort = chronological
+        if (jsonFiles.length === 0) {
+          console.error(`No run logs found in ${runsDir}/. Run a benchmark first, or pass a JSON path.`);
+          process.exitCode = 1;
+          return;
+        }
+        inputPath = path.join(runsDir, jsonFiles[jsonFiles.length - 1]);
+        console.log(`Auto-detected latest run log: ${inputPath}`);
+      } catch {
+        console.error('Error: no JSON path provided and artifacts/runs/ does not exist. Run a benchmark or pass a JSON path.');
+        process.exitCode = 1;
+        return;
+      }
     }
     const raw = await fs.readFile(path.resolve(inputPath), 'utf8');
     const bundle = parseRunLogExportJson(raw);
