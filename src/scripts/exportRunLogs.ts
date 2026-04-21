@@ -277,7 +277,7 @@ export function exportRunLogsAsCsv(options: RunLogExportOptions = {}): string {
     'action',
     'baseOutput',
     'finalOutputStep',
-    'synergyMultiplier',
+    'synergiesTriggered',
     'momentumMultiplier',
     'signalUsed',
     'comboTriggered',

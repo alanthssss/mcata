@@ -301,6 +301,7 @@ export function buildRunLog(
   const entries = state.phaseLogBuffer.flatMap(phase => phase.entries);
   const roundsCleared = Math.floor(state.phaseLogBuffer.filter(phase => phase.cleared).length / STAGES_PER_ROUND);
   const lateGameCleared = state.phaseLogBuffer.filter(phase => phase.cleared && phase.round >= 4);
+  const activeCombos = getActiveSynergies(state.activeCatalysts);
 
   let energyEarnedTotal = 0;
   let energySpentTotal = 0;
@@ -312,13 +313,13 @@ export function buildRunLog(
 
   const buildSnapshot = ensureBuildIdentityLabel({
     activeBoosts: [...state.activeCatalysts],
-    activeCombos: getActiveSynergies(state.activeCatalysts),
+    activeCombos,
     equippedSkills: [...state.signals],
     activeStyle: state.activePattern,
     selectedRule: state.protocol,
     buildIdentityLabel: null,
     boostsCount: state.activeCatalysts.length,
-    combosCount: getActiveSynergies(state.activeCatalysts).length,
+    combosCount: activeCombos.length,
     skillsCount: state.signals.length,
   });
 
