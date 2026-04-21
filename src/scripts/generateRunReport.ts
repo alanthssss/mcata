@@ -607,8 +607,8 @@ async function main(): Promise<void> {
         }
         inputPath = path.join(runsDir, jsonFiles[jsonFiles.length - 1]);
         console.log(`Auto-detected latest run log: ${inputPath}`);
-      } catch {
-        console.error('Error: no JSON path provided and artifacts/runs/ does not exist. Run a benchmark or pass a JSON path.');
+      } catch (err) {
+        console.error(`Error reading artifacts/runs/: ${err instanceof Error ? err.message : String(err)}. Run a benchmark or pass a JSON path.`);
         process.exitCode = 1;
         return;
       }
