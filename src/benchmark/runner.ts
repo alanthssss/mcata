@@ -19,6 +19,8 @@ import { ProtocolId } from '../core/types';
 import { DEFAULT_PROTOCOL } from '../core/protocols';
 import { calculateRunReward } from '../core/profile';
 import { CATALYST_DEFS } from '../core/catalysts';
+import { buildRunLog } from '../store/runLogStore';
+import type { RunLogPersister } from '../scripts/persistRunLog';
 
 export interface BenchmarkTuningOverrides {
   stepsMultiplier?: number;
@@ -77,6 +79,8 @@ export interface RunOptions {
    */
   unlockedCatalysts?: CatalystId[];
   tuningOverrides?: BenchmarkTuningOverrides;
+  /** Optional persister for automatic run-log disk persistence. */
+  persister?: RunLogPersister;
 }
 
 export function runSingle(opts: RunOptions): RunMetrics {
@@ -87,6 +91,7 @@ export function runSingle(opts: RunOptions): RunMetrics {
   const ascensionLevel = opts.ascensionLevel ?? 0;
   const unlockedCatalysts = opts.unlockedCatalysts;
   const tuningOverrides = opts.tuningOverrides;
+  const persister = opts.persister;
 
   let state = startGame(createInitialState(seed, protocol, {
     ascensionLevel,
@@ -96,6 +101,9 @@ export function runSingle(opts: RunOptions): RunMetrics {
   if (tuningOverrides?.startingEnergy !== undefined) {
     state = { ...state, energy: tuningOverrides.startingEnergy };
   }
+
+  // ── Lifecycle: run start ──────────────────────────────────────────────────
+  if (persister) persister.onRunStart(seed);
 
   let totalSteps           = 0;
   let totalCatalysts       = 0;
@@ -163,6 +171,9 @@ export function runSingle(opts: RunOptions): RunMetrics {
       const energyDelta = state.energy - prevState.energy;
       if (energyDelta > 0) totalEnergyEarned += energyDelta;
       if (energyDelta < 0) totalEnergySpent += Math.abs(energyDelta);
+
+      // ── Lifecycle: step ────────────────────────────────────────────────────
+      if (persister) persister.onStep(totalSteps, state.totalOutput, state.energy, dir);
     }
 
     // Handle all non-playing, non-terminal screens
@@ -318,6 +329,30 @@ export function runSingle(opts: RunOptions): RunMetrics {
   const highestTierReached = Math.log2(Math.max(2, maxTile));
 
   const reward = calculateRunReward(state, anomalySurvivalRate);
+
+  // ── Lifecycle: run end ────────────────────────────────────────────────────
+  if (persister) {
+    try {
+      const runLog = buildRunLog({
+        rngSeed: state.rngSeed,
+        runSeed: seed,
+        protocol,
+        challengeId: state.challengeId,
+        isDailyRun: state.isDailyRun,
+        roundNumber: state.roundNumber,
+        screen: state.screen,
+        totalOutput: state.totalOutput,
+        phaseLogBuffer: state.phaseLogBuffer,
+        activeCatalysts: state.activeCatalysts,
+        signals: state.signals,
+        activePattern: state.activePattern,
+      });
+      persister.onRunEnd(runLog);
+    } catch (err) {
+      // Persistence errors must never break the benchmark run; log to stderr for diagnostics
+      process.stderr.write(`[persistRunLog] error: ${err instanceof Error ? err.message : String(err)}\n`);
+    }
+  }
 
   return {
     seed,

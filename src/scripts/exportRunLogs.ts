@@ -170,7 +170,7 @@ function deriveStepRecords(phases: PhaseLog[]): ExportStepRecord[] {
   return steps;
 }
 
-function toExportRunRecord(run: RunLog): ExportRunRecord {
+export function toExportRunRecord(run: RunLog): ExportRunRecord {
   const steps = deriveStepRecords(run.phases);
   return {
     runMetadata: {
