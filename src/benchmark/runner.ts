@@ -402,6 +402,8 @@ export interface BatchOptions {
   unlockedCatalysts?: CatalystId[];
   tuningOverrides?: BenchmarkTuningOverrides;
   onProgress?: (done: number, total: number) => void;
+  /** Optional persister for automatic run-log disk persistence. */
+  persister?: RunLogPersister;
 }
 
 export function runBatch(opts: BatchOptions): RunMetrics[] {
@@ -414,6 +416,7 @@ export function runBatch(opts: BatchOptions): RunMetrics[] {
       ascensionLevel:    opts.ascensionLevel,
       unlockedCatalysts: opts.unlockedCatalysts,
       tuningOverrides: opts.tuningOverrides,
+      persister: opts.persister,
     }));
     opts.onProgress?.(i + 1, opts.runCount);
   }

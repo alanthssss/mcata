@@ -7,6 +7,7 @@ import { runBatch } from './runner';
 import { AscensionLevel } from '../core/types';
 import { ALL_ASCENSION_LEVELS } from '../core/ascensionModifiers';
 import { BASE_UNLOCKED_CATALYSTS } from '../core/unlockConfig';
+import type { RunLogPersister } from '../scripts/persistRunLog';
 
 export interface SuiteDefinition {
   name:        string;
@@ -26,7 +27,8 @@ export interface SuiteResult {
 // ─── Run a suite ──────────────────────────────────────────────────────────────
 export function runSuite(
   suite: SuiteDefinition,
-  onProgress?: (agent: string, done: number, total: number) => void
+  onProgress?: (agent: string, done: number, total: number) => void,
+  persister?: RunLogPersister,
 ): SuiteResult {
   const agentResults: Record<string, RunMetrics[]> = {};
   const suiteMetrics: Record<string, SuiteMetrics> = {};
@@ -38,6 +40,7 @@ export function runSuite(
       runCount:  suite.runCount,
       seedStart: suite.seedStart,
       onProgress: (done, total) => onProgress?.(agent.name, done, total),
+      persister,
     });
     agentResults[agent.name] = runs;
     suiteMetrics[agent.name] = buildSuiteMetrics(runs);

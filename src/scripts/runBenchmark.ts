@@ -14,6 +14,7 @@ import { analyseResults } from '../benchmark/analysis';
 import { exportAll }   from '../benchmark/exporters';
 import { generateAllCharts } from '../benchmark/charts';
 import { applyTerminology } from '../i18n/terminology';
+import { createRunLogPersister } from './persistRunLog';
 
 const term = (text: string): string => applyTerminology('en', text);
 
@@ -34,12 +35,13 @@ console.log(`Agents: ${suite.agents.map(a => a.name).join(', ')}`);
 console.log(`Runs per agent: ${suite.runCount}\n`);
 
 const t0 = Date.now();
+const persister = createRunLogPersister();
 const result = runSuite(suite, (agent, done, total) => {
   if (done % 50 === 0 || done === total) {
     process.stdout.write(`\r    ${agent}: ${done}/${total}`);
     if (done === total) process.stdout.write('\n');
   }
-});
+}, persister);
 
 const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
 console.log(`\nCompleted in ${elapsed}s`);
