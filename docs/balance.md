@@ -180,6 +180,24 @@ Key exported fields for tuning:
 - `energyEarnedTotal`, `energySpentTotal`, `lateGameClearSpeed`
 - per-step triggers (combo/skill/surge) and raw board/action data for deep-dive analysis
 
+### Generating Analysis Reports
+
+Use `report:run` and `report:compare` for human-readable Markdown + HTML reports:
+
+```bash
+# Single-run health check
+npm run report:run -- artifacts/runlog_current.json report.md
+
+# Before-vs-after config comparison
+npm run report:compare -- artifacts/runlog_before.json artifacts/runlog_after.json comparison.md
+```
+
+The before-vs-after report answers:
+- Did phases become longer or shorter?
+- Did higher-tier merges become more common?
+- Did economy become tighter?
+- Did late-game speed-clears reduce?
+
 ---
 
 ## Balance Version History

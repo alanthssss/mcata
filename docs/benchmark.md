@@ -292,6 +292,23 @@ npm run runlog:analyze -- artifacts/runlog_before.json artifacts/runlog_after.js
 This prints per-file summary metrics and aligned run deltas (`finalOutputDelta`, `roundsReachedDelta`,
 `avgOutputPerMoveDelta`) to make balance regressions easier to spot.
 
+### Generating Human-Readable Reports
+
+Use `report:run` and `report:compare` to produce Markdown + HTML reports for local review:
+
+```bash
+# Single-run analysis report
+npm run report:run -- artifacts/my_run.json my_run_report.md
+
+# Before-vs-after comparison (2 bundles → diff report with config diff)
+npm run report:compare -- artifacts/before.json artifacts/after.json diff_report.md
+
+# Multi-run comparison table (3+ bundles)
+npm run report:compare -- artifacts/run_a.json artifacts/run_b.json artifacts/run_c.json summary.md
+```
+
+Reports include pacing health, economy balance, highest-tier trends, and actionable interpretation.
+
 ---
 
 ## How to Run
