@@ -589,8 +589,8 @@ async function main(): Promise<void> {
   }
 
   if (mode === 'run') {
-    const [rawInput, outputPath] = rest;
-    let inputPath = rawInput;
+    const outputPath = rest.find(a => a.endsWith('.md'));
+    let inputPath = rest.find(a => a.endsWith('.json'));
     if (!inputPath) {
       // Auto-detect the most recently written file in artifacts/runs/
       const runsDir = path.resolve('artifacts', 'runs');
