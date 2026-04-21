@@ -239,7 +239,7 @@ export function exportRunLogsAsJson(options: RunLogExportOptions = {}): string {
  * escape internal quotes by doubling them.
  */
 function csvEscape(value: string): string {
-  if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+  if (value.includes(',') || value.includes('"') || value.includes('\n') || value.includes('\r')) {
     return `"${value.replace(/"/g, '""')}"`;
   }
   return value;

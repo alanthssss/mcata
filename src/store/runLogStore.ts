@@ -228,7 +228,7 @@ export function getLatestRunLog(): RunLog | null {
 }
 
 export function getRecentRunLogs(count: number): RunLog[] {
-  if (!Number.isFinite(count) || count <= 0) return [];
+  if (!Number.isFinite(count) || count < 1) return [];
   return getRunLogs().slice(-Math.floor(count));
 }
 
