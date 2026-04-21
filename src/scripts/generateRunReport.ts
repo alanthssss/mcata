@@ -20,6 +20,20 @@ import {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
+// Pacing thresholds (benchmark target: 6–12 moves/stage per docs/benchmark.md)
+// Below LOW: build power outpacing targets (short-clear risk)
+// Above HIGH: targets too tight for the observed builds
+const LOW_MOVES_THRESHOLD = 5;
+const HIGH_MOVES_THRESHOLD = 15;
+
+// Tier threshold: meaningful board-development shift between before/after configs.
+// Tiles are powers of 2; a raw change of 16 corresponds to roughly one tier step
+// (e.g. 64 → 80, 128 → 144) and is a practical signal for regression detection.
+const TIER_SIGNIFICANT_CHANGE_THRESHOLD = 16;
+
+// Late-game clear speed: minimum change considered significant (in moves/stage units).
+const LATE_GAME_SPEED_SIGNIFICANCE_THRESHOLD = 0.5;
+
 function fmt(n: number, decimals = 1): string {
   return n.toFixed(decimals);
 }
@@ -371,11 +385,11 @@ export function generateMultiRunComparisonMarkdown(bundles: RunLogExportBundle[]
     ``,
   );
 
-  // Pacing thresholds: < 5 moves/stage → build power outpacing targets (benchmark target: 6–12);
-  // > 15 moves/stage → targets too tight for the builds observed.
-  if (avgMovesPerStage < 5) {
+  // Pacing thresholds: < LOW_MOVES_THRESHOLD → build power outpacing targets (benchmark target: 6–12);
+  // > HIGH_MOVES_THRESHOLD → targets too tight for the builds observed.
+  if (avgMovesPerStage < LOW_MOVES_THRESHOLD) {
     lines.push(`- ⚠️ Avg moves/stage is low (${fmt(avgMovesPerStage)}) — builds may be outpacing targets (short-clear risk).`);
-  } else if (avgMovesPerStage > 15) {
+  } else if (avgMovesPerStage > HIGH_MOVES_THRESHOLD) {
     lines.push(`- ⚠️ Avg moves/stage is high (${fmt(avgMovesPerStage)}) — targets may be too tight for these builds.`);
   } else {
     lines.push(`- ✅ Pacing looks healthy (avg ${fmt(avgMovesPerStage)} moves/stage).`);
@@ -399,7 +413,7 @@ export function generateMultiRunComparisonMarkdown(bundles: RunLogExportBundle[]
 
 /** Compute a simple percent-change string. */
 function pctChange(before: number, after: number): string {
-  if (before === 0) return after === 0 ? '0%' : '+∞%';
+  if (before === 0) return after === 0 ? '0%' : '+N/A%';
   const pct = ((after - before) / Math.abs(before)) * 100;
   return `${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%`;
 }
@@ -513,9 +527,9 @@ export function generateBeforeVsAfterMarkdown(
 
   // Tier threshold: 16 raw tile units ≈ one tier step (tiles are powers of 2; a change of 16
   // on the raw value corresponds to a meaningful board-development shift, e.g. 64→80 or 128→144).
-  if (tierChange > 16) {
+  if (tierChange > TIER_SIGNIFICANT_CHANGE_THRESHOLD) {
     lines.push(`- **Higher-tier merges became more common** (avg tile Δ+${fmt(tierChange, 0)}).`);
-  } else if (tierChange < -16) {
+  } else if (tierChange < -TIER_SIGNIFICANT_CHANGE_THRESHOLD) {
     lines.push(`- **Higher-tier merges became less common** (avg tile Δ${fmt(tierChange, 0)}).`);
   } else {
     lines.push(`- **Board tier development unchanged**.`);
@@ -530,9 +544,9 @@ export function generateBeforeVsAfterMarkdown(
   }
 
   const lateGameChange = aLateGame - bLateGame;
-  if (lateGameChange < -0.5) {
+  if (lateGameChange < -LATE_GAME_SPEED_SIGNIFICANCE_THRESHOLD) {
     lines.push(`- **Late-game speed-clears reduced** (clear speed Δ${fmt(lateGameChange)}) — late-game pressure increased.`);
-  } else if (lateGameChange > 0.5) {
+  } else if (lateGameChange > LATE_GAME_SPEED_SIGNIFICANCE_THRESHOLD) {
     lines.push(`- **Late-game became faster** (clear speed Δ+${fmt(lateGameChange)}) — possible overpowered late-game builds.`);
   } else {
     lines.push(`- **Late-game clear speed unchanged**.`);

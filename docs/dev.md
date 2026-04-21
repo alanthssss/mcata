@@ -327,7 +327,7 @@ Classification thresholds (see `src/scripts/metaHealthAnalysis.ts`):
 |---|---|
 | Dominant | pick rate ≥ 30% AND avg output ≥ 1.30× global average |
 | Dead | pick rate < 10% AND avg output < 0.80× global average |
-| Trap | pick rate ≥ ~8.5% AND avg output < 0.85× global average |
+| Trap | pick rate ≥ 10% AND avg output < 0.85× global average |
 | Niche | pick rate < 10% AND avg output ≥ global average |
 | Healthy | everything else |
 

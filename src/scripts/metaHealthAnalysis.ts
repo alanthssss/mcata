@@ -112,19 +112,27 @@ function avg(runs: ExportRunRecord[], fn: (r: ExportRunRecord) => number): numbe
 
 // ─── Classification thresholds ───────────────────────────────────────────────
 
-// Dominant: pick rate > 30% AND avg output > 1.3× global average.
+// Dominant: pick rate >= 30% AND avg output >= 1.30× global average.
 const DOMINANT_PICK_RATE_THRESHOLD = 0.30;
 const DOMINANT_PERFORMANCE_MULTIPLIER = 1.30;
 
-// Dead: pick rate < 10% AND avg output < 0.8× global average.
+// Dead: pick rate < 10% AND avg output < 0.80× global average.
 const DEAD_PICK_RATE_THRESHOLD = 0.10;
 const DEAD_PERFORMANCE_MULTIPLIER = 0.80;
 
-// Trap: pick rate >= 10% but avg output < 0.85× global average.
+// Trap: pick rate >= 10% AND avg output < 0.85× global average.
+// A trap build appears in runs often enough to matter but consistently underperforms.
+const TRAP_PICK_RATE_THRESHOLD = 0.10;
 const TRAP_PERFORMANCE_MULTIPLIER = 0.85;
 
 // Niche: pick rate < 10% but performance at or above global average.
 const NICHE_PICK_RATE_THRESHOLD = 0.10;
+
+// Suggestion helpers: move-count thresholds
+// < 5 moves/stage: trivial clears — build is clearing too quickly
+const TRIVIAL_CLEAR_MOVES_THRESHOLD = 5;
+// > 12 moves/stage: slow build — may exhaust steps before clearing
+const SLOW_BUILD_MOVES_THRESHOLD = 12;
 
 // ─── Meta-health classifier ───────────────────────────────────────────────────
 
@@ -168,7 +176,7 @@ export function classifyMetaHealth(
       };
     }
 
-    if (pickRate >= TRAP_PERFORMANCE_MULTIPLIER / 10 && perfRatio < TRAP_PERFORMANCE_MULTIPLIER) {
+    if (pickRate >= TRAP_PICK_RATE_THRESHOLD && perfRatio < TRAP_PERFORMANCE_MULTIPLIER) {
       return {
         stat,
         classification: 'trap',
@@ -236,7 +244,7 @@ export function classifyMetaHealth(
 
 function dominantSuggestion(label: string, stat: BuildStat): string {
   const suggestions: string[] = [];
-  if (stat.avgMovesPerStage < 5) {
+  if (stat.avgMovesPerStage < TRIVIAL_CLEAR_MOVES_THRESHOLD) {
     suggestions.push('Raise phase targets or reduce step budget to prevent trivial clears.');
   }
   suggestions.push(`Increase shop price for key boosts in the "${label}" build.`);
@@ -259,7 +267,7 @@ function deadSuggestion(label: string, stat: BuildStat): string {
 function trapSuggestion(label: string, stat: BuildStat): string {
   const suggestions: string[] = [];
   suggestions.push(`Buff core output for the "${label}" build (raise multiplier or reduce cost).`);
-  if (stat.avgMovesPerStage > 12) {
+  if (stat.avgMovesPerStage > SLOW_BUILD_MOVES_THRESHOLD) {
     suggestions.push('Reduce phase targets slightly so this slower build can clear without exhausting steps.');
   }
   suggestions.push('Add a tutorial hint or description update to help players understand how to use this build effectively.');
@@ -361,7 +369,7 @@ export function generateMetaHealthMarkdown(result: MetaHealthResult): string {
     }
   }
 
-  lines.push(`---`, ``, `*Classification thresholds: dominant ≥ ${pct(DOMINANT_PICK_RATE_THRESHOLD)} pick rate + ≥ ${DOMINANT_PERFORMANCE_MULTIPLIER}× global output; dead < ${pct(DEAD_PICK_RATE_THRESHOLD)} pick rate + < ${DEAD_PERFORMANCE_MULTIPLIER}× global output; trap ≥ some presence + < ${TRAP_PERFORMANCE_MULTIPLIER}× global output.*`);
+  lines.push(`---`, ``, `*Classification thresholds: dominant ≥ ${pct(DOMINANT_PICK_RATE_THRESHOLD)} pick rate + ≥ ${DOMINANT_PERFORMANCE_MULTIPLIER}× global output; dead < ${pct(DEAD_PICK_RATE_THRESHOLD)} pick rate + < ${DEAD_PERFORMANCE_MULTIPLIER}× global output; trap ≥ ${pct(TRAP_PICK_RATE_THRESHOLD)} pick rate + < ${TRAP_PERFORMANCE_MULTIPLIER}× global output.*`);
 
   return lines.join('\n');
 }
