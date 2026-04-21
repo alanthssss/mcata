@@ -234,6 +234,11 @@ export function exportRunLogsAsJson(options: RunLogExportOptions = {}): string {
   return JSON.stringify(createRunLogExportBundle(options), null, 2);
 }
 
+/** Parse a JSON string produced by exportRunLogsAsJson back into a RunLogExportBundle. */
+export function parseRunLogExportJson(json: string): RunLogExportBundle {
+  return JSON.parse(json) as RunLogExportBundle;
+}
+
 /**
  * RFC4180-style CSV escaping: quote fields containing comma/quote/newline and
  * escape internal quotes by doubling them.
