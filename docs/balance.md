@@ -180,6 +180,47 @@ Key exported fields for tuning:
 - `energyEarnedTotal`, `energySpentTotal`, `lateGameClearSpeed`
 - per-step triggers (combo/skill/surge) and raw board/action data for deep-dive analysis
 
+### Generating Analysis Reports
+
+Use `report:run` and `report:compare` for human-readable Markdown + HTML reports:
+
+```bash
+# Single-run health check
+npm run report:run -- artifacts/runlog_current.json report.md
+
+# Before-vs-after config comparison
+npm run report:compare -- artifacts/runlog_before.json artifacts/runlog_after.json comparison.md
+```
+
+The before-vs-after report answers:
+- Did phases become longer or shorter?
+- Did higher-tier merges become more common?
+- Did economy become tighter?
+- Did late-game speed-clears reduce?
+
+### Meta-Health Analysis
+
+Identify dominant, dead, and trap build identities across a set of exported run logs:
+
+```bash
+npm run report:meta -- artifacts/runlog_all.json artifacts/meta_health.md
+```
+
+**Build classifications:**
+
+| Class | Definition |
+|---|---|
+| 🔴 Dominant | High pick rate (≥ 30%) + significantly above-average output (≥ 1.30×). Nerf candidates. |
+| 🟢 Healthy | Moderate presence and competitive performance. No action needed. |
+| 🔵 Niche | Low pick rate but adequate performance. May need discoverability help. |
+| ⚫ Dead | Low pick rate (< 10%) + below-average output (< 0.80×). Buff candidates. |
+| 🟡 Trap | Present in runs but consistently underperforms (< 0.85× global). Misleading to players. |
+
+**Actionable suggestions are included per build:**
+- Dominant: raise shop price, reduce rarity weight or multiplier, add counter-mechanic
+- Dead: lower shop price, buff combo/synergy payoff, improve availability
+- Trap: buff core output, reduce phase targets for this build style, add hint text
+
 ---
 
 ## Balance Version History

@@ -292,6 +292,37 @@ npm run runlog:analyze -- artifacts/runlog_before.json artifacts/runlog_after.js
 This prints per-file summary metrics and aligned run deltas (`finalOutputDelta`, `roundsReachedDelta`,
 `avgOutputPerMoveDelta`) to make balance regressions easier to spot.
 
+### Generating Human-Readable Reports
+
+Use `report:run` and `report:compare` to produce Markdown + HTML reports for local review:
+
+```bash
+# Single-run analysis report
+npm run report:run -- artifacts/my_run.json my_run_report.md
+
+# Before-vs-after comparison (2 bundles → diff report with config diff)
+npm run report:compare -- artifacts/before.json artifacts/after.json diff_report.md
+
+# Multi-run comparison table (3+ bundles)
+npm run report:compare -- artifacts/run_a.json artifacts/run_b.json artifacts/run_c.json summary.md
+```
+
+Reports include pacing health, economy balance, highest-tier trends, and actionable interpretation.
+
+### Meta-Health Detection
+
+After collecting runs from real gameplay or benchmark export, run the meta-health analyzer to detect build ecosystem issues:
+
+```bash
+# Analyze build ecosystem health from exported run logs
+npm run report:meta -- artifacts/my_run.json artifacts/meta_health.md
+
+# Combine multiple export bundles for a more representative sample
+npm run report:meta -- artifacts/run_a.json artifacts/run_b.json artifacts/meta_health.md
+```
+
+The meta-health report classifies builds as dominant / healthy / niche / dead / trap and provides concrete tuning suggestions (price, rarity, multiplier adjustments) for each non-healthy category.
+
 ---
 
 ## How to Run

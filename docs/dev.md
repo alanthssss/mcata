@@ -213,6 +213,9 @@ npm test               # run all unit tests (vitest)
 npm run benchmark      # run baseline benchmark suite
 npm run balance        # run balance + pacing + round-stress suites, generate report
 npm run balance:tune   # run heuristic-driven auto-tuning loop + tuning artifacts
+npm run report:run -- artifacts/run.json [out.md]      # single-run Markdown + HTML report
+npm run report:compare -- artifacts/before.json artifacts/after.json [out.md]  # comparison report
+npm run report:meta -- artifacts/run.json [out.md]     # meta-health build ecosystem report
 npm run docs:assets    # generate Mermaid diagram SVGs
 ```
 
@@ -268,6 +271,65 @@ npm run runlog:analyze -- artifacts/run_before.json artifacts/run_after.json
 ```
 
 The utility parses exported bundles, prints summaries, and compares aligned run records.
+
+### Local Analysis Reports
+
+Generate human-readable Markdown + HTML reports from exported run-log bundles:
+
+```bash
+# Single-run report (prints to stdout)
+npm run report:run -- artifacts/my_run.json
+
+# Single-run report written to file (also produces my_report.html)
+npm run report:run -- artifacts/my_run.json artifacts/my_report.md
+
+# Before-vs-after comparison (two bundles → before-vs-after diff)
+npm run report:compare -- artifacts/before.json artifacts/after.json
+
+# Multi-run comparison (three or more bundles → summary table)
+npm run report:compare -- artifacts/run_a.json artifacts/run_b.json artifacts/run_c.json out.md
+```
+
+Each report covers:
+- **Run Overview** — runId, seed, outcome, rounds/stages, highest tier, build identity
+- **Build Summary** — active boosts/combos/skills, style, rule
+- **Pacing Summary** — avg moves per stage, quick-clear phases, longest phase
+- **Economy Summary** — energy earned/spent/balance, shop affordability
+- **Key Moments** — highest-output move, strongest combo, turning point, failure point
+- **End-of-Run Diagnosis** — what likely helped / limited the run most
+
+Comparison reports additionally include:
+- Side-by-side metric diff table with % changes
+- Config diff (when bundle config snapshots differ)
+- Automated pacing, economy, and tier-growth interpretation
+
+### Meta-Health Detection
+
+Detect dominant, dead, trap, niche, and healthy build identities across a collection of runs:
+
+```bash
+# Meta-health report (prints to stdout)
+npm run report:meta -- artifacts/my_run.json
+
+# Meta-health report from multiple bundles, written to file (+ .html)
+npm run report:meta -- artifacts/run_a.json artifacts/run_b.json artifacts/meta.md
+```
+
+The meta-health report:
+- Aggregates stats per build identity (pick rate, avg output, rounds cleared, tier, moves/stage, energy)
+- Classifies each build as **dominant** 🔴, **healthy** 🟢, **niche** 🔵, **dead** ⚫, or **trap** 🟡
+- Raises ecosystem-level flags (dominant centralisation, many dead builds, trap choices)
+- Provides actionable suggestions (price/rarity/multiplier adjustments) for each non-healthy build
+
+Classification thresholds (see `src/scripts/metaHealthAnalysis.ts`):
+
+| Class | Condition |
+|---|---|
+| Dominant | pick rate ≥ 30% AND avg output ≥ 1.30× global average |
+| Dead | pick rate < 10% AND avg output < 0.80× global average |
+| Trap | pick rate ≥ 10% AND avg output < 0.85× global average |
+| Niche | pick rate < 10% AND avg output ≥ global average |
+| Healthy | everything else |
 
 ---
 
