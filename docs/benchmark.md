@@ -272,6 +272,28 @@ flowchart TD
 
 ---
 
+## Using Run Log Exports in Benchmark/Tuning Workflow
+
+Gameplay exports now use structured bundle schema `run-log-export.v1` and can be fed into
+manual or scripted review loops:
+
+- End Screen export (`JSON`/`CSV`) for current run
+- Debug Start Screen export (`?debug=export_logs`) for all local runs + summary CSV
+
+Bundle contents include schema/config version, run metadata, build snapshot, step-level records,
+derived pacing/energy metrics, replay actions, and resolved config snapshot.
+
+Use the helper script for quick summaries and before-vs-after comparisons:
+
+```bash
+npm run runlog:analyze -- artifacts/runlog_before.json artifacts/runlog_after.json
+```
+
+This prints per-file summary metrics and aligned run deltas (`finalOutputDelta`, `roundsReachedDelta`,
+`avgOutputPerMoveDelta`) to make balance regressions easier to spot.
+
+---
+
 ## How to Run
 
 ```bash

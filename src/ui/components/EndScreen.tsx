@@ -2,7 +2,7 @@ import React from 'react';
 import { useT } from '../../i18n';
 import { formatScore } from '../scoreDisplay';
 import { LocaleSwitcher } from './LocaleSwitcher';
-import { isDebugExportLogs } from '../../store/runLogStore';
+import { hasRunLogs } from '../../store/runLogStore';
 import { downloadRunLogs, downloadRunLogsCsv } from '../../scripts/exportRunLogs';
 
 interface EndScreenProps {
@@ -11,9 +11,29 @@ interface EndScreenProps {
   onRestart: () => void;
 }
 
+export function createEndScreenRunLogExportControls(canExport: boolean): {
+  disabled: boolean;
+  exportJson: () => void;
+  exportCsv: () => void;
+} {
+  return {
+    disabled: !canExport,
+    exportJson: () => {
+      if (!canExport) return;
+      downloadRunLogs(undefined, { scope: 'current' });
+    },
+    exportCsv: () => {
+      if (!canExport) return;
+      downloadRunLogsCsv(undefined, { scope: 'current' });
+    },
+  };
+}
+
 export const EndScreen: React.FC<EndScreenProps> = ({ isVictory, totalOutput, onRestart }) => {
   const t = useT();
-  const showExport = isDebugExportLogs();
+  const canExport = hasRunLogs();
+  const controls = createEndScreenRunLogExportControls(canExport);
+  const exportTitle = canExport ? t('ui.export_run_tooltip') : t('ui.export_run_disabled');
 
   return (
     <div className="screen end-screen">
@@ -31,16 +51,24 @@ export const EndScreen: React.FC<EndScreenProps> = ({ isVictory, totalOutput, on
         </div>
       </div>
       <button className="start-btn" onClick={onRestart}>{t('ui.new_run')}</button>
-      {showExport && (
-        <div className="debug-export-row">
-          <button className="debug-export-btn" onClick={() => downloadRunLogs()}>
-            ⬇ Export Logs (JSON)
+      <div className="debug-export-row">
+          <button
+            className="debug-export-btn"
+            title={exportTitle}
+            disabled={controls.disabled}
+            onClick={controls.exportJson}
+          >
+            {t('ui.export_run_json')}
           </button>
-          <button className="debug-export-btn" onClick={() => downloadRunLogsCsv()}>
-            ⬇ Export Logs (CSV)
+          <button
+            className="debug-export-btn"
+            title={exportTitle}
+            disabled={controls.disabled}
+            onClick={controls.exportCsv}
+          >
+            {t('ui.export_run_csv')}
           </button>
-        </div>
-      )}
+      </div>
     </div>
   );
 };

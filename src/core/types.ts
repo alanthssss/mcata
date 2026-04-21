@@ -291,8 +291,17 @@ export interface ReactionLogEntry {
   signalEffect: LocalizedText | null;
 }
 
-/** A slimmed-down reaction entry used for run-log persistence (grid snapshots omitted). */
-export type SlimReactionEntry = Omit<ReactionLogEntry, 'gridBefore' | 'gridAfter'>;
+/** Compact 4x4 board snapshot for run-log persistence and export. */
+export type BoardSnapshot = Array<Array<number | null>>;
+
+/** A structured per-move record used for run-log persistence and export. */
+export interface SlimReactionEntry extends Omit<ReactionLogEntry, 'gridBefore' | 'gridAfter' | 'step'> {
+  stepNumber: number;
+  boardBefore: BoardSnapshot;
+  boardAfter: BoardSnapshot;
+  energyBefore: number;
+  energyAfter: number;
+}
 
 /** Per-phase snapshot accumulated during a run for run-log persistence. */
 export interface PhaseLog {
@@ -417,4 +426,8 @@ export interface GameState {
   currentPhaseEntries: SlimReactionEntry[];
   /** Completed-phase snapshots accumulated during this run, persisted at run end. */
   phaseLogBuffer: PhaseLog[];
+  /** Original run seed for reproducibility exports. */
+  runSeed?: number;
+  /** Run start timestamp (unix ms). */
+  runStartedAt?: number;
 }

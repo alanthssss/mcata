@@ -101,6 +101,13 @@ const en: TranslationMap = {
   'ui.total_output': 'Total Output',
   'ui.new_round': 'New Round',
   'ui.new_run': 'New Run',
+  'ui.export_run_json': '⬇ Export Run Log (JSON)',
+  'ui.export_run_csv': '⬇ Export Run Log (CSV)',
+  'ui.export_all_runs_json': '⬇ Export All Run Logs (JSON)',
+  'ui.export_all_runs_csv': '⬇ Export All Run Logs (CSV)',
+  'ui.export_all_runs_summary_csv': '⬇ Export Run Summary (CSV)',
+  'ui.export_run_tooltip': 'Export structured run logs for analysis, balancing, and debugging.',
+  'ui.export_run_disabled': 'No run log data available yet.',
 
   // ─── UI: Forge ─────────────────────────────────────────────────────────────
   'ui.forge_title': '⚗ Forge',

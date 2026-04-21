@@ -238,8 +238,36 @@ Auto-tuning loop:
 | Tool | How to Activate |
 |---|---|
 | Unlock all catalysts | Add `?debug=unlock_all` to URL |
+| Export current run logs | End Screen → `Export Run Log (JSON/CSV)` |
+| Export all local run logs | Add `?debug=export_logs` on Start Screen |
 | Run benchmark in CI | `npx tsx src/scripts/runBenchmark.ts --suite smoke` |
 | Meta benchmark | `npm run benchmark:meta` |
+
+---
+
+## Structured Run Log Export
+
+Run logs are persisted in localStorage (`mcata_run_logs`) with schema version `2.0.0`.
+Exports use bundle schema `run-log-export.v1` and include:
+
+- run metadata (`runId`, seed, timestamps, rounds/stages reached, final output, highest tier)
+- build snapshot (active boosts/combos/skills/style/rule + build label)
+- per-step records (action, board before/after, score breakdown, triggered effects, energy before/after)
+- derived analysis fields (avg output per move, avg moves per stage, energy earned/spent, late-game clear speed)
+- config snapshot (`GAME_CONFIG` + balance version) for reproducibility/tuning
+
+Export entry points:
+- End Screen: player-facing `Export Run Log (JSON)` / `Export Run Log (CSV)` for current run
+- Start Screen with `?debug=export_logs`: developer-facing all-runs JSON/CSV + run-summary CSV
+
+Analysis utility:
+
+```bash
+npm run runlog:analyze -- artifacts/run_a.json
+npm run runlog:analyze -- artifacts/run_before.json artifacts/run_after.json
+```
+
+The utility parses exported bundles, prints summaries, and compares aligned run records.
 
 ---
 
