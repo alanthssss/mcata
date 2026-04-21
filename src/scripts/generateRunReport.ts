@@ -371,7 +371,8 @@ export function generateMultiRunComparisonMarkdown(bundles: RunLogExportBundle[]
     ``,
   );
 
-  // Pacing interpretation
+  // Pacing thresholds: < 5 moves/stage → build power outpacing targets (benchmark target: 6–12);
+  // > 15 moves/stage → targets too tight for the builds observed.
   if (avgMovesPerStage < 5) {
     lines.push(`- ⚠️ Avg moves/stage is low (${fmt(avgMovesPerStage)}) — builds may be outpacing targets (short-clear risk).`);
   } else if (avgMovesPerStage > 15) {
@@ -467,8 +468,7 @@ export function generateBeforeVsAfterMarkdown(
   const lines: string[] = [
     `# Before-vs-After Config Comparison`,
     ``,
-    `> Generated at ${fmtDate(Date.now())}`,
-    `> Before: ${beforeBundle.configVersion} (${beforeRuns.length} run(s)) · After: ${afterBundle.configVersion} (${afterRuns.length} run(s))`,
+    `> Generated at ${fmtDate(Date.now())} · Before: ${beforeBundle.configVersion} (${beforeRuns.length} run(s)) · After: ${afterBundle.configVersion} (${afterRuns.length} run(s))`,
     ``,
     `---`,
     ``,
@@ -511,6 +511,8 @@ export function generateBeforeVsAfterMarkdown(
     lines.push(`- **Pacing unchanged** (moves/stage Δ${fmt(movesChange)}).`);
   }
 
+  // Tier threshold: 16 raw tile units ≈ one tier step (tiles are powers of 2; a change of 16
+  // on the raw value corresponds to a meaningful board-development shift, e.g. 64→80 or 128→144).
   if (tierChange > 16) {
     lines.push(`- **Higher-tier merges became more common** (avg tile Δ+${fmt(tierChange, 0)}).`);
   } else if (tierChange < -16) {
