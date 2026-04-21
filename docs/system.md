@@ -229,6 +229,22 @@ Gameplay/system cards use a unified compact-first presentation:
 
 ---
 
+## Structured Run Log Export
+
+Run completion writes structured telemetry to localStorage (`mcata_run_logs`).
+Each run log includes:
+
+- versioned run metadata (runId, seed, start/end time, rounds/stages reached, final output)
+- build snapshot (Boosts, Combos, Skills, Style, Rule)
+- per-stage + per-step records (board before/after, action, score breakdown, triggers, energy deltas)
+- replay actions and derived analysis metrics
+
+Exports are available from End Screen (current run JSON/CSV) and debug Start Screen
+(`?debug=export_logs`, all-runs bundle/CSV summary). Export bundles include a config
+snapshot (`GAME_CONFIG`) and config version for reproducibility.
+
+---
+
 ## 7. Unlock System
 
 Player progress is persisted via `useProfileStore` in

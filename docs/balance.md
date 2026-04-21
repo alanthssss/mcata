@@ -163,6 +163,25 @@ Additional tuning-loop targets (see `src/benchmark/tuning.ts`):
 
 ---
 
+## Run Log Export in Balance Reviews
+
+Use structured run log exports to complement benchmark suites with real gameplay traces:
+
+- Export current run JSON/CSV from End Screen
+- Export all local run bundles from Start Screen in `?debug=export_logs`
+- Compare before/after exported bundles with:
+
+```bash
+npm run runlog:analyze -- artifacts/runlog_before.json artifacts/runlog_after.json
+```
+
+Key exported fields for tuning:
+- `avgOutputPerMove`, `avgMovesPerStage`, `roundsCleared`, `highestTierReached`
+- `energyEarnedTotal`, `energySpentTotal`, `lateGameClearSpeed`
+- per-step triggers (combo/skill/surge) and raw board/action data for deep-dive analysis
+
+---
+
 ## Balance Version History
 
 | Version | Key Changes |

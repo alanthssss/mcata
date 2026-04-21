@@ -271,6 +271,24 @@ artifacts/benchmark/latest/
 - [docs/balance.md](docs/balance.md)
 - [docs/ai.md](docs/ai.md)
 
+## Run Log Export (JSON / CSV)
+
+- End Screen includes one-click export for the current run:
+  - `Export Run Log (JSON)`
+  - `Export Run Log (CSV)`
+- Add `?debug=export_logs` to enable developer exports on Start Screen:
+  - all local runs bundle JSON
+  - step-level CSV
+  - run-summary CSV
+
+For analysis/compare workflows:
+
+```bash
+npm run runlog:analyze -- path/to/runlog_a.json path/to/runlog_b.json
+```
+
+The analyzer prints summary metrics and before-vs-after deltas for fast tuning/debug checks.
+
 ## Numeric Tuning Config
 
 - Source of truth: `config/game.yaml`

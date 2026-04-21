@@ -101,6 +101,13 @@ const zhCN: TranslationMap = {
   'ui.total_output': '总产出',
   'ui.new_round': '新的一轮',
   'ui.new_run': '新的一局',
+  'ui.export_run_json': '⬇ 导出本局日志（JSON）',
+  'ui.export_run_csv': '⬇ 导出本局日志（CSV）',
+  'ui.export_all_runs_json': '⬇ 导出全部日志（JSON）',
+  'ui.export_all_runs_csv': '⬇ 导出全部日志（CSV）',
+  'ui.export_all_runs_summary_csv': '⬇ 导出局摘要（CSV）',
+  'ui.export_run_tooltip': '导出结构化运行日志，用于分析、平衡调优与调试复现。',
+  'ui.export_run_disabled': '暂无可导出的运行日志。',
 
   // ─── UI: Forge ─────────────────────────────────────────────────────────────
   'ui.forge_title': '⚗ 熔炉',

@@ -43,11 +43,21 @@ const SECOND_MERGE_FEEDBACK_MULTIPLIER = 1.1;
 // board reseeding deterministic without colliding with existing RNG branches.
 const ONBOARDING_SEED_OFFSET = 600;
 
-/** Strip grid snapshots from a log entry to produce a slim, persistable version. */
-function toSlimEntry(entry: ReactionLogEntry): SlimReactionEntry {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { gridBefore: _gb, gridAfter: _ga, ...slim } = entry;
-  return slim;
+function toBoardSnapshot(grid: Grid): Array<Array<number | null>> {
+  return grid.map(row => row.map(cell => cell?.value ?? null));
+}
+
+/** Build a persistable step record with plain board snapshots and no unstable refs. */
+function toSlimEntry(entry: ReactionLogEntry, energyBefore: number, energyAfter: number): SlimReactionEntry {
+  const { step, gridBefore, gridAfter, ...rest } = entry;
+  return {
+    ...rest,
+    stepNumber: step,
+    boardBefore: toBoardSnapshot(gridBefore),
+    boardAfter: toBoardSnapshot(gridAfter),
+    energyBefore,
+    energyAfter,
+  };
 }
 
 /** Build a PhaseLog snapshot from the current engine state. */
@@ -107,6 +117,7 @@ export function createInitialState(
   const startingEnergy = Math.floor(STARTING_ENERGY * ascMod.startingEnergyFactor);
   // At run start there are no active catalysts and no multiplier yet — factor = 1.0
   const initialPhaseTargetOutput = Math.ceil(phase.targetOutput * ascMod.targetOutputScale);
+  const runStartedAt = Date.now();
 
   return {
     screen: 'start',
@@ -164,6 +175,8 @@ export function createInitialState(
     phaseTargetOutput: initialPhaseTargetOutput,
     currentPhaseEntries: [],
     phaseLogBuffer: [],
+    runSeed: seed,
+    runStartedAt,
   };
 }
 
@@ -480,6 +493,7 @@ export function processMoveAction(state: GameState, dir: Direction): GameState {
 
   const newLog = [logEntry, ...state.reactionLog].slice(0, MAX_LOG);
 
+  const nextEnergy = state.energy + energyGain + streakEnergyBonus + jackpotEnergyBonus;
   let newState: GameState = {
     ...state,
     grid: newGrid,
@@ -490,7 +504,7 @@ export function processMoveAction(state: GameState, dir: Direction): GameState {
     collapseFieldCounter: newCollapseCounter,
     entropyBlockedCell,
     reactionLog: newLog,
-    currentPhaseEntries: [...state.currentPhaseEntries, toSlimEntry(logEntry)],
+    currentPhaseEntries: [...state.currentPhaseEntries, toSlimEntry(logEntry, state.energy, nextEnergy)],
     tileIdCounter: newIdCounter,
     rngSeed: state.rngSeed + 1,
     consecutiveValidMoves: newConsecutiveValidMoves,
@@ -498,7 +512,7 @@ export function processMoveAction(state: GameState, dir: Direction): GameState {
     stabilityCount: newStabilityCount,
     delayedSpawnCount: newDelayedSpawnCount,
     echoOutputLast: finalOutputWithBonuses,
-    energy: state.energy + energyGain + streakEnergyBonus + jackpotEnergyBonus,
+    energy: nextEnergy,
     pendingSignal: null,
     signals: usedSignal
       ? state.signals.filter(s => s !== usedSignal)

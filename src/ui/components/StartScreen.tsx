@@ -4,8 +4,8 @@ import { ALL_PROTOCOLS, DEFAULT_PROTOCOL } from '../../core/protocols';
 import { useT } from '../../i18n';
 import { CompactDetail } from './CompactDetail';
 import { LocaleSwitcher } from './LocaleSwitcher';
-import { isDebugExportLogs } from '../../store/runLogStore';
-import { downloadRunLogs, downloadRunLogsCsv } from '../../scripts/exportRunLogs';
+import { hasRunLogs, isDebugExportLogs } from '../../store/runLogStore';
+import { downloadRunLogs, downloadRunLogsCsv, downloadRunSummaryCsv } from '../../scripts/exportRunLogs';
 
 interface StartScreenProps {
   onStart: (protocol: ProtocolId) => void;
@@ -15,6 +15,7 @@ export const StartScreen: React.FC<StartScreenProps> = ({ onStart }) => {
   const t = useT();
   const [selectedProtocol, setSelectedProtocol] = useState<ProtocolId>(DEFAULT_PROTOCOL);
   const showExport = isDebugExportLogs();
+  const canExport = hasRunLogs();
 
   return (
     <div className="screen start-screen">
@@ -51,11 +52,29 @@ export const StartScreen: React.FC<StartScreenProps> = ({ onStart }) => {
 
       {showExport && (
         <div className="debug-export-row">
-          <button className="debug-export-btn" onClick={() => downloadRunLogs()}>
-            ⬇ Export All Logs (JSON)
+          <button
+            className="debug-export-btn"
+            title={canExport ? t('ui.export_run_tooltip') : t('ui.export_run_disabled')}
+            disabled={!canExport}
+            onClick={() => downloadRunLogs('mcata_run_logs_bundle.json', { scope: 'all' })}
+          >
+            {t('ui.export_all_runs_json')}
           </button>
-          <button className="debug-export-btn" onClick={() => downloadRunLogsCsv()}>
-            ⬇ Export All Logs (CSV)
+          <button
+            className="debug-export-btn"
+            title={canExport ? t('ui.export_run_tooltip') : t('ui.export_run_disabled')}
+            disabled={!canExport}
+            onClick={() => downloadRunLogsCsv('mcata_run_logs_steps.csv', { scope: 'all' })}
+          >
+            {t('ui.export_all_runs_csv')}
+          </button>
+          <button
+            className="debug-export-btn"
+            title={canExport ? t('ui.export_run_tooltip') : t('ui.export_run_disabled')}
+            disabled={!canExport}
+            onClick={() => downloadRunSummaryCsv('mcata_run_logs_summary.csv', { scope: 'all' })}
+          >
+            {t('ui.export_all_runs_summary_csv')}
           </button>
         </div>
       )}

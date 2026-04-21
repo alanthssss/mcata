@@ -14,6 +14,7 @@
     "benchmark:meta": "npm run sync:config && tsx src/scripts/runMetaBenchmark.ts",
     "balance": "npm run sync:config && tsx src/scripts/runBalanceCheck.ts",
     "balance:tune": "npm run sync:config && tsx src/scripts/runAutoTuneBalance.ts",
+    "runlog:analyze": "npm run sync:config && tsx src/scripts/analyzeRunLogExports.ts",
     "docs:assets": "tsx src/scripts/generateDocsAssets.ts"
   },
   "dependencies": {
