@@ -34,6 +34,7 @@ export interface ExportStepRecord {
     base: number;
     multipliers: SlimReactionEntry['multipliers'];
     finalOutput: number;
+    momentumMultiplier: number;
   };
   triggeredEffects: {
     catalysts: SlimReactionEntry['triggeredCatalysts'];
@@ -144,6 +145,7 @@ function deriveStepRecords(phases: PhaseLog[]): ExportStepRecord[] {
           base: entry.base,
           multipliers: entry.multipliers,
           finalOutput: entry.finalOutput,
+          momentumMultiplier: entry.momentumMultiplier,
         },
         triggeredEffects: {
           catalysts: entry.triggeredCatalysts,
@@ -232,6 +234,10 @@ export function exportRunLogsAsJson(options: RunLogExportOptions = {}): string {
   return JSON.stringify(createRunLogExportBundle(options), null, 2);
 }
 
+/**
+ * RFC4180-style CSV escaping: quote fields containing comma/quote/newline and
+ * escape internal quotes by doubling them.
+ */
 function csvEscape(value: string): string {
   if (value.includes(',') || value.includes('"') || value.includes('\n')) {
     return `"${value.replace(/"/g, '""')}"`;
@@ -321,7 +327,7 @@ export function exportRunLogsAsCsv(options: RunLogExportOptions = {}): string {
         `${step.scoreBreakdown.base}`,
         `${step.scoreBreakdown.finalOutput}`,
         `${step.triggeredEffects.synergies.length > 0 ? 1 : 0}`,
-        `${step.scoreBreakdown.multipliers.find(mult => mult.name.toLowerCase().includes('momentum'))?.value ?? 1}`,
+        `${step.scoreBreakdown.momentumMultiplier}`,
         step.triggeredEffects.signal ?? '',
         step.derived.comboTriggered ? '1' : '0',
         step.derived.skillTriggered ? '1' : '0',

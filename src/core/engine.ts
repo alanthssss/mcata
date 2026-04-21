@@ -43,6 +43,7 @@ const SECOND_MERGE_FEEDBACK_MULTIPLIER = 1.1;
 // board reseeding deterministic without colliding with existing RNG branches.
 const ONBOARDING_SEED_OFFSET = 600;
 
+/** Convert rich grid tile objects into a plain serializable 4x4 value snapshot. */
 function toBoardSnapshot(grid: Grid): Array<Array<number | null>> {
   return grid.map(row => row.map(cell => cell?.value ?? null));
 }

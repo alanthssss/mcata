@@ -1,5 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { RUN_LOG_EXPORT_SCHEMA_VERSION, type ExportRunRecord, type RunLogExportBundle } from './exportRunLogs';
 
 export interface RunLogBundleSummary {
@@ -108,6 +109,6 @@ async function main(): Promise<void> {
   console.log(JSON.stringify({ comparisonCount: comparisons.length, comparisons }, null, 2));
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   void main();
 }

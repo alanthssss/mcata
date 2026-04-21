@@ -20,6 +20,7 @@ import type { ChallengeId } from '../core/challenges';
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export const RUN_LOG_SCHEMA_VERSION = '2.0.0';
+const STAGES_PER_ROUND = 6;
 
 export interface RunBuildSnapshot {
   activeBoosts: CatalystId[];
@@ -85,11 +86,23 @@ function inferHighestTier(entries: SlimReactionEntry[]): number {
   return highest;
 }
 
+/**
+ * Provide a stable analysis label when explicit build-identity output is absent.
+ * Priority is active style (most specific), then combo presence, then mixed boosts.
+ */
 function deriveBuildIdentityLabel(build: RunBuildSnapshot): string | null {
   if (build.activeStyle) return build.activeStyle;
   if (build.activeCombos.length > 0) return 'combo';
   if (build.activeBoosts.length > 0) return 'mixed';
   return null;
+}
+
+function ensureBuildIdentityLabel(build: RunBuildSnapshot): RunBuildSnapshot {
+  if (build.buildIdentityLabel) return build;
+  return {
+    ...build,
+    buildIdentityLabel: deriveBuildIdentityLabel(build),
+  };
 }
 
 function normaliseRunLog(raw: unknown): RunLog | null {
@@ -124,7 +137,7 @@ function normaliseRunLog(raw: unknown): RunLog | null {
   const roundClearsByPhases = phases.filter(p => p.cleared).length;
   const roundsCleared = typeof source.roundsCleared === 'number'
     ? source.roundsCleared
-    : Math.floor(roundClearsByPhases / 6);
+    : Math.floor(roundClearsByPhases / STAGES_PER_ROUND);
 
   const lastPhase = phases.length > 0 ? phases[phases.length - 1] : undefined;
   const activeBoosts = source.buildSnapshot?.activeBoosts ?? (lastPhase?.activeCatalysts ?? []);
@@ -145,9 +158,7 @@ function normaliseRunLog(raw: unknown): RunLog | null {
     skillsCount: source.buildSnapshot?.skillsCount ?? equippedSkills.length,
   };
 
-  if (!buildSnapshot.buildIdentityLabel) {
-    buildSnapshot.buildIdentityLabel = deriveBuildIdentityLabel(buildSnapshot);
-  }
+  const labeledBuildSnapshot = ensureBuildIdentityLabel(buildSnapshot);
 
   let energyEarnedTotal = 0;
   let energySpentTotal = 0;
@@ -186,7 +197,7 @@ function normaliseRunLog(raw: unknown): RunLog | null {
       : (lateGameCleared.length > 0
         ? lateGameCleared.reduce((sum, phase) => sum + phase.stepsUsed, 0) / lateGameCleared.length
         : 0),
-    buildSnapshot,
+    buildSnapshot: labeledBuildSnapshot,
     replayActions: Array.isArray(source.replayActions) ? source.replayActions : entries.map(entry => entry.action),
     phases,
     timestamp: source.timestamp ?? endedAt,
@@ -288,7 +299,7 @@ export function buildRunLog(
   const endedAt = Date.now();
   const runId = `${endedAt}-${Math.random().toString(36).slice(2, 7)}`;
   const entries = state.phaseLogBuffer.flatMap(phase => phase.entries);
-  const roundsCleared = Math.floor(state.phaseLogBuffer.filter(phase => phase.cleared).length / 6);
+  const roundsCleared = Math.floor(state.phaseLogBuffer.filter(phase => phase.cleared).length / STAGES_PER_ROUND);
   const lateGameCleared = state.phaseLogBuffer.filter(phase => phase.cleared && phase.round >= 4);
 
   let energyEarnedTotal = 0;
@@ -299,7 +310,7 @@ export function buildRunLog(
     if (diff < 0) energySpentTotal += Math.abs(diff);
   }
 
-  const buildSnapshot: RunBuildSnapshot = {
+  const buildSnapshot = ensureBuildIdentityLabel({
     activeBoosts: [...state.activeCatalysts],
     activeCombos: getActiveSynergies(state.activeCatalysts),
     equippedSkills: [...state.signals],
@@ -309,8 +320,7 @@ export function buildRunLog(
     boostsCount: state.activeCatalysts.length,
     combosCount: getActiveSynergies(state.activeCatalysts).length,
     skillsCount: state.signals.length,
-  };
-  buildSnapshot.buildIdentityLabel = deriveBuildIdentityLabel(buildSnapshot);
+  });
 
   const run: RunLog = {
     schemaVersion: RUN_LOG_SCHEMA_VERSION,
