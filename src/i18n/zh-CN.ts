@@ -416,6 +416,12 @@ const zhCN: TranslationMap = {
 
   // ─── UI: 无限模式 / Infinite Mode ─────────────────────────────────────────
   'ui.infinite_mode': '无限模式',
+  'ui.select_mode': '选择模式',
+  'ui.mode_standard': '标准模式',
+  'ui.mode_standard_desc': '在步数耗尽前完成阶段目标',
+  'ui.mode_infinite': '无限模式',
+  'ui.mode_infinite_desc': '每次移动都会增加熵值——坚持越久越好',
+  'ui.mode_infinite_hint': '⚠ 每次移动都会增加熵值，在反应链失稳前完成目标。',
   'ui.entropy': '熵值',
   'ui.entropy_danger_low': '稳定',
   'ui.entropy_danger_medium': '警告',

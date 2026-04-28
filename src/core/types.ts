@@ -437,6 +437,8 @@ export interface GameState {
   /** Run start timestamp (unix ms). */
   runStartedAt?: number;
   // ─── Infinite Mode ───────────────────────────────────────────────────────────
+  /** Whether this run uses infinite mode (entropy-based failure, no step limit). Set at run start. */
+  infiniteModeEnabled: boolean;
   /** Current entropy value. Increases per valid move in infinite mode; phase fails at max. */
   entropy: number;
   /** Number of corrupted tiles spawned this phase (infinite mode). */

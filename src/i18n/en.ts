@@ -416,6 +416,12 @@ const en: TranslationMap = {
 
   // ─── UI: Infinite Mode ───────────────────────────────────────────────────
   'ui.infinite_mode': 'Infinite Mode',
+  'ui.select_mode': 'Select Mode',
+  'ui.mode_standard': 'Standard',
+  'ui.mode_standard_desc': 'Clear phases before steps run out',
+  'ui.mode_infinite': 'Infinite',
+  'ui.mode_infinite_desc': 'Entropy rises each move — survive as long as you can',
+  'ui.mode_infinite_hint': '⚠ Entropy rises every move. Clear objectives before the chain destabilises.',
   'ui.entropy': 'Entropy',
   'ui.entropy_danger_low': 'Stable',
   'ui.entropy_danger_medium': 'Warning',

@@ -130,7 +130,7 @@ export const App: React.FC = () => {
 
   if (state.screen === 'start' || (!ENABLE_SECONDARY_MODES && state.screen === 'challenge_select')) {
     return <StartScreen
-      onStart={(protocol) => state.initAndStart(undefined, protocol)}
+      onStart={(protocol, infiniteMode) => state.initAndStart(undefined, protocol, infiniteMode)}
     />;
   }
 
@@ -204,7 +204,7 @@ export const App: React.FC = () => {
       <div className="game-layout">
         <div className="left-column">
           <PhasePanel phaseIndex={state.phaseIndex} output={state.output} phaseTargetOutput={state.phaseTargetOutput} />
-          {INFINITE_MODE_CONFIG.enabled && (
+          {state.infiniteModeEnabled && (
             <EntropyBar
               entropy={state.entropy}
               entropyMax={INFINITE_MODE_CONFIG.entropy.max}

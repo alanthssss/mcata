@@ -1,17 +1,17 @@
 /**
  * Infinite Mode tests — entropy pressure, corrupted tiles, phase transitions.
  *
- * These tests mock INFINITE_MODE_CONFIG to enable infinite mode and exercise
- * the engine paths that are only active when infiniteMode.enabled = true.
+ * The `infiniteMode` flag is now a per-run state field (state.infiniteModeEnabled).
+ * INFINITE_MODE_CONFIG is still mocked to control entropy parameters in tests.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { InfiniteModeConfig } from './gameConfigSchema';
 
 // ─── Mock config ─────────────────────────────────────────────────────────────
 // We define a mutable test config and override INFINITE_MODE_CONFIG so we can
-// toggle infinite mode on/off within individual tests.
+// control entropy/spawn parameters within individual tests.
 const testInfiniteConfig: InfiniteModeConfig = {
-  enabled: false,
+  enabled: false, // not read by engine anymore — controlled via state.infiniteModeEnabled
   entropy: { start: 0, perMove: 1, max: 5, spawnEntropyThreshold: 3 },
   phaseObjective: { type: 'score', score: 50 },
   failConditions: ['entropy_overflow'],
@@ -61,14 +61,12 @@ function withGrid(state: GameState, grid: Grid): GameState {
 
 /** Return a state ready to play (screen='playing') in standard mode. */
 function playingState(seed = 1): GameState {
-  testInfiniteConfig.enabled = false;
-  return startGame(createInitialState(seed));
+  return startGame(createInitialState(seed, undefined, { infiniteMode: false }));
 }
 
 /** Return a state ready to play in infinite mode (screen='playing'). */
 function infinitePlayingState(seed = 1): GameState {
-  testInfiniteConfig.enabled = true;
-  return startGame(createInitialState(seed));
+  return startGame(createInitialState(seed, undefined, { infiniteMode: true }));
 }
 
 // A grid with an obvious mergeable pair so every 'left' swipe produces a merge
@@ -82,6 +80,16 @@ const MERGE_GRID_VALUES = [
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
 describe('Infinite Mode — initial state', () => {
+  it('infiniteModeEnabled=false by default in standard createInitialState', () => {
+    const state = createInitialState(1);
+    expect(state.infiniteModeEnabled).toBe(false);
+  });
+
+  it('infiniteModeEnabled=true when passed in runConfig', () => {
+    const state = createInitialState(1, undefined, { infiniteMode: true });
+    expect(state.infiniteModeEnabled).toBe(true);
+  });
+
   it('initialises entropy from config start value', () => {
     const state = createInitialState(1);
     expect(state.entropy).toBe(testInfiniteConfig.entropy.start);
@@ -100,7 +108,6 @@ describe('Infinite Mode — initial state', () => {
 
 describe('Infinite Mode — entropy increases per valid move', () => {
   beforeEach(() => {
-    testInfiniteConfig.enabled = true;
     testInfiniteConfig.entropy.max = 50; // high so we don't fail accidentally
   });
 
@@ -124,11 +131,17 @@ describe('Infinite Mode — entropy increases per valid move', () => {
     const after = processMoveAction(s, 'left'); // no tiles can move further left
     expect(after.entropy).toBe(base.entropy);
   });
+
+  it('entropy does NOT increase in standard mode', () => {
+    const base = playingState();
+    const s = withGrid(base, makeGrid(MERGE_GRID_VALUES));
+    const after = processMoveAction(s, 'left');
+    expect(after.entropy).toBe(base.entropy);
+  });
 });
 
 describe('Infinite Mode — phase fails at max entropy', () => {
   beforeEach(() => {
-    testInfiniteConfig.enabled = true;
     testInfiniteConfig.entropy.max = 5;
     testInfiniteConfig.entropy.perMove = 1;
     testInfiniteConfig.phaseObjective.score = 99999; // unreachably high so success won't trigger
@@ -160,7 +173,6 @@ describe('Infinite Mode — phase fails at max entropy', () => {
 
 describe('Infinite Mode — phase succeeds when score target is reached', () => {
   beforeEach(() => {
-    testInfiniteConfig.enabled = true;
     testInfiniteConfig.entropy.max = 9999;
     testInfiniteConfig.phaseObjective.score = 4; // very low so a single merge reaches it
   });
@@ -201,7 +213,6 @@ describe('Infinite Mode — corrupted tiles', () => {
   });
 
   it('corrupted tiles only spawn when entropy >= spawnEntropyThreshold', () => {
-    testInfiniteConfig.enabled = true;
     testInfiniteConfig.entropy.spawnEntropyThreshold = 3;
     testInfiniteConfig.negativeTiles.corrupted.spawnChance = 1.0; // always spawn when threshold met
     testInfiniteConfig.entropy.max = 9999;
@@ -217,7 +228,6 @@ describe('Infinite Mode — corrupted tiles', () => {
 
 describe('Infinite Mode — board kept after phase success', () => {
   beforeEach(() => {
-    testInfiniteConfig.enabled = true;
     testInfiniteConfig.phaseTransition.keepBoard = true;
     testInfiniteConfig.entropy.max = 9999;
   });
@@ -250,7 +260,6 @@ describe('Infinite Mode — board kept after phase success', () => {
 
 describe('Infinite Mode — entropy reduced after phase transition', () => {
   beforeEach(() => {
-    testInfiniteConfig.enabled = true;
     testInfiniteConfig.entropy.max = 9999;
     testInfiniteConfig.phaseTransition.entropyAfterSuccessRatio = 0.5;
     testInfiniteConfig.phaseObjective.score = 4; // easily reached
