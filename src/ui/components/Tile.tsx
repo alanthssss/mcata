@@ -17,9 +17,12 @@ export const Tile: React.FC<TileProps> = ({ cell, isFrozen, isBlocked, isHinted,
   const theme = useThemeStore(s => s.getActiveTheme());
   const mode = displayMode ?? TILE_DISPLAY_MODE;
 
+  const isCorrupted = cell?.corrupted === true;
+
   const className = [
     'tile',
     cell ? 'tile-filled' : '',
+    isCorrupted ? 'tile-corrupted' : '',
     isFrozen ? 'tile-frozen' : '',
     isBlocked ? 'tile-blocked' : '',
     isHinted ? 'tile-hinted' : '',
@@ -32,38 +35,43 @@ export const Tile: React.FC<TileProps> = ({ cell, isFrozen, isBlocked, isHinted,
   let label: React.ReactNode = null;
 
   if (cell) {
-    const entry = getThemeEntry(theme, cell.value);
-    style = {
-      backgroundColor: entry.colorToken,
-      color: entry.textColorToken,
-    };
-
-    if (mode === 'value-only') {
-      label = (
-        <span className="tile-display-label">{cell.value}</span>
-      );
-    } else if (mode === 'label+value') {
-      label = (
-        <>
-          {entry.iconToken && (
-            <span className="tile-icon" aria-hidden="true">{entry.iconToken}</span>
-          )}
-          <span className="tile-display-label">{entry.displayLabel}</span>
-          <span className="tile-internal-value" aria-label={`internal value ${cell.value}`}>
-            {cell.value}
-          </span>
-        </>
-      );
+    if (isCorrupted) {
+      style = { backgroundColor: '#3d1a1a', color: '#ff4444' };
+      label = <span className="tile-display-label" title="Corrupted — cannot merge">☠</span>;
     } else {
-      // mode === 'label'
-      label = (
-        <>
-          {entry.iconToken && (
-            <span className="tile-icon" aria-hidden="true">{entry.iconToken}</span>
-          )}
-          <span className="tile-display-label">{entry.displayLabel}</span>
-        </>
-      );
+      const entry = getThemeEntry(theme, cell.value);
+      style = {
+        backgroundColor: entry.colorToken,
+        color: entry.textColorToken,
+      };
+
+      if (mode === 'value-only') {
+        label = (
+          <span className="tile-display-label">{cell.value}</span>
+        );
+      } else if (mode === 'label+value') {
+        label = (
+          <>
+            {entry.iconToken && (
+              <span className="tile-icon" aria-hidden="true">{entry.iconToken}</span>
+            )}
+            <span className="tile-display-label">{entry.displayLabel}</span>
+            <span className="tile-internal-value" aria-label={`internal value ${cell.value}`}>
+              {cell.value}
+            </span>
+          </>
+        );
+      } else {
+        // mode === 'label'
+        label = (
+          <>
+            {entry.iconToken && (
+              <span className="tile-icon" aria-hidden="true">{entry.iconToken}</span>
+            )}
+            <span className="tile-display-label">{entry.displayLabel}</span>
+          </>
+        );
+      }
     }
   }
 

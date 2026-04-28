@@ -85,3 +85,5 @@ export const BUILD_IDENTITY_CONFIG = GAME_CONFIG.buildIdentity;
 export const BENCHMARK_TUNING_BASELINE_CANDIDATE = GAME_CONFIG.benchmarkTuning.baselineCandidate;
 export const BENCHMARK_TUNING_BOUNDS = GAME_CONFIG.benchmarkTuning.bounds;
 export const BENCHMARK_TUNING_TARGETS = GAME_CONFIG.benchmarkTuning.heuristicTargets;
+
+export const INFINITE_MODE_CONFIG = GAME_CONFIG.infiniteMode;

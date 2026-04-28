@@ -20,8 +20,10 @@ import { SynergyPanel } from './components/SynergyPanel';
 import { PatternPanel } from './components/PatternPanel';
 import { CatalystCollectionView } from './components/CatalystCollectionView';
 import { BuildIdentityPanel } from './components/BuildIdentityPanel';
+import { EntropyBar } from './components/EntropyBar';
 import { useT } from '../i18n';
 import { ENABLE_SECONDARY_MODES } from '../core/features';
+import { INFINITE_MODE_CONFIG } from '../core/config';
 import './style.css';
 
 const KEY_MAP: Record<string, Direction> = {
@@ -164,6 +166,7 @@ export const App: React.FC = () => {
       <EndScreen
         isVictory={false}
         totalOutput={state.totalOutput}
+        failReason={state.failReason}
         onRestart={() => state.initGame()}
       />
     );
@@ -201,6 +204,14 @@ export const App: React.FC = () => {
       <div className="game-layout">
         <div className="left-column">
           <PhasePanel phaseIndex={state.phaseIndex} output={state.output} phaseTargetOutput={state.phaseTargetOutput} />
+          {INFINITE_MODE_CONFIG.enabled && (
+            <EntropyBar
+              entropy={state.entropy}
+              entropyMax={INFINITE_MODE_CONFIG.entropy.max}
+              phaseObjectiveScore={INFINITE_MODE_CONFIG.phaseObjective.score}
+              currentOutput={state.output}
+            />
+          )}
           <ProtocolPanel protocol={state.protocol} />
           {(advancedSystemsUnlocked || showSmallSystemNudge) && (
             <MomentumBar

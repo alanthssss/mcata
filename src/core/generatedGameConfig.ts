@@ -307,5 +307,30 @@ export const GAME_CONFIG: GameConfig = {
         "min": 2.5
       }
     }
+  },
+  "infiniteMode": {
+    "enabled": false,
+    "entropy": {
+      "start": 0,
+      "perMove": 1,
+      "max": 50,
+      "spawnEntropyThreshold": 25
+    },
+    "phaseObjective": {
+      "type": "score",
+      "score": 500
+    },
+    "failConditions": [
+      "entropy_overflow"
+    ],
+    "negativeTiles": {
+      "corrupted": {
+        "spawnChance": 0.15
+      }
+    },
+    "phaseTransition": {
+      "keepBoard": true,
+      "entropyAfterSuccessRatio": 0.5
+    }
   }
 };

@@ -75,6 +75,19 @@ export interface RunMetrics {
   highestTierReached?: number;
   forgeOffersSeen?: number;
   forgeOffersAffordable?: number;
+  // Infinite mode metrics
+  /** Steps taken in the current/last phase (infinite mode) */
+  stepsPerPhase?: number;
+  /** Entropy value at the time of the last phase success (infinite mode) */
+  entropyAtSuccess?: number;
+  /** Entropy value at the time of the last phase failure (infinite mode) */
+  entropyAtFailure?: number;
+  /** Total corrupted tiles spawned across all phases (infinite mode) */
+  corruptedTileCount?: number;
+  /** Reason the run failed (e.g. 'entropy_overflow'); null for standard out-of-steps failure */
+  failReason?: string | null;
+  /** Rate of score growth across phases (output delta per phase) */
+  scoreGrowthRate?: number;
 }
 
 // ─── Aggregate suite metrics ──────────────────────────────────────────────────

@@ -32,6 +32,7 @@ import {
   PATTERN_BONUS_BY_LEVEL,
   PATTERN_EMPTY_SPACE_CAP,
   FORGE_UTILITY_VALUES,
+  INFINITE_MODE_CONFIG,
 } from './config';
 import { checkMilestones, MILESTONE_DEFS, MilestoneId } from './milestones';
 import { CATALYST_DEFS } from './catalysts';
@@ -62,7 +63,7 @@ function toSlimEntry(entry: ReactionLogEntry, energyBefore: number, energyAfter:
 }
 
 /** Build a PhaseLog snapshot from the current engine state. */
-function buildPhaseLog(state: GameState, cleared: boolean): PhaseLog {
+function buildPhaseLog(state: GameState, cleared: boolean, failReason?: string | null): PhaseLog {
   return {
     round: state.roundNumber,
     phaseIndex: state.phaseIndex,
@@ -77,6 +78,9 @@ function buildPhaseLog(state: GameState, cleared: boolean): PhaseLog {
     patternLevel: state.activePattern ? state.patternLevels[state.activePattern] : 0,
     globalMultiplier: state.globalMultiplier,
     entries: [...state.currentPhaseEntries],
+    entropyAtEnd: state.entropy,
+    corruptedTileCount: state.corruptedTileCount,
+    failReason: failReason !== undefined ? failReason : null,
   };
 }
 
@@ -178,6 +182,9 @@ export function createInitialState(
     phaseLogBuffer: [],
     runSeed: seed,
     runStartedAt,
+    entropy: INFINITE_MODE_CONFIG.entropy.start,
+    corruptedTileCount: 0,
+    failReason: null,
   };
 }
 
@@ -242,7 +249,8 @@ export function grantSignal(state: GameState, signalId: SignalId): GameState {
 
 export function processMoveAction(state: GameState, dir: Direction): GameState {
   if (state.screen !== 'playing') return state;
-  if (state.stepsRemaining <= 0) return state;
+  if (!INFINITE_MODE_CONFIG.enabled && state.stepsRemaining <= 0) return state;
+  if (INFINITE_MODE_CONFIG.enabled && state.stepsRemaining <= 0 && state.stepsRemaining < -9000) return state;
 
   const rng = createRng(state.rngSeed + state.reactionLog.length + 1);
   const gridBefore = cloneGrid(state.grid);
@@ -404,6 +412,7 @@ export function processMoveAction(state: GameState, dir: Direction): GameState {
 
   // Delay Spawn catalyst: skip spawn now, double later
   const delaySpawnActive = state.activeCatalysts.includes('delay_spawn');
+  let newCorruptedTileCount = state.corruptedTileCount;
   if (freezeStepActive || (delaySpawnActive && newDelayedSpawnCount === 0 && rng.next() < CATALYST_MULTIPLIERS.delay_spawn_probability)) {
     // Skip spawn this turn; note the debt
     if (!freezeStepActive) newDelayedSpawnCount = 1;
@@ -425,13 +434,29 @@ export function processMoveAction(state: GameState, dir: Direction): GameState {
       const spawnIdx = Math.floor(rng.next() * spawnableEmpty.length);
       const sp = spawnableEmpty[spawnIdx];
       if (s === 0) spawnPos = sp;
-      const base4Prob = SPAWN_4_PROBABILITY + ascMod.spawnFourBonus;
-      const spawnValue = state.activeCatalysts.includes('lucky_seed')
-        ? (rng.next() < 0.75 ? 2 : 4)
-        : (rng.next() < (1 - base4Prob) ? 2 : 4);
-      const spawnResult = spawnTile(newGrid, spawnValue, sp, newIdCounter);
-      newGrid = spawnResult.grid;
-      newIdCounter = spawnResult.id;
+      // ── Infinite mode: maybe spawn a corrupted tile ────────────────────────
+      const newEntropy = state.entropy + (INFINITE_MODE_CONFIG.enabled && moveResult.changed ? INFINITE_MODE_CONFIG.entropy.perMove : 0);
+      if (
+        INFINITE_MODE_CONFIG.enabled &&
+        newEntropy >= INFINITE_MODE_CONFIG.entropy.spawnEntropyThreshold &&
+        rng.next() < INFINITE_MODE_CONFIG.negativeTiles.corrupted.spawnChance
+      ) {
+        // Spawn a corrupted tile (value=2, cannot merge)
+        newIdCounter++;
+        const corruptedTile = { id: newIdCounter, value: 2, merged: false, corrupted: true };
+        const corruptedGrid = newGrid.map(row => row.map(cell => cell));
+        corruptedGrid[sp.row][sp.col] = corruptedTile;
+        newGrid = corruptedGrid as typeof newGrid;
+        newCorruptedTileCount++;
+      } else {
+        const base4Prob = SPAWN_4_PROBABILITY + ascMod.spawnFourBonus;
+        const spawnValue = state.activeCatalysts.includes('lucky_seed')
+          ? (rng.next() < 0.75 ? 2 : 4)
+          : (rng.next() < (1 - base4Prob) ? 2 : 4);
+        const spawnResult = spawnTile(newGrid, spawnValue, sp, newIdCounter);
+        newGrid = spawnResult.grid;
+        newIdCounter = spawnResult.id;
+      }
       spawnableEmpty = spawnableEmpty.filter((_, i) => i !== spawnIdx);
     }
   }
@@ -494,6 +519,11 @@ export function processMoveAction(state: GameState, dir: Direction): GameState {
 
   const newLog = [logEntry, ...state.reactionLog].slice(0, MAX_LOG);
 
+  // ── Entropy tracking (infinite mode) ─────────────────────────────────────
+  const newEntropy = INFINITE_MODE_CONFIG.enabled && moveResult.changed
+    ? state.entropy + INFINITE_MODE_CONFIG.entropy.perMove
+    : state.entropy;
+
   const nextEnergy = state.energy + energyGain + streakEnergyBonus + jackpotEnergyBonus;
   let newState: GameState = {
     ...state,
@@ -524,10 +554,29 @@ export function processMoveAction(state: GameState, dir: Direction): GameState {
     bestStreak: newBestStreak,
     jackpotTriggered,
     lastIntermissionMessage: null,
+    entropy: newEntropy,
+    corruptedTileCount: newCorruptedTileCount,
   };
 
-  if (newOutput >= state.phaseTargetOutput || newSteps <= 0) {
-    newState = handlePhaseEnd(newState);
+  if (INFINITE_MODE_CONFIG.enabled) {
+    // ── Infinite mode: entropy overflow → game over ────────────────────────
+    if (newEntropy >= INFINITE_MODE_CONFIG.entropy.max) {
+      const failLog = buildPhaseLog({ ...newState, output: newOutput }, false, 'entropy_overflow');
+      return {
+        ...newState,
+        screen: 'game_over',
+        failReason: 'entropy_overflow',
+        phaseLogBuffer: [...newState.phaseLogBuffer, failLog],
+      };
+    }
+    // ── Infinite mode: score objective reached → phase success ─────────────
+    if (newOutput >= INFINITE_MODE_CONFIG.phaseObjective.score) {
+      newState = handlePhaseEnd(newState);
+    }
+  } else {
+    if (newOutput >= state.phaseTargetOutput || newSteps <= 0) {
+      newState = handlePhaseEnd(newState);
+    }
   }
 
   // ── Milestone check ───────────────────────────────────────────────────────
@@ -602,8 +651,12 @@ function handlePhaseEnd(state: GameState): GameState {
     energy += (phases[state.phaseIndex].steps - state.stepsRemaining) * CATALYST_MULTIPLIERS.reserve_bank_energy_per_step;
   }
 
-  // Use the pre-computed effective target stored in state (includes build-aware factor)
-  const succeeded = output >= state.phaseTargetOutput;
+  // In infinite mode, the phase is always cleared when handlePhaseEnd is called
+  // (entropy-overflow failure is handled before reaching here).
+  // In standard mode, check output vs target.
+  const succeeded = INFINITE_MODE_CONFIG.enabled
+    ? true
+    : output >= state.phaseTargetOutput;
 
   const failedPhaseLog = succeeded ? null : buildPhaseLog({ ...state, output }, false);
 
@@ -622,8 +675,8 @@ function handlePhaseEnd(state: GameState): GameState {
   const clearedPhaseLog = buildPhaseLog({ ...state, output }, true);
   const nextPhaseLogBuffer = [...state.phaseLogBuffer, clearedPhaseLog];
 
-  // Last phase of the round cleared — transition to round_complete
-  if (state.phaseIndex >= PHASES_PER_ROUND - 1) {
+  // Last phase of the round cleared — transition to round_complete (not used in infinite mode)
+  if (!INFINITE_MODE_CONFIG.enabled && state.phaseIndex >= PHASES_PER_ROUND - 1) {
     const roundCompleteEnergy = energy + ROUND_COMPLETE_ENERGY_BONUS;
     const roundCompleteMultiplier = Math.round((state.globalMultiplier + ROUND_COMPLETE_MULTIPLIER_BONUS) * 100) / 100;
     return {
@@ -638,8 +691,10 @@ function handlePhaseEnd(state: GameState): GameState {
   }
 
   // Not the last phase — advance to next phase and enter the unified Forge.
-  const nextPhaseIndex = state.phaseIndex + 1;
-  const nextPhase = phases[nextPhaseIndex];
+  const nextPhaseIndex = INFINITE_MODE_CONFIG.enabled
+    ? state.phaseIndex  // in infinite mode, phase index cycles (we reuse phase 0 infinitely)
+    : state.phaseIndex + 1;
+  const nextPhase = phases[INFINITE_MODE_CONFIG.enabled ? 0 : nextPhaseIndex];
   const nextSteps = Math.max(1, nextPhase.steps - protocolDef.stepsReduction - ascMod.stepsReduction);
   const buildFactor = getBuildAwareTargetScale(
     state.activeCatalysts.length,
@@ -647,7 +702,12 @@ function handlePhaseEnd(state: GameState): GameState {
   );
   const nextPhaseTargetOutput = Math.ceil(nextPhase.targetOutput * ascMod.targetOutputScale * buildFactor);
 
-  if (state.roundNumber === 1 && state.phaseIndex === 0) {
+  // ── Infinite mode: reduce entropy on success ───────────────────────────────
+  const nextEntropy = INFINITE_MODE_CONFIG.enabled
+    ? Math.max(0, Math.floor(state.entropy * INFINITE_MODE_CONFIG.phaseTransition.entropyAfterSuccessRatio))
+    : state.entropy;
+
+  if (!INFINITE_MODE_CONFIG.enabled && state.roundNumber === 1 && state.phaseIndex === 0) {
     // Keep onboarding reseed offset distinct from forge/reroll offsets so phase-clear
     // transition stays deterministic while avoiding overlap with other intermission RNG paths.
     const onboardingRng = createRng(state.rngSeed + ONBOARDING_SEED_OFFSET);
@@ -700,6 +760,8 @@ function handlePhaseEnd(state: GameState): GameState {
     screen: 'forge',
     output,
     energy,
+    entropy: nextEntropy,
+    corruptedTileCount: INFINITE_MODE_CONFIG.enabled ? 0 : state.corruptedTileCount,
     forgeOffers: forgeItems.filter(i => i.type === 'catalyst').map(i => i.catalyst),
     forgeItems,
     forgeVisitCount: state.forgeVisitCount + 1,
@@ -948,6 +1010,23 @@ export function sellSignal(state: GameState, signalId: SignalId): GameState {
 }
 
 export function skipForge(state: GameState): GameState {
+  // In infinite mode with keep_board, preserve the current board instead of resetting
+  if (INFINITE_MODE_CONFIG.enabled && INFINITE_MODE_CONFIG.phaseTransition.keepBoard) {
+    return {
+      ...state,
+      screen: 'playing',
+      output: 0,
+      forgeOffers: [],
+      infusionOptions: [],
+      forgeItems: [],
+      reactionLog: [],
+      consecutiveValidMoves: 0,
+      momentumMultiplier: 1.0,
+      stabilityCount: 0,
+      currentPhaseEntries: [],
+    };
+  }
+
   const rng = createRng(state.rngSeed + 600);
   const protocolDef = PROTOCOL_DEFS[state.protocol];
   let grid = createEmptyGrid();
@@ -1040,6 +1119,9 @@ export function advanceRound(state: GameState): GameState {
     phaseTargetOutput: nextPhaseTargetOutput,
     lastIntermissionMessage: null,
     currentPhaseEntries: [],
+    entropy: INFINITE_MODE_CONFIG.entropy.start,
+    corruptedTileCount: 0,
+    failReason: null,
   };
 }
 

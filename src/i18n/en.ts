@@ -413,6 +413,21 @@ const en: TranslationMap = {
   'challenge.anomaly_storm.name': 'Anomaly Storm',
   'challenge.anomaly_storm.description': 'Anomalies trigger twice as often.',
   'challenge.anomaly_storm.win_condition': 'Survive 3 rounds under anomaly pressure',
+
+  // ─── UI: Infinite Mode ───────────────────────────────────────────────────
+  'ui.infinite_mode': 'Infinite Mode',
+  'ui.entropy': 'Entropy',
+  'ui.entropy_danger_low': 'Stable',
+  'ui.entropy_danger_medium': 'Warning',
+  'ui.entropy_danger_high': 'Critical',
+  'ui.entropy_max': 'MAX',
+  'ui.phase_objective': 'Objective',
+  'ui.phase_objective_score': 'Reach {score}',
+  'ui.fail_reason_entropy_overflow': 'Entropy overflow — phase destabilised',
+  'ui.fail_reason_unknown': 'Phase failed',
+  'ui.corrupted_tile': '☠',
+  'ui.corrupted_tile_tooltip': 'Corrupted — cannot merge',
+  'ui.defeat_subtitle_entropy': 'Entropy reached critical mass. The reaction chain destabilised.',
 };
 
 export default en;

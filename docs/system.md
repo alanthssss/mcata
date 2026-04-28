@@ -256,3 +256,83 @@ Player progress is persisted via `useProfileStore` in
 
 On first visit (or incognito), the store falls back to `DEFAULT_PROFILE`,
 ensuring new players start with a restricted boost pool.
+
+---
+
+## 8. Infinite Mode
+
+Infinite Mode replaces the standard fixed-step phase structure with an
+**entropy-pressure system** designed for endless play.
+
+### Overview
+
+| Concept | Standard Mode | Infinite Mode |
+|---|---|---|
+| Failure condition | Steps run out | Entropy reaches maximum |
+| Phase success | Output ≥ phase target | Output ≥ `phaseObjective.score` |
+| Board on success | Reset to fresh tiles | Preserved (if `keepBoard: true`) |
+| Entropy | Not tracked | Increases each valid move |
+
+### Entropy Pressure
+
+Entropy is a run-level counter that increases by `entropy.perMove` after
+every valid (board-changing) move.  When entropy reaches `entropy.max`,
+the current phase fails immediately with reason `entropy_overflow`.
+
+On a successful phase transition, entropy is multiplied by
+`phaseTransition.entropyAfterSuccessRatio` (e.g. 0.5 halves it).  This
+rewards efficient play while maintaining long-term pressure.
+
+### Corrupted Tiles
+
+When entropy reaches `entropy.spawnEntropyThreshold`, the game may spawn
+**corrupted tiles** instead of normal tiles.  Corrupted tiles:
+
+- Cannot participate in any merge.
+- Block the cell they occupy.
+- Spawn with probability `negativeTiles.corrupted.spawnChance` per step
+  once the threshold is met.
+
+They appear with a skull icon (☠) and dark red background.
+
+### YAML Configuration
+
+```yaml
+infiniteMode:
+  enabled: false          # Set to true to activate infinite mode
+
+  entropy:
+    start: 0              # Initial entropy at run start
+    perMove: 1            # Entropy added per valid move
+    max: 50               # Entropy at which the current phase fails
+    spawnEntropyThreshold: 25  # Entropy above which corrupted tiles may spawn
+
+  phaseObjective:
+    type: score           # Currently only 'score' is supported
+    score: 500            # Output required to succeed the phase
+
+  failConditions:
+    - entropy_overflow    # Built-in condition: entropy >= max
+
+  negativeTiles:
+    corrupted:
+      spawnChance: 0.15   # Probability of spawning a corrupted tile per step
+
+  phaseTransition:
+    keepBoard: true       # Preserve the board after a successful phase
+    entropyAfterSuccessRatio: 0.5  # Entropy *= this on phase success
+```
+
+### Benchmark Metrics (Infinite Mode)
+
+When running benchmarks with infinite mode enabled, the following extra
+metrics are captured in `RunMetrics`:
+
+| Metric | Description |
+|---|---|
+| `stepsPerPhase` | Average moves taken per phase |
+| `entropyAtSuccess` | Entropy when the last phase was cleared |
+| `entropyAtFailure` | Entropy at the time the run ended |
+| `corruptedTileCount` | Total corrupted tiles spawned across all phases |
+| `failReason` | `'entropy_overflow'` or `null` for standard failure |
+| `scoreGrowthRate` | Output delta per phase (higher = escalating skill) |

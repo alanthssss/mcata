@@ -28,7 +28,9 @@ function mergeLine(line: Line, startId: number, highestBefore: number): {
       ti + 1 < tiles.length &&
       tiles[ti].value === tiles[ti + 1].value &&
       !tiles[ti].merged &&
-      !tiles[ti + 1].merged
+      !tiles[ti + 1].merged &&
+      !tiles[ti].corrupted &&
+      !tiles[ti + 1].corrupted
     ) {
       const newValue = tiles[ti].value * 2;
       idCounter++;

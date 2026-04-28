@@ -8,6 +8,30 @@ export interface RarityRule {
   perRunCap?: number;
 }
 
+export interface InfiniteModeConfig {
+  enabled: boolean;
+  entropy: {
+    start: number;
+    perMove: number;
+    max: number;
+    spawnEntropyThreshold: number;
+  };
+  phaseObjective: {
+    type: string;
+    score: number;
+  };
+  failConditions: string[];
+  negativeTiles: {
+    corrupted: {
+      spawnChance: number;
+    };
+  };
+  phaseTransition: {
+    keepBoard: boolean;
+    entropyAfterSuccessRatio: number;
+  };
+}
+
 export interface BenchmarkTuningConfig {
   baselineCandidate: {
     stepsMultiplier: number;
@@ -118,6 +142,7 @@ export interface GameConfig {
     minScoreForLabel: number;
   };
   benchmarkTuning: BenchmarkTuningConfig;
+  infiniteMode: InfiniteModeConfig;
 }
 
 function assertObject(value: unknown, path: string): Record<string, unknown> {
@@ -375,6 +400,53 @@ export function validateGameConfig(raw: unknown): GameConfig {
         forgeAffordabilityRate: parseMetricRange(heuristicTargetsObj.forgeAffordabilityRate, 'benchmarkTuning.heuristicTargets.forgeAffordabilityRate'),
         buildMaturityRound3: parseMetricRange(heuristicTargetsObj.buildMaturityRound3, 'benchmarkTuning.heuristicTargets.buildMaturityRound3'),
       },
+    },
+    infiniteMode: parseInfiniteMode(root.infiniteMode),
+  };
+}
+
+const DEFAULT_INFINITE_MODE: InfiniteModeConfig = {
+  enabled: false,
+  entropy: { start: 0, perMove: 1, max: 50, spawnEntropyThreshold: 25 },
+  phaseObjective: { type: 'score', score: 500 },
+  failConditions: ['entropy_overflow'],
+  negativeTiles: { corrupted: { spawnChance: 0.15 } },
+  phaseTransition: { keepBoard: true, entropyAfterSuccessRatio: 0.5 },
+};
+
+function parseInfiniteMode(raw: unknown): InfiniteModeConfig {
+  if (raw === undefined || raw === null) return DEFAULT_INFINITE_MODE;
+  const obj = assertObject(raw, 'infiniteMode');
+  const entropyObj = assertObject(obj.entropy, 'infiniteMode.entropy');
+  const phaseObjectiveObj = assertObject(obj.phaseObjective, 'infiniteMode.phaseObjective');
+  const negativeTilesObj = assertObject(obj.negativeTiles, 'infiniteMode.negativeTiles');
+  const corruptedObj = assertObject(negativeTilesObj.corrupted, 'infiniteMode.negativeTiles.corrupted');
+  const phaseTransitionObj = assertObject(obj.phaseTransition, 'infiniteMode.phaseTransition');
+  const failConditionsRaw = obj.failConditions;
+  const failConditions: string[] = Array.isArray(failConditionsRaw)
+    ? failConditionsRaw.map((v, i) => assertString(v, `infiniteMode.failConditions[${i}]`))
+    : ['entropy_overflow'];
+  return {
+    enabled: assertBoolean(obj.enabled, 'infiniteMode.enabled'),
+    entropy: {
+      start: assertNumber(entropyObj.start, 'infiniteMode.entropy.start'),
+      perMove: assertNumber(entropyObj.perMove, 'infiniteMode.entropy.perMove'),
+      max: assertNumber(entropyObj.max, 'infiniteMode.entropy.max'),
+      spawnEntropyThreshold: assertNumber(entropyObj.spawnEntropyThreshold, 'infiniteMode.entropy.spawnEntropyThreshold'),
+    },
+    phaseObjective: {
+      type: assertString(phaseObjectiveObj.type, 'infiniteMode.phaseObjective.type'),
+      score: assertNumber(phaseObjectiveObj.score, 'infiniteMode.phaseObjective.score'),
+    },
+    failConditions,
+    negativeTiles: {
+      corrupted: {
+        spawnChance: assertNumber(corruptedObj.spawnChance, 'infiniteMode.negativeTiles.corrupted.spawnChance'),
+      },
+    },
+    phaseTransition: {
+      keepBoard: assertBoolean(phaseTransitionObj.keepBoard, 'infiniteMode.phaseTransition.keepBoard'),
+      entropyAfterSuccessRatio: assertNumber(phaseTransitionObj.entropyAfterSuccessRatio, 'infiniteMode.phaseTransition.entropyAfterSuccessRatio'),
     },
   };
 }

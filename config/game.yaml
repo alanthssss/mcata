@@ -437,3 +437,40 @@ benchmarkTuning:
     # 第3轮时构筑成熟度评分下限，衡量玩家是否已建立清晰构筑方向
     # Build maturity score at round 3 (measures whether a clear build direction has formed)
     buildMaturityRound3:    { min: 2.5 }
+
+
+# ==============================================================================
+# 无限模式 / Infinite Mode configuration
+# 开启后以熵压力取代固定步数限制，实现无限循环阶段。
+# When enabled, replaces the fixed step limit with an entropy pressure system for endless play.
+# ==============================================================================
+infiniteMode:
+  # 是否开启无限模式（false = 使用默认的有限步数模式）
+  # Whether infinite mode is active (false = standard fixed-step mode)
+  enabled: false
+
+  # 熵配置 / Entropy settings
+  entropy:
+    start: 0          # 每局开始时的初始熵值 / Initial entropy value at run start
+    perMove: 1        # 每次有效移动增加的熵值 / Entropy added per valid move
+    max: 50           # 熵达到此值时阶段失败 / Entropy at which the current phase fails
+    spawnEntropyThreshold: 25  # 开始生成腐化方块的熵阈值 / Entropy at which corrupted tiles begin to spawn
+
+  # 阶段目标 / Phase objective
+  phaseObjective:
+    type: score       # 目标类型（score = 达到分数目标）/ Objective type (score = reach score target)
+    score: 500        # 阶段成功所需的产出目标 / Output required to succeed the phase
+
+  # 失败条件列表 / Fail conditions
+  failConditions:
+    - entropy_overflow  # 熵溢出时失败 / Fail when entropy overflows
+
+  # 负面方块配置 / Negative tile settings
+  negativeTiles:
+    corrupted:
+      spawnChance: 0.15  # 满足阈值后每步生成腐化方块的概率 / Probability of spawning a corrupted tile per step once threshold is met
+
+  # 阶段过渡配置 / Phase transition settings
+  phaseTransition:
+    keepBoard: true   # 成功后是否保留当前棋盘 / Whether to keep the board after a successful phase
+    entropyAfterSuccessRatio: 0.5  # 成功后熵乘以该比例（0.5 = 减半）/ Multiplier applied to entropy on phase success (0.5 = halved)
