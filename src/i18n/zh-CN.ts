@@ -413,6 +413,27 @@ const zhCN: TranslationMap = {
   'challenge.anomaly_storm.name': '异常风暴',
   'challenge.anomaly_storm.description': '异常触发频率加倍。',
   'challenge.anomaly_storm.win_condition': '在持续异常压力下生存3轮',
+
+  // ─── UI: 无限模式 / Infinite Mode ─────────────────────────────────────────
+  'ui.infinite_mode': '无限模式',
+  'ui.select_mode': '选择模式',
+  'ui.mode_standard': '标准模式',
+  'ui.mode_standard_desc': '在步数耗尽前完成阶段目标',
+  'ui.mode_infinite': '无限模式',
+  'ui.mode_infinite_desc': '每次移动都会增加熵值——坚持越久越好',
+  'ui.mode_infinite_hint': '⚠ 每次移动都会增加熵值，在反应链失稳前完成目标。',
+  'ui.entropy': '熵值',
+  'ui.entropy_danger_low': '稳定',
+  'ui.entropy_danger_medium': '警告',
+  'ui.entropy_danger_high': '危急',
+  'ui.entropy_max': '溢出',
+  'ui.phase_objective': '目标',
+  'ui.phase_objective_score': '达到 {score}',
+  'ui.fail_reason_entropy_overflow': '熵值溢出——反应链失稳',
+  'ui.fail_reason_unknown': '阶段失败',
+  'ui.corrupted_tile': '☠',
+  'ui.corrupted_tile_tooltip': '已腐化——无法合并',
+  'ui.defeat_subtitle_entropy': '熵值达到临界值，反应链已失稳。',
 };
 
 export default zhCN;

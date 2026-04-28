@@ -15,7 +15,7 @@ import { exportRunLogsAsJson } from '../scripts/exportRunLogs';
 interface GameStore extends GameState {
   initGame: (seed?: number, protocol?: ProtocolId) => void;
   /** Atomically initialise a new run and transition to the playing screen. */
-  initAndStart: (seed?: number, protocol?: ProtocolId) => void;
+  initAndStart: (seed?: number, protocol?: ProtocolId, infiniteMode?: boolean) => void;
   start: () => void;
   move: (dir: Direction) => void;
   purchaseForgeItem: (item: ForgeShopItem, replaceIndex?: number) => void;
@@ -44,8 +44,8 @@ export const useGameStore = create<GameStore>((set) => ({
     set(createInitialState(seed ?? Date.now(), protocol));
   },
 
-  initAndStart: (seed?: number, protocol?: ProtocolId) => {
-    set(startGame(createInitialState(seed ?? Date.now(), protocol)));
+  initAndStart: (seed?: number, protocol?: ProtocolId, infiniteMode?: boolean) => {
+    set(startGame(createInitialState(seed ?? Date.now(), protocol, { infiniteMode })));
   },
 
   start: () => {

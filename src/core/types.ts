@@ -4,6 +4,8 @@ export interface Tile {
   id: number;
   value: number;
   merged: boolean;
+  /** When true, this tile cannot participate in merges and blocks its cell. */
+  corrupted?: boolean;
 }
 
 export type Cell = Tile | null;
@@ -316,6 +318,10 @@ export interface PhaseLog {
   patternLevel: number;
   globalMultiplier: number;
   entries: SlimReactionEntry[];
+  // Infinite mode metrics
+  entropyAtEnd?: number;
+  corruptedTileCount?: number;
+  failReason?: string | null;
 }
 
 export interface LocalizedText {
@@ -430,4 +436,13 @@ export interface GameState {
   runSeed?: number;
   /** Run start timestamp (unix ms). */
   runStartedAt?: number;
+  // ─── Infinite Mode ───────────────────────────────────────────────────────────
+  /** Whether this run uses infinite mode (entropy-based failure, no step limit). Set at run start. */
+  infiniteModeEnabled: boolean;
+  /** Current entropy value. Increases per valid move in infinite mode; phase fails at max. */
+  entropy: number;
+  /** Number of corrupted tiles spawned this phase (infinite mode). */
+  corruptedTileCount: number;
+  /** Reason the current/last phase failed; null if not failed or standard failure. */
+  failReason: string | null;
 }

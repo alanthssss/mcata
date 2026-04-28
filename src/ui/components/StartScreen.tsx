@@ -8,12 +8,13 @@ import { hasRunLogs, isDebugExportLogs } from '../../store/runLogStore';
 import { downloadRunLogs, downloadRunLogsCsv, downloadRunSummaryCsv } from '../../scripts/exportRunLogs';
 
 interface StartScreenProps {
-  onStart: (protocol: ProtocolId) => void;
+  onStart: (protocol: ProtocolId, infiniteMode: boolean) => void;
 }
 
 export const StartScreen: React.FC<StartScreenProps> = ({ onStart }) => {
   const t = useT();
   const [selectedProtocol, setSelectedProtocol] = useState<ProtocolId>(DEFAULT_PROTOCOL);
+  const [infiniteMode, setInfiniteMode] = useState(false);
   const showExport = isDebugExportLogs();
   const canExport = hasRunLogs();
 
@@ -46,8 +47,38 @@ export const StartScreen: React.FC<StartScreenProps> = ({ onStart }) => {
         </div>
       </div>
 
+      {/* ── Mode Selection ─────────────────────────────────────────────────── */}
+      <div className="mode-select-section">
+        <div className="protocol-select-label">{t('ui.select_mode')}</div>
+        <div className="mode-select-grid">
+          <button
+            className={`mode-card ${!infiniteMode ? 'mode-card--selected' : ''}`}
+            onClick={() => setInfiniteMode(false)}
+          >
+            <span className="mode-card__icon">🎯</span>
+            <span className="mode-card__name">{t('ui.mode_standard')}</span>
+            <span className="mode-card__desc">{t('ui.mode_standard_desc')}</span>
+          </button>
+          <button
+            className={`mode-card mode-card--infinite ${infiniteMode ? 'mode-card--selected mode-card--infinite-selected' : ''}`}
+            onClick={() => setInfiniteMode(true)}
+          >
+            <span className="mode-card__icon">∞</span>
+            <span className="mode-card__name">{t('ui.mode_infinite')}</span>
+            <span className="mode-card__desc">{t('ui.mode_infinite_desc')}</span>
+          </button>
+        </div>
+        {infiniteMode && (
+          <div className="mode-infinite-hint">
+            {t('ui.mode_infinite_hint')}
+          </div>
+        )}
+      </div>
+
       <div className="start-actions">
-        <button className="start-btn" onClick={() => onStart(selectedProtocol)}>{t('ui.start_btn')}</button>
+        <button className="start-btn" onClick={() => onStart(selectedProtocol, infiniteMode)}>
+          {t('ui.start_btn')}
+        </button>
       </div>
 
       {showExport && (

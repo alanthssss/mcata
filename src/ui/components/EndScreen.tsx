@@ -9,6 +9,7 @@ interface EndScreenProps {
   isVictory: boolean;
   totalOutput: number;
   onRestart: () => void;
+  failReason?: string | null;
 }
 
 export function createEndScreenRunLogExportControls(canExport: boolean): {
@@ -29,11 +30,15 @@ export function createEndScreenRunLogExportControls(canExport: boolean): {
   };
 }
 
-export const EndScreen: React.FC<EndScreenProps> = ({ isVictory, totalOutput, onRestart }) => {
+export const EndScreen: React.FC<EndScreenProps> = ({ isVictory, totalOutput, onRestart, failReason }) => {
   const t = useT();
   const canExport = hasRunLogs();
   const controls = createEndScreenRunLogExportControls(canExport);
   const exportTitle = canExport ? t('ui.export_run_tooltip') : t('ui.export_run_disabled');
+
+  const defeatSubtitle = failReason === 'entropy_overflow'
+    ? t('ui.defeat_subtitle_entropy')
+    : t('ui.defeat_subtitle');
 
   return (
     <div className="screen end-screen">
@@ -42,8 +47,13 @@ export const EndScreen: React.FC<EndScreenProps> = ({ isVictory, totalOutput, on
         {isVictory ? t('ui.victory_title') : t('ui.defeat_title')}
       </h1>
       <p className="end-subtitle">
-        {isVictory ? t('ui.victory_subtitle') : t('ui.defeat_subtitle')}
+        {isVictory ? t('ui.victory_subtitle') : defeatSubtitle}
       </p>
+      {failReason && !isVictory && (
+        <p className="end-fail-reason">
+          {t(`ui.fail_reason_${failReason}`) || t('ui.fail_reason_unknown')}
+        </p>
+      )}
       <div className="end-stats">
         <div className="stat-block">
           <div className="stat-label">{t('ui.total_output')}</div>
