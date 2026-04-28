@@ -37,11 +37,9 @@ export const EntropyBar: React.FC<EntropyBarProps> = ({
           {entropy} / {entropyMax}
         </span>
         <span className={`entropy-danger-badge entropy-danger-${dangerLevel}`}>
-          {dangerLevel === 'high'
-            ? t('ui.entropy_danger_high')
-            : dangerLevel === 'medium'
-            ? t('ui.entropy_danger_medium')
-            : t('ui.entropy_danger_low')}
+          {dangerLevel === 'high' && t('ui.entropy_danger_high')}
+          {dangerLevel === 'medium' && t('ui.entropy_danger_medium')}
+          {dangerLevel === 'low' && t('ui.entropy_danger_low')}
         </span>
       </div>
       <div className="progress-bar-container entropy-progress">

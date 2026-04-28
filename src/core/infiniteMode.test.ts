@@ -168,10 +168,11 @@ describe('Infinite Mode — phase succeeds when score target is reached', () => 
   it('transitions to forge when score target is reached', () => {
     const base = infinitePlayingState();
     // A merge of two 2-tiles yields 4, which should trigger the phase success
+    // In infinite mode the onboarding special case is bypassed, so we always go to forge
     const s = withGrid({ ...base, output: 0 }, makeGrid(MERGE_GRID_VALUES));
     const after = processMoveAction(s, 'left');
-    // Should move to forge (reward selection) after hitting the score target
-    expect(['forge', 'playing']).toContain(after.screen);
+    // In infinite mode, phase success routes to the forge (reward selection screen)
+    expect(after.screen).toBe('forge');
   });
 });
 

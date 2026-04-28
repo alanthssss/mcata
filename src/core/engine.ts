@@ -63,7 +63,7 @@ function toSlimEntry(entry: ReactionLogEntry, energyBefore: number, energyAfter:
 }
 
 /** Build a PhaseLog snapshot from the current engine state. */
-function buildPhaseLog(state: GameState, cleared: boolean, failReason?: string | null): PhaseLog {
+function buildPhaseLog(state: GameState, cleared: boolean, failReason: string | null = null): PhaseLog {
   return {
     round: state.roundNumber,
     phaseIndex: state.phaseIndex,
@@ -250,7 +250,6 @@ export function grantSignal(state: GameState, signalId: SignalId): GameState {
 export function processMoveAction(state: GameState, dir: Direction): GameState {
   if (state.screen !== 'playing') return state;
   if (!INFINITE_MODE_CONFIG.enabled && state.stepsRemaining <= 0) return state;
-  if (INFINITE_MODE_CONFIG.enabled && state.stepsRemaining <= 0 && state.stepsRemaining < -9000) return state;
 
   const rng = createRng(state.rngSeed + state.reactionLog.length + 1);
   const gridBefore = cloneGrid(state.grid);
@@ -276,6 +275,11 @@ export function processMoveAction(state: GameState, dir: Direction): GameState {
   if (!moveResult.changed) {
     return state;
   }
+
+  // ── Entropy update (infinite mode) — computed once per valid move ─────────
+  const newEntropy = INFINITE_MODE_CONFIG.enabled
+    ? state.entropy + INFINITE_MODE_CONFIG.entropy.perMove
+    : state.entropy;
 
   let newGrid = moveResult.grid;
   let newIdCounter = moveResult.newTileIdCounter;
@@ -435,7 +439,6 @@ export function processMoveAction(state: GameState, dir: Direction): GameState {
       const sp = spawnableEmpty[spawnIdx];
       if (s === 0) spawnPos = sp;
       // ── Infinite mode: maybe spawn a corrupted tile ────────────────────────
-      const newEntropy = state.entropy + (INFINITE_MODE_CONFIG.enabled && moveResult.changed ? INFINITE_MODE_CONFIG.entropy.perMove : 0);
       if (
         INFINITE_MODE_CONFIG.enabled &&
         newEntropy >= INFINITE_MODE_CONFIG.entropy.spawnEntropyThreshold &&
@@ -518,11 +521,6 @@ export function processMoveAction(state: GameState, dir: Direction): GameState {
   };
 
   const newLog = [logEntry, ...state.reactionLog].slice(0, MAX_LOG);
-
-  // ── Entropy tracking (infinite mode) ─────────────────────────────────────
-  const newEntropy = INFINITE_MODE_CONFIG.enabled && moveResult.changed
-    ? state.entropy + INFINITE_MODE_CONFIG.entropy.perMove
-    : state.entropy;
 
   const nextEnergy = state.energy + energyGain + streakEnergyBonus + jackpotEnergyBonus;
   let newState: GameState = {
