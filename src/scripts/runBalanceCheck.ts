@@ -12,17 +12,19 @@ import { analyseResults } from '../benchmark/analysis';
 import { exportAll, exportBalanceReport } from '../benchmark/exporters';
 import { generateAllCharts } from '../benchmark/charts';
 import { applyTerminology } from '../i18n/terminology';
+import { createRunLogPersister } from './persistRunLog';
 
 const term = (text: string): string => applyTerminology('en', text);
 
 console.log(`\n=== ${term('Merge Catalyst Balance Check')} ===\n`);
 
 const t0 = Date.now();
+const persister = createRunLogPersister();
 
 console.log(`Running suite: ${SUITE_BALANCE.name}...`);
 const balanceResult = runSuite(SUITE_BALANCE, (agent, done, total) => {
   if (done === total) process.stdout.write(`    ${agent}: ${done}/${total}\n`);
-});
+}, persister);
 
 const stressSuites = [SUITE_PACING, SUITE_ROUND_STRESS];
 const stressResults = stressSuites.map((suite) => {
@@ -32,7 +34,7 @@ const stressResults = stressSuites.map((suite) => {
   console.log(`Running suite: ${suite.name}...`);
   return runSuite(suite, (agent, done, total) => {
     if (done === total) process.stdout.write(`    ${agent}: ${done}/${total}\n`);
-  });
+  }, persister);
 });
 
 const elapsed = ((Date.now() - t0) / 1000).toFixed(1);

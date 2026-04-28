@@ -10,6 +10,7 @@ import {
 } from '../core/engine';
 import { useProfileStore } from './profileStore';
 import { appendRunLog, buildRunLog } from './runLogStore';
+import { exportRunLogsAsJson } from '../scripts/exportRunLogs';
 
 interface GameStore extends GameState {
   initGame: (seed?: number, protocol?: ProtocolId) => void;
@@ -150,11 +151,24 @@ export const useGameStore = create<GameStore>((set) => ({
 // Save a completed run log to localStorage whenever the screen transitions
 // to 'game_over' or 'run_complete'.  This is fire-and-forget and does not
 // affect game logic.
+// In dev mode, also POST the run log bundle to the Vite dev server so it is
+// persisted to <cwd>/artifacts/runs/ for offline analysis.
 useGameStore.subscribe((state, prevState) => {
   if (
     prevState.screen !== state.screen &&
     (state.screen === 'game_over' || state.screen === 'run_complete')
   ) {
-    appendRunLog(buildRunLog(state));
+    const log = buildRunLog(state);
+    appendRunLog(log);
+    if (import.meta.env.DEV) {
+      const json = exportRunLogsAsJson({ scope: 'current' });
+      fetch('/dev-api/save-run-log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: json,
+      }).catch(() => {
+        // Silently ignore — dev server may not be available
+      });
+    }
   }
 });

@@ -170,7 +170,7 @@ function deriveStepRecords(phases: PhaseLog[]): ExportStepRecord[] {
   return steps;
 }
 
-function toExportRunRecord(run: RunLog): ExportRunRecord {
+export function toExportRunRecord(run: RunLog): ExportRunRecord {
   const steps = deriveStepRecords(run.phases);
   return {
     runMetadata: {
@@ -232,6 +232,11 @@ export function createRunLogExportBundle(options: RunLogExportOptions = {}): Run
 /** Return structured run log export as JSON. */
 export function exportRunLogsAsJson(options: RunLogExportOptions = {}): string {
   return JSON.stringify(createRunLogExportBundle(options), null, 2);
+}
+
+/** Parse a JSON string produced by exportRunLogsAsJson back into a RunLogExportBundle. */
+export function parseRunLogExportJson(json: string): RunLogExportBundle {
+  return JSON.parse(json) as RunLogExportBundle;
 }
 
 /**
